@@ -1,0 +1,69 @@
+# Agent config (internal instructions, not for public)
+AGENTS.md
+
+# Design docs (not for public repo)
+docs/
+
+# Development harness
+.better-harness/
+
+# Environment
+.env
+
+# macOS
+.DS_Store
+
+# Go
+/vendor/
+bin/
+go.work
+go.work.sum
+
+# CGO build artifacts
+*.so
+*.dylib
+*.dll
+
+# Python (legacy scripts)
+__pycache__/
+*.pyc
+*.pyo
+
+# IDE
+.vscode/
+.idea/
+
+# WorkBuddy & other tools
+.workbuddy/
+.qoder/
+.qoder-cn/
+.qoderignore
+.serena/
+
+# Benchmarks
+.benchmarks/
+
+# Screenshots
+*.png
+
+# Local config & tools
+.history/
+.mcp.json
+skills/
+memhop_brains/
+
+# Test LLM credentials (use key_config.json.example as template,
+# or set MEMHOP_TEST_LLM_KEY env var instead)
+test/testsupport/key_config.json
+
+# Large model files (user-downloaded)
+/models/
+
+# Node.js
+/node_modules/
+
+# Local Go build cache (sandboxed builds)
+/.gocache/
+
+# ZCode workspace config (hook registrations)
+.zcode/

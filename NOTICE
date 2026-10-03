@@ -1,0 +1,14 @@
+Long-term-memory-go
+===================
+
+This repository contains a copy of MemHop source code originally published at:
+https://github.com/qyiun666/MemHop
+
+Copyright (c) 2026 qyiun666 and other MemHop contributors.
+
+Licensed under the MIT License and/or the Apache License, Version 2.0.
+See LICENSE-MIT and LICENSE-APACHE.
+
+This is not an official MemHop release. Upstream project credit belongs to the
+original authors. Do not treat this repository as original authorship of the
+MemHop design or implementation.

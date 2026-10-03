@@ -1,0 +1,258 @@
+// Copyright (c) 2026 qyiun666
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
+package dream
+
+import (
+	"context"
+	"log/slog"
+	"strings"
+	"sync"
+	"time"
+
+	"github.com/genosis18m/Long-term-memory-go/internal/cap/llmops"
+	"github.com/genosis18m/Long-term-memory-go/internal/common"
+	"github.com/genosis18m/Long-term-memory-go/internal/domain"
+	"github.com/genosis18m/Long-term-memory-go/internal/repo"
+	"github.com/genosis18m/Long-term-memory-go/internal/repo/core"
+)
+
+// compressFanout bounds how many scenes consolidate at once. Every scene costs an
+// LLM round-trip taken inside the domain lock, so an unbounded fan-out is a burst of
+// as many concurrent requests as the domain has scenes — the shape that trips an
+// endpoint's rate limit and then has every scene report a failed call.
+const compressFanout = 4
+
+// CompressScenes consolidates every scene named, at most compressFanout at a time:
+// reads depth-1 topics, asks the LLM for merge groups and applies them. It returns the
+// scenes that had at least one group applied, and how many scenes produced nothing
+// usable — a call that failed, or a group this engine could not apply. An engine
+// refusal comes back as the error instead of joining that count, under the code it
+// arrived with. The topics applied groups sank accumulate into
+// rep.L2TopicsCompressed under mu. All scenes belong to ac's domain.
+func CompressScenes(ctx context.Context, ac *domain.Context, scenes []uint64, rep *core.DreamReport) (map[uint64]struct{}, int, error) {
+	var (
+		wg        sync.WaitGroup
+		mu        sync.Mutex
+		succeeded = make(map[uint64]struct{})
+		unusable  int
+		failed    error
+		sem       = make(chan struct{}, compressFanout)
+	)
+	for _, sid := range scenes {
+		sem <- struct{}{}
+		wg.Add(1)
+		go func(sceneID uint64) {
+			defer wg.Done()
+			defer func() { <-sem }()
+			topics := repo.ListTopicsL2(repo.TopicListQuery{
+				MetaIdx: ac.L2Meta,
+				SceneID: sceneID,
+				Depth:   1,
+			})
+			if len(topics) < ac.Defaults.DreamCompressMinTopics {
+				return
+			}
+			out, err := llmops.Consolidate(ctx, ac.LLM, topics, ac.Defaults.DreamCompressMinTopics)
+			if err != nil {
+				mu.Lock()
+				unusable++
+				mu.Unlock()
+				return
+			}
+			got, err := applyGroups(ctx, ac, sceneID, topics, out)
+			mu.Lock()
+			defer mu.Unlock()
+			if err != nil {
+				if failed == nil {
+					failed = err
+				}
+				return
+			}
+			unusable += got.unusable
+			if got.unusable > 0 {
+				slog.Warn("dream: merge groups proposed but not applied",
+					"scene", common.FormatHash(sceneID), "applied", got.groups, "rejected", got.unusable)
+			}
+			if got.groups > 0 {
+				succeeded[sceneID] = struct{}{}
+				rep.L2TopicsCompressed += got.topics
+			}
+		}(sid)
+	}
+	wg.Wait()
+	return succeeded, unusable, failed
+}
+
+// groupOutcome is one scene's consolidation result: the groups that landed, the
+// topics those groups sank under them, and the proposals that produced nothing.
+type groupOutcome struct {
+	groups   uint32
+	topics   int
+	unusable int
+}
+
+// applyGroups applies one scene's groups: stores MergedSummary as an L4 archive of
+// the fused topic, extracts keywords for it, creates it, then sinks the group nodes. A
+// proposal that produces nothing — one name, a member another group already claimed,
+// bounds this engine cannot resolve, a summary the model left empty — counts as
+// unusable and the rest continue, so a pass that applied nothing because every group
+// was unusable does not read as a scene with nothing to consolidate. A refusal out of
+// the records is returned instead: applyOneGroup has already rolled that group back.
+func applyGroups(ctx context.Context, ac *domain.Context, sceneID uint64, topics []core.TopicSlot, out *llmops.ConsolidationOutput) (groupOutcome, error) {
+	byID := make(map[uint64]core.TopicSlot, len(topics))
+	for _, t := range topics {
+		byID[t.ID] = t
+	}
+	// Members a group has already sunk. Two groups claiming one topic cannot both be
+	// applied: the second re-parents it under itself, leaving the first summary
+	// claiming a child that no longer answers to it.
+	claimed := make(map[uint64]struct{}, len(topics))
+	var got groupOutcome
+	for _, g := range out.L2Groups {
+		if len(g.NodeHashes) < 2 {
+			// A one-name group is a proposal this engine cannot apply: a fused parent
+			// exists to stand over children. Unapplied, not "nothing to consolidate".
+			got.unusable++
+			continue
+		}
+		if sharesMember(g.NodeHashes, claimed) {
+			got.unusable++
+			continue
+		}
+		minTS, maxTS, ok := groupTimestamps(g.NodeHashes, byID)
+		if !ok {
+			got.unusable++
+			continue
+		}
+		if err := applyOneGroup(ctx, ac, sceneID, g, minTS, maxTS); err != nil {
+			if common.CodeOf(err) != common.ErrLLM {
+				return got, err
+			}
+			got.unusable++
+			continue
+		}
+		for _, id := range g.NodeHashes {
+			claimed[id] = struct{}{}
+		}
+		got.groups++
+		got.topics += len(g.NodeHashes)
+	}
+	return got, nil
+}
+
+// sharesMember reports whether any of a proposed group's members already belongs
+// to a group this scene applied.
+func sharesMember(nodeHashes []uint64, claimed map[uint64]struct{}) bool {
+	for _, id := range nodeHashes {
+		if _, ok := claimed[id]; ok {
+			return true
+		}
+	}
+	return false
+}
+
+// applyOneGroup consolidates a single merge group: stores MergedSummary as the fused
+// topic's own content slot, extracts keywords for that topic, creates it, then sinks
+// the group nodes. Any step that cannot be applied rolls back what this group already
+// wrote and returns the reason, so a group is either fully applied or leaves nothing
+// behind — except a rollback that itself fails, which is what its WARN exists to say.
+func applyOneGroup(ctx context.Context, ac *domain.Context, sceneID uint64, g llmops.L2Group, minTS, maxTS int64) error {
+	parentID := core.ComputeFusedTopicID(sceneID, minTS, maxTS, g.NodeHashes)
+	// An empty summary is not a group the engine can fuse: it would sink children
+	// under a parent carrying nothing. Refused ahead of the first record this group
+	// would own, so a rejected proposal leaves nothing to undo.
+	if strings.TrimSpace(g.MergedSummary) == "" {
+		return common.NewError(common.ErrLLM, "dream: merge group proposed an empty merged_summary", nil)
+	}
+	// The parent id names its members, so two disjoint groups over the same bounds no
+	// longer hash to one id. What remains for this guard to catch is a genuine reuse of
+	// an address: the same member set proposed again (a replay of an applied group), or a
+	// 64-bit accident. Landing it would re-scope a parent over children another summary
+	// already claims, so it is refused — ahead of the first record this group would own.
+	switch stored, err := core.ReadTopicLenient(ac.Engine, ac.ID, parentID); {
+	case err != nil && common.CodeOf(err) != common.ErrNotFound:
+		return common.NewError(common.ErrIO, "dream: read the parent id this group would create", err)
+	case err != nil:
+		// Nothing stored: the ordinary case, this group creates the parent.
+	case stored == nil:
+		return common.NewError(common.ErrIO, "dream: the parent id this group would create already names a record that is not a topic", nil)
+	default:
+		return common.NewError(common.ErrLLM, "dream: merge group's bounds collide with an existing topic", nil)
+	}
+	// The fused group's summary is the parent topic's own utterance: it occupies the
+	// slot a turn's user side would, and no reference list points at it. It ages from
+	// this pass and not from the group's last turn — the retention window sweeps on
+	// CreatedAt, so a fold of turns already past the cutoff would be deleted on
+	// arrival. The group's own span stays on the topic record.
+	if err := repo.AppendArchiveL4(ac.Engine, ac.ID, ac.L4, &core.ArchiveSlot{
+		TopicID: parentID, Seq: core.SeqUser, Kind: core.KindUtterance,
+		Role: core.RoleDream, ContentType: core.ContentText, Content: g.MergedSummary,
+		CreatedAt: time.Now().UnixMilli(),
+	}); err != nil {
+		return common.NewError(common.ErrIO, "dream: archive merged summary", err)
+	}
+
+	// Keywords of MergedSummary become the fused topic's single track.
+	keywords, err := llmops.ExtractKeywords(ctx, ac.LLM, g.MergedSummary)
+	if err != nil || len(keywords) == 0 {
+		discardFusedGroup(ac, parentID)
+		if err == nil {
+			err = common.NewError(common.ErrLLM, "extracted no keywords", nil)
+		}
+		return common.NewError(common.ErrLLM, "dream: extract keywords from merged summary", err)
+	}
+
+	if err := repo.CreateFusedTopicL2(ac.Engine, ac.ID, sceneID, keywords, minTS, maxTS, g.NodeHashes); err != nil {
+		discardFusedGroup(ac, parentID)
+		return common.NewError(common.CodeOf(err), "dream: create fused topic", err)
+	}
+	if err := repo.CompressTopicsL2(ac.Engine, ac.ID, g.NodeHashes, parentID); err != nil {
+		// The sink is one batch, and a batch that fails partway leaves the members it
+		// reached at depth 2 under a parent this call is about to erase. Restoring them
+		// is what makes the rollback complete: depth-1 listing is what both `Search`
+		// and the next Dream's group picker read.
+		if rerr := repo.RestoreSunkTopicsL2(ac.Engine, ac.ID, g.NodeHashes, parentID); rerr != nil {
+			slog.Warn("dream: rollback sunk topics failed",
+				"parent", common.FormatHash(parentID), "err", rerr)
+		}
+		discardFusedGroup(ac, parentID)
+		return common.NewError(common.ErrIO, "dream: compress child topics", err)
+	}
+	return nil
+}
+
+// discardFusedGroup rolls back a partially applied merge group: no orphan summary
+// content and no fused parent above children that were never sunk. Undo is keyed by the
+// one id this group wrote and scans nothing — a rollback that read the topic bucket
+// could be refused by the very record whose write failed. Rollback failures only warn:
+// the children stay at depth 1, so the next Dream re-picks the group.
+func discardFusedGroup(ac *domain.Context, parentID uint64) {
+	if err := repo.DeleteL2Records(ac.Engine, ac.ID, []uint64{parentID}); err != nil {
+		slog.Warn("dream: rollback fused topic failed", "parent", common.FormatHash(parentID), "err", err)
+	}
+	if err := repo.DeleteTopicArchives(ac.Engine, ac.ID, ac.L4, []uint64{parentID}); err != nil {
+		slog.Warn("dream: rollback summary content failed", "parent", common.FormatHash(parentID), "err", err)
+	}
+}
+
+// groupTimestamps returns the bounds a fused parent is keyed by. It refuses a group
+// whose members the engine cannot all see: the listing handed to the model is the only
+// source of these ids, so an id it invented would buy a summary over turns nobody
+// counted.
+func groupTimestamps(nodeHashes []uint64, byID map[uint64]core.TopicSlot) (minTS, maxTS int64, ok bool) {
+	for _, id := range nodeHashes {
+		t, found := byID[id]
+		if !found {
+			return 0, 0, false
+		}
+		if !ok || t.UserTimestamp < minTS {
+			minTS = t.UserTimestamp
+		}
+		if !ok || t.AgentTimestamp > maxTS {
+			maxTS = t.AgentTimestamp
+		}
+		ok = true
+	}
+	return minTS, maxTS, ok
+}
