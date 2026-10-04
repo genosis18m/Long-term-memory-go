@@ -299,14 +299,16 @@ go test -tags integration ./test/...    # 集成测试（需要 LLM key）
 
 | | |
 |---|---|
+| 本镜像 | [github.com/genosis18m/Long-term-memory-go](https://github.com/genosis18m/Long-term-memory-go) |
+| 上游 MemHop | [github.com/qyiun666/MemHop](https://github.com/qyiun666/MemHop) |
+| 镜像说明 | [MIRROR.md](MIRROR.md) |
 | MeowAgent | [github.com/meowagent/meowagent](https://github.com/meowagent/meowagent) — 即将开源 |
-| MemHop | [github.com/genosis18m/Long-term-memory-go](https://github.com/genosis18m/Long-term-memory-go) |
 | Meowire | [github.com/qyiun666/meowire](https://github.com/qyiun666/meowire) |
 | MeowDesk | [github.com/qyiun666/MeowDesk](https://github.com/qyiun666/MeowDesk) — 即将开源 |
 | 官网 | [qyiun666.github.io/meowagent.github.io](https://qyiun666.github.io/meowagent.github.io/) |
-| 邮箱 | qyiun666@163.com |
+| 上游邮箱 | qyiun666@163.com |
 
-<p align="center">⭐️ <a href="https://github.com/genosis18m/Long-term-memory-go">在 GitHub 上给 MemHop 点个小星星</a> — 你的支持是我们的动力！</p>
+<p align="center">⭐️ 请优先给 <a href="https://github.com/qyiun666/MemHop">上游 MemHop 仓库</a> 点星 —— 那才是原作者持续开发的地方。</p>
 
 ## 许可证
 

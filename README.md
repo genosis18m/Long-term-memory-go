@@ -312,14 +312,16 @@ Each row keeps at most five highlights; the full numbered log lives in [CHANGELO
 
 | | |
 |---|---|
+| This mirror | [github.com/genosis18m/Long-term-memory-go](https://github.com/genosis18m/Long-term-memory-go) |
+| Upstream MemHop | [github.com/qyiun666/MemHop](https://github.com/qyiun666/MemHop) |
+| Mirror notes | [MIRROR.md](MIRROR.md) |
 | MeowAgent | [github.com/meowagent/meowagent](https://github.com/meowagent/meowagent) — coming soon |
-| MemHop | [github.com/genosis18m/Long-term-memory-go](https://github.com/genosis18m/Long-term-memory-go) |
 | Meowire | [github.com/qyiun666/meowire](https://github.com/qyiun666/meowire) |
 | MeowDesk | [github.com/qyiun666/MeowDesk](https://github.com/qyiun666/MeowDesk) — coming soon |
 | Website | [qyiun666.github.io/meowagent.github.io](https://qyiun666.github.io/meowagent.github.io/) |
-| Email | qyiun666@163.com |
+| Upstream email | qyiun666@163.com |
 
-<p align="center">⭐️ <a href="https://github.com/genosis18m/Long-term-memory-go">Star MemHop on GitHub</a> — your support keeps us building!</p>
+<p align="center">⭐️ Prefer starring the <a href="https://github.com/qyiun666/MemHop">upstream MemHop repository</a> — that is where the original authors build.</p>
 
 ## License
 
