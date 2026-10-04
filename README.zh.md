@@ -1,3 +1,5 @@
+> **声明：** 本仓库是基于 [qyiun666/MemHop](https://github.com/qyiun666/MemHop)（MIT OR Apache-2.0）的公开镜像。**不是**仓库所有者的原创作品。上游版权仍属于 MemHop 原作者。详见 `NOTICE`、`LICENSE-MIT`、`LICENSE-APACHE`。
+
 <p align="center">
   <h1 align="center">MemHop</h1>
   <p align="center">
