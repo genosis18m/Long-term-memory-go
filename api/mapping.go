@@ -1,8 +1,7 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// Mapping from the internal/core uint64 models to the public DTOs. One-way, no
-// business logic; every id a host can see is rendered here.
+// Mapping from the internal/core uint64 models to the public DTOs.
 
 package api
 
@@ -12,8 +11,7 @@ import (
 
 func formatID(id uint64) string { return internal.FormatID(id) }
 
-// mapSlice renders a list of internal records into the element DTO of each. The
-// answer is always non-nil: a host decoding a collection never sees null.
+// mapSlice renders a list of internal records into the element DTO of each.
 func mapSlice[T, U any](in []T, f func(T) U) []U {
 	out := make([]U, len(in))
 	for i := range in {
@@ -24,8 +22,7 @@ func mapSlice[T, U any](in []T, f func(T) U) []U {
 
 func formatIDs(ids []uint64) []string { return mapSlice(ids, formatID) }
 
-// cloneStrings copies a keyword list out of an internal record. An imported node may
-// carry none, and that must encode as [] like every other list here, not as null.
+// cloneStrings copies a keyword list out of an internal record.
 func cloneStrings(in []string) []string {
 	out := make([]string, len(in))
 	copy(out, in)
@@ -59,8 +56,8 @@ func fromProfileSlot(s internal.ProfileSlot) ProfileSlot {
 	}
 }
 
-// toCoreProfileSlot maps the host-writable half of the profile; the library-owned
-// half is inherited by the write itself.
+// toCoreProfileSlot maps the host-writable half of the profile; the library-owned half is inherited by
+// the write itself.
 func toCoreProfileSlot(s ProfileInput) internal.ProfileSlot {
 	return internal.ProfileSlot{
 		Name:        s.Name,
@@ -129,8 +126,8 @@ func fromHypergraphSlot(s internal.HypergraphSlot) HypergraphSlot {
 	}
 }
 
-// derefString reads the library's optional string as the plain string the facade publishes:
-// a source reference is stored only when it is non-empty, so nil and "" are the same answer.
+// derefString reads the library's optional string as the plain string the facade publishes: a source
+// reference is stored only when it is non-empty, so nil and "" are the same answer.
 func derefString(s *string) string {
 	if s == nil {
 		return ""
@@ -199,9 +196,8 @@ func formatOptionalID(id uint64) string {
 	return formatID(id)
 }
 
-// toCoreAppendSlot turns the write shape into a record: the owning topic comes from
-// the turn the domain holds open, and the record id follows from (topic, Seq) — which
-// is why ArchiveInput carries neither.
+// toCoreAppendSlot turns the write shape into a record: the owning topic comes from the turn the
+// domain holds open, and the record id follows from (topic, Seq).
 func toCoreAppendSlot(s ArchiveInput) internal.ArchiveSlot {
 	return internal.ArchiveSlot{
 		Kind:        s.Kind,

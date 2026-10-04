@@ -9,8 +9,8 @@ import (
 	"testing"
 )
 
-// The facade's own entry, end to end: what the file holds decides whether Open
-// succeeds, and both kinds of domain come back as handles rather than as ids.
+// The facade's own entry, end to end: what the file holds decides whether Open succeeds, and both
+// kinds of domain come back as handles rather than as ids.
 func TestOpenSettlesThePrimaryAndCreatesSubAgents(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "facade.meh")
 	llm := LlmConfig{APIURL: "http://127.0.0.1:1", APIKey: "k", Model: "m"}
@@ -97,12 +97,8 @@ func TestOpenSettlesThePrimaryAndCreatesSubAgents(t *testing.T) {
 	}
 }
 
-// One file, one holder — and the lock does not soften inside a single process: a second
-// `Open` of a file this process already holds is refused exactly as another process's would
-// be. That is the failure a host meets when it hands two agents one path (a worker's file
-// path came out of a model), and it reads as "pick another path", not as damage: the holder
-// keeps working untouched, and a second path opens fine alongside it. That is how "one
-// library per agent" grows at runtime rather than only at start-up.
+// One file, one holder — and the lock does not soften inside a single process: a second `Open` of a
+// file this process already holds is refused exactly as another process's would be.
 func TestOpenRefusesAFileThisProcessAlreadyHolds(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "held.meh")
@@ -141,12 +137,8 @@ func TestOpenRefusesAFileThisProcessAlreadyHolds(t *testing.T) {
 	}
 }
 
-// The L3 pool is per file, not per domain, and that is the boundary a host decides on when
-// it spawns a worker: a second *domain* of the same file inherits the project knowledge with
-// no re-import, while a second *file* starts with an empty pool of its own. So "one library
-// per agent" carries the graph along only in the sub-agent shape — a worker on its own path
-// brings nothing over, and that is the library's rule rather than a bug it can be talked out
-// of (`TestKnowledgeGraphStaysInsideItsFile` exists so the two shapes cannot drift).
+// The L3 pool is per file, not per domain, and that is the boundary a host decides on when it spawns a
+// worker.
 func TestKnowledgeGraphStaysInsideItsFile(t *testing.T) {
 	dir := t.TempDir()
 	llm := LlmConfig{APIURL: "http://127.0.0.1:1", APIKey: "k", Model: "m"}
@@ -197,11 +189,8 @@ func TestKnowledgeGraphStaysInsideItsFile(t *testing.T) {
 	}
 }
 
-// A domain's own id — the one Session.AgentID renders — is the handle a host keeps when it
-// would rather address one memory than re-say a name. DB.Agent takes it back to that same
-// domain, across a reopening, and refuses an id this file never registered rather than
-// opening an empty memory in its place. Every id the facade hands out round-trips, the
-// primary's included.
+// A domain's own id — the one Session.AgentID renders — is the handle a host keeps when it would
+// rather address one memory than re-say a name.
 func TestADomainIsAddressableByTheIDTheLibraryIssued(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "ids.meh")
@@ -287,10 +276,7 @@ func TestADomainIsAddressableByTheIDTheLibraryIssued(t *testing.T) {
 	}
 }
 
-// The listing is the other half of the id door: a host that inherited a `.meh` or lost its
-// own roster reads DB.Agents to learn which domains the file holds, instead of guessing a
-// name and quietly creating a second domain beside the real one. What it lists must be what
-// it can open, by both keys, and survive a restart.
+// The listing is the other half of the id door.
 func TestAgentsDiscoversEveryDomainInTheFile(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "roster.meh")

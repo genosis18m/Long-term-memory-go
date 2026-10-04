@@ -1,10 +1,7 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// Closed-loop tests for the strict (no-fallback) write contracts: a call that
-// returns an error must leave nothing behind, a call that succeeds must return
-// what it stored, and every malformed request must surface as an error rather
-// than as a silently degraded write. These run against the stub LLM only.
+// Closed-loop tests for the strict (no-fallback) write contracts.
 
 package api
 
@@ -17,9 +14,8 @@ import (
 	"testing"
 )
 
-// garbageLLM answers a well-formed chat completion whose content is prose,
-// never JSON — the shape a model that cannot follow the output contract
-// actually returns.
+// garbageLLM answers a well-formed chat completion whose content is prose, never JSON — the shape a
+// model that cannot follow the output contract actually returns.
 func garbageLLM(t *testing.T) *httptest.Server {
 	t.Helper()
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -39,8 +35,7 @@ func garbageLLM(t *testing.T) *httptest.Server {
 	}))
 }
 
-// importGraph imports a small package-shaped knowledge batch and returns its
-// graph id.
+// importGraph imports a small package-shaped knowledge batch and returns its graph id.
 func importGraph(t *testing.T, sess *Session, mode L3ImportMode) (*L3ImportResult, string) {
 	t.Helper()
 	items := []L3ImportItem{
@@ -94,7 +89,7 @@ func TestImportL3RejectsMalformedBatch(t *testing.T) {
 			t.Errorf("%s: want an error, got nil", tc.name)
 		}
 	}
-	// none of them wrote anything
+	// none of them wrote anything.
 	after, _ := sess.ListL3()
 	if len(after) != len(before) {
 		t.Fatalf("a refused batch must create no graph: %d → %d graphs", len(before), len(after))
@@ -133,7 +128,7 @@ func TestImportL3ReadsBackEveryField(t *testing.T) {
 			t.Fatalf("unexpected edge: %+v", e)
 		}
 	}
-	// the same batch re-imported is idempotent in every mode
+	// the same batch re-imported is idempotent in every mode.
 	for _, mode := range []L3ImportMode{L3ImportSkip, L3ImportMerge, L3ImportOverwrite} {
 		r, err := sess.ImportL3([]L3ImportItem{
 			{Title: "api", Domain: "proj/pkg", NodeType: "package", Content: "the facade",
@@ -173,7 +168,7 @@ func TestUpdateL3RenameSurvivesReimport(t *testing.T) {
 	if len(after.Nodes) != 3 {
 		t.Fatalf("the re-import should extend the same graph, nodes=%d", len(after.Nodes))
 	}
-	// importing under the NEW name extends the same graph too
+	// importing under the NEW name extends the same graph too.
 	if _, err := sess.ImportL3([]L3ImportItem{{Title: "extra", Domain: "proj/renamed", NodeType: "package"}},
 		L3ImportOverwrite); err != nil {
 		t.Fatalf("import under the renamed domain: %v", err)
@@ -196,7 +191,7 @@ func TestQueryL3NodesRefusesUnknownGraphAndBadIds(t *testing.T) {
 	if err := sess.DeleteL3(gid); err != nil {
 		t.Fatalf("DeleteL3: %v", err)
 	}
-	// every L3 read now agrees that the graph is gone
+	// every L3 read now agrees that the graph is gone.
 	if _, err := sess.GetL3(gid); err == nil {
 		t.Fatal("GetL3 on a deleted graph must error")
 	}
@@ -216,12 +211,11 @@ func TestSceneAnchorAgreesWithTheGraphSurface(t *testing.T) {
 	if sr.Scene.L3ID != gid {
 		t.Fatalf("new scene should carry the anchor, got %q", sr.Scene.L3ID)
 	}
-	// the same anchor on an existing scene is a request conflict, not a no-op
+	// the same anchor on an existing scene is a request conflict, not a no-op.
 	if _, err := sess.Search(SearchQuery{SceneID: sr.Scene.SceneID, L3ID: gid}); CodeOf(err) != ErrInvalidQuery {
 		t.Fatalf("Search must refuse an L3ID for an existing scene instead of ignoring it, got %v", err)
 	}
-	// an anchor naming a graph that does not exist is refused on creation too — the
-	// anchor is read on the creating path, so this read asks for its own scene
+	// an anchor naming a graph that does not exist is refused on creation too.
 	if _, err := sess.Search(SearchQuery{L3ID: "ffffffffffffffff", NewScene: true}); err == nil {
 		t.Fatal("Search must refuse an unknown anchor graph")
 	}
@@ -235,7 +229,7 @@ func TestSceneAnchorAgreesWithTheGraphSurface(t *testing.T) {
 	if got, _ := sess.ListScenes(gid); len(got) != 0 {
 		t.Fatalf("scene kept its anchor in the l3 listing: %d", len(got))
 	}
-	// the whole graph going away leaves no dangling anchor behind
+	// the whole graph going away leaves no dangling anchor behind.
 	if err := sess.DeleteL3(gid); err != nil {
 		t.Fatalf("DeleteL3: %v", err)
 	}
@@ -248,8 +242,8 @@ func TestSceneAnchorAgreesWithTheGraphSurface(t *testing.T) {
 	}
 }
 
-// A refused plan write is a whole refusal: whichever way a host is told no, the
-// tree it reads back afterwards is the tree it had before.
+// A refused plan write is a whole refusal: whichever way a host is told no, the tree it reads back
+// afterwards is the tree it had before.
 func TestPlanWritesRejectedLeaveTreeUntouched(t *testing.T) {
 	sess := openSurfaceDB(t)
 	turn := mustTurnKey(t, sess)
@@ -290,9 +284,8 @@ func TestPlanWritesRejectedLeaveTreeUntouched(t *testing.T) {
 		}},
 	}
 	for _, tc := range refused {
-		// An address the tree does not hold answers ErrNotFound; a value the engine
-		// cannot name answers ErrInvalidQuery. Both are refusals, and which one a
-		// host gets is not this test's subject — that the tree did not move is.
+		// An address the tree does not hold answers ErrNotFound; a value the engine cannot name answers
+		// ErrInvalidQuery.
 		err := tc.call()
 		if code := CodeOf(err); code != ErrInvalidQuery && code != ErrNotFound {
 			t.Fatalf("%s: want a refusal, got %v", tc.name, err)
@@ -328,9 +321,7 @@ func TestPlanWritesRejectedLeaveTreeUntouched(t *testing.T) {
 	}
 }
 
-// The budgets are the host's contract in bytes, so the number itself is pinned: a change to it is
-// a change to what a host must chunk into, and it should fail here rather than quietly widen the
-// gap between the guide and the code.
+// The budgets are the host's contract in bytes, so the number itself is pinned.
 func TestWriteBudgetsAreTheAdvertisedNumbers(t *testing.T) {
 	if MaxEventPayloadBytes != 4*1024 {
 		t.Fatalf("the event budget is %d bytes, want the 4096 the guides tell a host to chunk into",
@@ -342,9 +333,7 @@ func TestWriteBudgetsAreTheAdvertisedNumbers(t *testing.T) {
 }
 
 // A refused append must not consume a slot: the turn's event track is read by Seq, and the host
-// reasons about its own calls in that order ("the third thing I recorded"). Burning an ordinal
-// on a refusal would leave a hole no later call ever fills — and the budget is checked before
-// any slot is offered, which is exactly what this pins.
+// reasons about its own calls in that order ("the third thing I recorded").
 func TestRefusedAppendLeavesNoHoleInTheTrack(t *testing.T) {
 	sess := openSurfaceDB(t)
 	turn := mustTurnKey(t, sess)
@@ -379,10 +368,8 @@ func TestAppendArchiveRefusesAndStoresNothing(t *testing.T) {
 	if evs := eventsOf(t, sess, turn); len(evs) != 0 {
 		t.Fatalf("a refused append stored %d events", len(evs))
 	}
-	// exactly at the budget is accepted — the budget is the whole record, so the
-	// one-byte name leaves the rest to the body. Every size here is written against the
-	// exported constant, which is what makes the export a checked boundary rather than a
-	// number that may have drifted from the check since the guide was written.
+	// exactly at the budget is accepted — the budget is the whole record, so the one-byte name leaves the
+	// rest to the body.
 	if _, err := sess.AppendArchive(event("x", strings.Repeat("a", MaxEventPayloadBytes-1), 1)); err != nil {
 		t.Fatalf("event at the budget limit: %v", err)
 	}
@@ -406,9 +393,8 @@ func TestAppendArchiveRefusesAndStoresNothing(t *testing.T) {
 	}); err == nil {
 		t.Fatal("an over-budget utterance must be refused, not truncated")
 	}
-	// A step-bound event answers to the same content contract as a bare one: the
-	// step being real does not excuse a record missing its own name. It lands on the
-	// next turn, because that is the only turn a write can reach.
+	// A step-bound event answers to the same content contract as a bare one: the step being real does not
+	// excuse a record missing its own name.
 	key := mustTurnKey(t, sess)
 	keyStep, err := sess.PlanNodeAdd(0, "一步")
 	if err != nil {
@@ -435,7 +421,7 @@ func TestUpdateFailsLoudlyWhenTheLLMCannotExtract(t *testing.T) {
 	}); err == nil {
 		t.Fatal("Update must fail when keyword extraction degrades, not settle a turn with fake keywords")
 	}
-	// nothing settled: the scene still has no topics
+	// nothing settled: the scene still has no topics.
 	again, err := sess.Search(SearchQuery{SceneID: sr.Scene.SceneID})
 	if err != nil {
 		t.Fatalf("re-read: %v", err)
@@ -443,15 +429,11 @@ func TestUpdateFailsLoudlyWhenTheLLMCannotExtract(t *testing.T) {
 	if len(again.Topics) != 0 {
 		t.Fatalf("a failed Update settled %d topics", len(again.Topics))
 	}
-	// The dialogue Update wrote survives the failed distillation: the close owns the
-	// records it stored and has no business undoing them, so the retry rewrites the
-	// same two slots and distills what is still there.
+	// The dialogue Update wrote survives the failed distillation.
 	if arcs, err := sess.SearchL4(L4Query{}); err != nil || len(arcs) != 2 {
 		t.Fatalf("a failed Update disturbed the turn's content: %d (err=%v)", len(arcs), err)
 	}
 }
-
-// ---- small helpers ----
 
 func ptr[T any](v T) *T { return &v }
 
@@ -464,10 +446,8 @@ func scenesOf(t *testing.T, sess *Session) int {
 	return len(scenes)
 }
 
-// mustTurnKey opens a turn on the domain's current scene and returns the topic id
-// Search minted for it — the key a read of that turn's content asks for. Every write
-// on the turn takes no key at all: this call is what tells the library which turn is
-// open.
+// mustTurnKey opens a turn on the domain's current scene and returns the topic id Search minted for it
+// — the key a read of that turn's content asks for.
 func mustTurnKey(t *testing.T, sess *Session) string {
 	t.Helper()
 	sr, err := sess.Search(SearchQuery{})
@@ -477,9 +457,8 @@ func mustTurnKey(t *testing.T, sess *Session) string {
 	return sr.NewTopicID
 }
 
-// noTurnWrites lists the five calls that write the turn the library holds, so a
-// scenario can refuse all of them at once. None of them carries an id to be wrong
-// about, so the one state a missing turn shows up as is the refusal they all share.
+// noTurnWrites lists the five calls that write the turn the library holds, so a scenario can refuse
+// all of them at once.
 func noTurnWrites(sess *Session) map[string]func() error {
 	return map[string]func() error{
 		"Update": func() error {
@@ -493,10 +472,8 @@ func noTurnWrites(sess *Session) map[string]func() error {
 	}
 }
 
-// A domain that has never read holds no turn, and each of the five writes says so
-// instead of inventing one — picking the newest scene's next turn would write onto a
-// turn nobody opened. One read flips all five back to working, which is what makes the
-// refusal above about the missing turn rather than about the calls themselves.
+// A domain that has never read holds no turn, and each of the five writes says so instead of inventing
+// one — picking the newest scene's next turn would write onto a turn nobody opened.
 func TestTurnWritesRefuseWhenNoTurnIsOpen(t *testing.T) {
 	sess := openSurfaceDB(t)
 	for name, write := range noTurnWrites(sess) {
@@ -514,8 +491,8 @@ func TestTurnWritesRefuseWhenNoTurnIsOpen(t *testing.T) {
 	}
 }
 
-// A turn's ending is one call: the two originals and the host's word for how it ended
-// land on the open turn, and the empty form is refused instead of settling nothing.
+// A turn's ending is one call: the two originals and the host's word for how it ended land on the open
+// turn, and the empty form is refused instead of settling nothing.
 func TestUpdateWritesTheTurnEndItIsGiven(t *testing.T) {
 	sess := openSurfaceDB(t)
 	turn := mustTurnKey(t, sess)
@@ -591,7 +568,7 @@ func TestImportL3HyperedgeStaysOneEdge(t *testing.T) {
 		}
 	}
 
-	// a relation naming nothing, or a member twice, is refused per relation
+	// a relation naming nothing, or a member twice, is refused per relation.
 	bad, err := sess.ImportL3([]L3ImportItem{
 		{Title: "auth-module", Domain: "proj/arch", Content: "the whole", Related: []L3Relation{
 			{Titles: nil}, {Titles: []string{"login", "login"}}, {Titles: []string{"ghost"}}}},

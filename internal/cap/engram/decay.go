@@ -1,9 +1,8 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// L1 network forgetting: RebuildFromL2 drops stale scene nodes and
-// DecayNetwork applies exponential decay to node importance and edge
-// weights, removing what falls below the configured thresholds.
+// L1 network forgetting: RebuildFromL2 drops stale scene nodes and DecayNetwork applies exponential
+// decay to node importance and edge weights, removing what falls below the configured thresholds.
 
 package engram
 
@@ -26,18 +25,13 @@ type DecayParams struct {
 	MinEdgeNodes           int
 }
 
-// DecayReport counts what one decay pass removed. A node whose edges were pruned
-// but which survived is not a removal and is not counted.
+// DecayReport counts what one decay pass removed.
 type DecayReport struct {
 	RemovedNodes int
 	RemovedEdges int
 }
 
-// RebuildFromL2 removes stale L1 nodes (empty TopicIDs, missing first
-// topic, or over-deep topics not meeting the keep rule) with their edge
-// references; returns the hex IDs of removed nodes and the number of edges that
-// went with them — dropping a member can take a co-occurrence edge below
-// MinEdgeNodes, so a rebuild removed edges as well as nodes.
+// RebuildFromL2 removes stale L1 nodes (empty TopicIDs, missing first topic, or over-deep topics not.
 func RebuildFromL2(engine *core.StorageEngine, agentID uint64, l2Meta *index.L2MetaIndex, cfg *DecayParams) ([]string, int, error) {
 	var updated []string
 	var edgesRemoved int
@@ -94,8 +88,8 @@ func isNodeStale(node *core.SceneNode, engine *core.StorageEngine, agentID uint6
 	return !keep, nil
 }
 
-// keepDeepNode keeps depth-3 nodes whose parent topic is depth <= 2
-// (compression-group nodes stay visible while the parent is retrievable).
+// keepDeepNode keeps depth-3 nodes whose parent topic is depth <= 2 (compression-group nodes stay
+// visible while the parent is retrievable).
 func keepDeepNode(topicID uint64, meta *index.L2Meta, engine *core.StorageEngine, agentID uint64, l2Meta *index.L2MetaIndex) (bool, error) {
 	if meta.Depth != 3 {
 		return false, nil
@@ -115,9 +109,8 @@ func keepDeepNode(topicID uint64, meta *index.L2Meta, engine *core.StorageEngine
 	return parentMeta != nil && parentMeta.Depth <= 2, nil
 }
 
-// DecayNetwork decays node and edge weights exponentially: nodes first
-// (below threshold removed, below prune threshold edges cleared), then
-// propagates cleared edges, then decays the remaining edges.
+// DecayNetwork decays node and edge weights exponentially: nodes first (below threshold removed, below
+// prune threshold edges cleared), then propagates cleared edges, then decays the remaining edges.
 func DecayNetwork(engine *core.StorageEngine, agentID uint64, l2Meta *index.L2MetaIndex, cfg *DecayParams) (*DecayReport, error) {
 	nowMs := time.Now().UnixMilli()
 	report := &DecayReport{}
@@ -228,9 +221,7 @@ func decayRemainingEdges(engine *core.StorageEngine, agentID uint64, cfg *DecayP
 	return nil
 }
 
-// decayOneEdge decays the edge weight incrementally from the last decay
-// time, drops members that are no longer nodes of this domain, and deletes the edge
-// when it falls below MinEdgeNodes or the weight threshold.
+// decayOneEdge decays the edge weight incrementally from the last decay time, drops members that are.
 func decayOneEdge(engine *core.StorageEngine, agentID uint64, cfg *DecayParams, edge *core.SceneEdge, idHash uint64, removedNodeIDs map[uint64]bool, nowMs int64, report *DecayReport) error {
 	baseMs := edge.LastDecayAt
 	if baseMs == 0 {
@@ -262,9 +253,8 @@ func decayOneEdge(engine *core.StorageEngine, agentID uint64, cfg *DecayParams, 
 	return core.WriteSceneEdge(engine, agentID, idHash, edge)
 }
 
-// removeNodeFromEdge removes a node from an edge; when the edge falls below
-// MinEdgeNodes it is deleted and its refs are cleared from other nodes.
-// Returns whether the edge was deleted.
+// removeNodeFromEdge removes a node from an edge; when the edge falls below MinEdgeNodes it is deleted
+// and its refs are cleared from other nodes.
 func removeNodeFromEdge(engine *core.StorageEngine, agentID uint64, edgeID, nodeID uint64, cfg *DecayParams) (bool, error) {
 	edge, err := core.ReadSceneEdge(engine, agentID, edgeID)
 	if err != nil {
@@ -312,19 +302,16 @@ func removeEdgeFromNode(engine *core.StorageEngine, agentID uint64, nodeID, edge
 	return core.WriteSceneNode(engine, agentID, nodeID, node)
 }
 
-// neutralValence is the midpoint of the scale distillation answers on: valence runs
-// [0,1] with 0 = very negative, so how emotional a memory reads is its distance from
-// this point — its distance from zero says how positive it is, a different fact.
+// neutralValence is the midpoint of the scale distillation answers on: valence runs [0,1] with 0 =
+// very negative, so how emotional a memory reads is its distance from this point.
 const neutralValence = 0.5
 
-// maxEmotionalSlowdown caps the protection: at its ceiling the most intense memory
-// still fades at a tenth of the base rate. Lambda may not reach zero — the only path
-// to the threshold that deletes a node runs through decay.
+// maxEmotionalSlowdown caps the protection: at its ceiling the most intense memory still fades at a
+// tenth of the base rate.
 const maxEmotionalSlowdown = 0.9
 
-// applyEmotionalBoost returns the node's decay rate: the further its valence sits
-// from neutral, scaled by how aroused it was, the slower it fades — the same in
-// either direction. Both inputs arrive on [0,1].
+// applyEmotionalBoost returns the node's decay rate: the further its valence sits from neutral, scaled
+// by how aroused it was, the slower it fades — the same in either direction.
 func applyEmotionalBoost(baseLambda float64, valence, arousal float64) float64 {
 	strength := math.Abs(valence-neutralValence) * 2.0
 	// The writer clamps, but a value already in the file may not push the factor past

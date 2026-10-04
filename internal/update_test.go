@@ -1,10 +1,8 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// Update is the one call that closes a turn: it records what the turn opened
-// with and what it ended with, then distils the topic's utterances. Which turn
-// it closes is the domain's own — Search minted it — so no test here hands an id
-// to a write.
+// Update is the one call that closes a turn: it records what the turn opened with and what it ended
+// with, then distils the topic's utterances.
 package internal
 
 import (
@@ -24,10 +22,8 @@ const (
 	agentTurnText = "所有权系统靠移动语义保证内存安全"
 )
 
-// openTurn gives a test the host session and the topic id Search issued for
-// the turn it is about to close. The domain holds that id now, so a write call
-// takes none: what openTurn hands back is for reading records back and for
-// addressing the turn in an L4 query.
+// openTurn gives a test the host session and the topic id Search issued for the turn it is about to
+// close.
 func openTurn(t *testing.T, db *DB) (uint64, uint64) {
 	t.Helper()
 	res, err := db.Search(core.DefaultAgentID, SearchQuery{})
@@ -37,14 +33,8 @@ func openTurn(t *testing.T, db *DB) (uint64, uint64) {
 	return res.Scene.SceneID, res.NewTopicID
 }
 
-// appendTurn is the host's half of a turn recorded while it ran: the two
-// originals in the two slots dialogue owns, under the timestamps the topic will
-// report. A closing call writes those same two slots itself, so a test that
-// appends and then closes the turn lands one pair of records, not two.
-//
-// The write takes its address from the domain, so it names no ids: a test that lost
-// the turn finds out at the close, which refuses a turn the domain no longer holds
-// (see settle).
+// appendTurn is the host's half of a turn recorded while it ran: the two originals in the two slots
+// dialogue owns, under the timestamps the topic will report.
 func appendTurn(t *testing.T, db *DB, userTS int64) {
 	t.Helper()
 	slots := []core.ArchiveSlot{
@@ -58,17 +48,14 @@ func appendTurn(t *testing.T, db *DB, userTS int64) {
 	}
 }
 
-// endTurn is the host's whole closing call: the two originals a turn leaves
-// behind, in one call that also distils them.
+// endTurn is the host's whole closing call: the two originals a turn leaves behind, in one call that
+// also distils them.
 func endTurn(db *DB, ts int64) error {
 	_, err := db.Update(core.DefaultAgentID, core.TurnEnd{Input: userTurnText, Output: agentTurnText, CreatedAt: ts})
 	return err
 }
 
-// settle closes the turn a fixture believes is open. The scene and topic
-// arguments are the test's belief, not the library's instruction: the domain
-// decides for itself which turn that is, so the helper refuses to hide a caller
-// that lost it. The timestamp is the one every fixture that appends first passes.
+// settle closes the turn a fixture believes is open.
 func settle(db *DB, sceneID, topicID uint64) error {
 	ac := db.agents[core.DefaultAgentID]
 	if ac == nil || ac.Scene != sceneID || ac.Turn != topicID {
@@ -78,9 +65,8 @@ func settle(db *DB, sceneID, topicID uint64) error {
 	return endTurn(db, 1000)
 }
 
-// wantNoOpenTurn asserts the refusal every turn write makes when the domain holds
-// no open turn: the host has to read before it can write, and guessing a turn would
-// close one nobody opened.
+// wantNoOpenTurn asserts the refusal every turn write makes when the domain holds no open turn: the
+// host has to read before it can write, and guessing a turn would close one nobody opened.
 func wantNoOpenTurn(t *testing.T, err error) {
 	t.Helper()
 	if common.CodeOf(err) != common.ErrInvalidQuery || !strings.Contains(err.Error(), "no turn is open") {
@@ -88,8 +74,8 @@ func wantNoOpenTurn(t *testing.T, err error) {
 	}
 }
 
-// archivesOfTopic reads what a topic owns straight off the archive records, so
-// a test never asks the index it is checking.
+// archivesOfTopic reads what a topic owns straight off the archive records, so a test never asks the
+// index it is checking.
 func archivesOfTopic(t *testing.T, engine *core.StorageEngine, topicID uint64) []core.ArchiveSlot {
 	t.Helper()
 	var out []core.ArchiveSlot
@@ -101,9 +87,7 @@ func archivesOfTopic(t *testing.T, engine *core.StorageEngine, topicID uint64) [
 	return out
 }
 
-// Closing a turn yields one depth-1 topic for it: a single keyword track, the
-// timestamps of the content the distillation read, and the two originals stored
-// verbatim under the one CreatedAt the closing call named.
+// Closing a turn yields one depth-1 topic for it.
 func TestUpdateWritesOneTurnTopic(t *testing.T) {
 	srv, calls := countingLLMServer(t, turnKeywords)
 	db := newSearchTestDB(t, srv.URL)
@@ -166,9 +150,7 @@ func TestUpdateWritesOneTurnTopic(t *testing.T) {
 	}
 }
 
-// Successive turns of one session each settle into the topic id the read that
-// opened them issued. The domain carries one turn at a time, so a host closes the
-// turn it has before opening the next — and the surface comes back in turn order.
+// Successive turns of one session each settle into the topic id the read that opened them issued.
 func TestUpdateSettlesEachScenesTurnsInOrder(t *testing.T) {
 	srv := mockLLMServer(t, turnKeywords)
 	db := newSearchTestDB(t, srv.URL)
@@ -209,9 +191,8 @@ func TestUpdateSettlesEachScenesTurnsInOrder(t *testing.T) {
 	}
 }
 
-// A turn belongs to the scene it was opened on: when that scene is deleted, the
-// domain stops holding a turn on it and the close is refused rather than written
-// onto a scene that no longer exists.
+// A turn belongs to the scene it was opened on: when that scene is deleted, the domain stops holding a
+// turn on it and the close is refused rather than written onto a scene that no longer exists.
 func TestUpdateRejectsUnknownScene(t *testing.T) {
 	srv, calls := countingLLMServer(t, turnKeywords)
 	db := newSearchTestDB(t, srv.URL)
@@ -229,9 +210,8 @@ func TestUpdateRejectsUnknownScene(t *testing.T) {
 	}
 }
 
-// Every turn write refuses a domain that holds no open turn, and refuses it before
-// anything is stored: no read happened yet, and guessing a turn would close one
-// nobody opened.
+// Every turn write refuses a domain that holds no open turn, and refuses it before anything is stored:
+// no read happened yet, and guessing a turn would close one nobody opened.
 func TestUpdateRefusesWhenNoTurnIsOpen(t *testing.T) {
 	srv, calls := countingLLMServer(t, turnKeywords)
 	db := newSearchTestDB(t, srv.URL)
@@ -244,9 +224,8 @@ func TestUpdateRefusesWhenNoTurnIsOpen(t *testing.T) {
 		t.Fatalf("a close with no turn open wrote %d topics", n)
 	}
 
-	// The library can take a turn back too: deleting the topic that holds the open
-	// turn clears it, so the next close is refused instead of written onto a topic
-	// that is gone.
+	// The library can take a turn back too: deleting the topic that holds the open turn clears it, so the
+	// next close is refused instead of written onto a topic that is gone.
 	_, topicID := openTurn(t, db)
 	if err := endTurn(db, 1000); err != nil {
 		t.Fatalf("Update: %v", err)
@@ -263,12 +242,7 @@ func TestUpdateRefusesWhenNoTurnIsOpen(t *testing.T) {
 	}
 }
 
-// The close boundary checks the host's timestamp the same way the append boundary
-// does — including an absent one, which is refused rather than filled in — and checks
-// it before anything is spent or stored: a seconds-scale stamp would
-// settle a turn whose originals the next Dream reads as long expired, and the host
-// would find out only when the transcript is gone. A refusal leaves the turn open, so
-// the same close carrying a millisecond instant still settles it.
+// The close boundary checks the host's timestamp the same way the append boundary does.
 func TestUpdateRefusesAnAbsentOrWrongUnitTimestamp(t *testing.T) {
 	srv, calls := countingLLMServer(t, turnKeywords)
 	db := newSearchTestDB(t, srv.URL)
@@ -280,9 +254,7 @@ func TestUpdateRefusesAnAbsentOrWrongUnitTimestamp(t *testing.T) {
 	}{
 		{"seconds since the epoch", 1_700_000_000},
 		{"microseconds since the epoch", 1_700_000_000_000_000},
-		// A port that carries no clock at all is the shape an adapter meets: the close
-		// boundary has to refuse an absent stamp, not substitute its own, or every
-		// round a host forgot to time would expire on the library's clock instead.
+		// A port that carries no clock at all is the shape an adapter meets.
 		{"no stamp at all", 0},
 		{"negative stamp", -5},
 	} {
@@ -309,14 +281,8 @@ func TestUpdateRefusesAnAbsentOrWrongUnitTimestamp(t *testing.T) {
 	}
 }
 
-// A close that leaves nothing to distill is refused without spending an LLM call: an
-// empty keyword track written now would read back as the real distillation of a turn
-// nobody can any longer quote. Both shapes of it are refused — a call that names
-// nothing, and one that records only how the turn ended, which leaves the topic with
-// an event and no dialogue. The two refusals are not the same shape, and that is the
-// point of pinning them together: the empty one writes nothing, while the second keeps
-// the outcome it carried — it is the only record that this round ever happened, and a
-// refusal that discarded it would lose a fact on the way out.
+// A close that leaves nothing to distill is refused without spending an LLM call: an empty keyword
+// track written now would read back as the real distillation of a turn nobody can any longer quote.
 func TestUpdateRejectsTurnWithNoContent(t *testing.T) {
 	srv, calls := countingLLMServer(t, turnKeywords)
 	db := newSearchTestDB(t, srv.URL)
@@ -342,10 +308,8 @@ func TestUpdateRejectsTurnWithNoContent(t *testing.T) {
 	}
 }
 
-// The distillation runs before the topic is written: an LLM failure must not
-// leave a keywordless topic behind. The two originals the refused close wrote stay —
-// they are the turn's own content, and the retry rewrites the same two slots rather
-// than accumulating a third record.
+// The distillation runs before the topic is written: an LLM failure must not leave a keywordless topic
+// behind.
 func TestUpdateDistillFailureLeavesNoTopic(t *testing.T) {
 	srv := failingLLMServer(t, http.StatusBadRequest)
 	db := newSearchTestDB(t, srv.URL)
@@ -376,9 +340,7 @@ func TestUpdateRejectsEmptyExtraction(t *testing.T) {
 	}
 }
 
-// A turn distills only what its own utterances say: the label the record
-// carries is what keeps the two sides apart in the prompt, so an extraction that
-// sees both speakers is the check that the transcript was rendered, not glued.
+// A turn distills only what its own utterances say.
 func TestUpdateDistillsRenderedTranscript(t *testing.T) {
 	srv, seen := recordingLLMServer(t, turnKeywords)
 	db := newSearchTestDB(t, srv.URL)
@@ -398,8 +360,8 @@ func TestUpdateDistillsRenderedTranscript(t *testing.T) {
 	}
 }
 
-// Consolidation is scheduled per scene once its surface passes the threshold,
-// and not below it (the scene is a host session, not an active-set slot).
+// Consolidation is scheduled per scene once its surface passes the threshold, and not below it (the
+// scene is a host session, not an active-set slot).
 func TestConsolidateSceneThreshold(t *testing.T) {
 	t.Run("over threshold schedules the scene dream", func(t *testing.T) {
 		srv := mockLLMServer(t, turnKeywords)
@@ -434,9 +396,7 @@ func TestConsolidateSceneThreshold(t *testing.T) {
 		}
 	})
 
-	// The off spelling is a negative: a host that fills in 0 asked for nothing, so
-	// normalization hands it the library default before this reader ever sees the number
-	// (TestOpenTakesUnfilledDefaultsAsTheLibraryDefaults pins that boundary).
+	// The off spelling is a negative.
 	t.Run("a negative threshold disables the trigger", func(t *testing.T) {
 		srv := mockLLMServer(t, turnKeywords)
 		db := newSearchTestDB(t, srv.URL)
@@ -455,8 +415,8 @@ func TestConsolidateSceneThreshold(t *testing.T) {
 	})
 }
 
-// Closing the same turn twice re-derives its track from the content the topic
-// holds and creates no second topic — so an at-least-once write loop stays safe.
+// Closing the same turn twice re-derives its track from the content the topic holds and creates no
+// second topic — so an at-least-once write loop stays safe.
 func TestUpdateReplayIsIdempotent(t *testing.T) {
 	srv := mockLLMServer(t, turnKeywords)
 	db := newSearchTestDB(t, srv.URL)
@@ -486,10 +446,8 @@ func TestUpdateReplayIsIdempotent(t *testing.T) {
 	}
 }
 
-// A revised turn is revised by closing it again with the new wording: the two slots
-// the dialogue owns are rewritten in place, and settling again distills the new
-// pair. The superseded wording stops being searchable and L4 holds one
-// version of the turn — nothing had to be listed as owned beforehand.
+// A revised turn is revised by closing it again with the new wording: the two slots the dialogue owns
+// are rewritten in place, and settling again distills the new pair.
 func TestUpdateReplayOverwritesPriorContent(t *testing.T) {
 	srv := mockLLMServer(t, turnKeywords)
 	db := newSearchTestDB(t, srv.URL)
@@ -522,13 +480,8 @@ func TestUpdateReplayOverwritesPriorContent(t *testing.T) {
 	}
 }
 
-// The close still owns one contract: the turn it settles must be a turn topic of the
-// scene the read picked. A host can no longer name a topic to break that, so the
-// fixture moves the domain onto the id it wants closed. A Dream-fused parent (also
-// depth 1 in this scene, but derived from timestamps rather than from the turn
-// counter) is refused, and so is a depth-2 topic whose id no turn counter issued, a
-// turn of another scene, and an invented id. A turn Dream has sunk keeps its turn id
-// and is settled again on purpose (see TestUpdateReplayKeepsASunkTurnSunk).
+// The close still owns one contract: the turn it settles must be a turn topic of the scene the read
+// picked.
 func TestUpdateRejectsForeignOrFusedTopic(t *testing.T) {
 	srv, calls := countingLLMServer(t, turnKeywords)
 	db := newSearchTestDB(t, srv.URL)
@@ -576,11 +529,8 @@ func TestUpdateRejectsForeignOrFusedTopic(t *testing.T) {
 	}
 }
 
-// A turn Dream has sunk is still a turn this scene opened, so closing it again is a
-// rewrite and not an error — and the rewrite must not undo the consolidation:
-// depth, parent link and the host's own name come off the stored record, so the turn
-// stays under its fused group while its keyword track is refreshed. The gate judges
-// the key; where the turn sits is the settle write's answer.
+// A turn Dream has sunk is still a turn this scene opened, so closing it again is a rewrite and not an
+// error.
 func TestUpdateReplayKeepsASunkTurnSunk(t *testing.T) {
 	srv, _ := countingLLMServer(t, turnKeywords)
 	db := newSearchTestDB(t, srv.URL)
@@ -620,13 +570,8 @@ func TestUpdateReplayKeepsASunkTurnSunk(t *testing.T) {
 	}
 }
 
-// A decision-loop kernel can end one round twice: the arm that suspends it and the
-// resume that finishes it are separate invocations, and each hands its own closing
-// call over. This is what a turn then keeps — the dialogue is the pair the *last* close
-// stated (Seq 1 and 2 are this turn's dialogue, not a log of every exchange), while
-// both endings stay on the event track as their own records. A host that must keep an
-// earlier arm's words records them with AppendArchive while the round runs; the close
-// is not where a turn's history accumulates.
+// A decision-loop kernel can end one round twice: the arm that suspends it and the resume that
+// finishes it are separate invocations, and each hands its own closing call over.
 func TestTwoClosesOfOneTurnKeepBothEndingsAndTheLastDialogue(t *testing.T) {
 	srv := mockLLMServer(t, turnKeywords)
 	db := newSearchTestDB(t, srv.URL)

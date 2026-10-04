@@ -13,11 +13,8 @@ func completeEndpoint() LlmConfig {
 	return LlmConfig{APIURL: "http://127.0.0.1:1/v1", APIKey: "k", Model: "m"}
 }
 
-// A timeout the HTTP client cannot hold is worse than no timeout at all: net/http only arms
-// a deadline for a positive Client.Timeout, so seconds that wrapped around leave the call
-// free to hang — and every LLM call runs inside its domain's lock, so a hung endpoint blocks
-// that agent indefinitely. The ceiling is where that scaling stops fitting, and the value one
-// past it is the hazard itself rather than a slightly longer wait.
+// A timeout the HTTP client cannot hold is worse than no timeout at all: net/http only arms a deadline
+// for a positive Client.Timeout, so seconds that wrapped around leave the call free to hang.
 func TestValidateRefusesUnrepresentableTimeouts(t *testing.T) {
 	// Only a build whose int is wide enough can express the bad value: a 32-bit int tops out
 	// near 68 years, comfortably inside the ceiling, so the rule there is that nothing fits.

@@ -14,9 +14,7 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/test/testsupport"
 )
 
-// TestE2EUpdateDream exercises the full memory loop against a real LLM:
-// open the host session → settle one turn → read the session back → L4
-// archive readback → Dream on that session → readable afterwards.
+// TestE2EUpdateDream exercises the full memory loop against a real LLM.
 func TestE2EUpdateDream(t *testing.T) {
 	db := testsupport.OpenMemHop(t)
 	defer db.Close()

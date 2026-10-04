@@ -1,12 +1,7 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// Offline interface tests for what a host gets when it asks for something
-// contradictory. Every case here came out of a probe that ran the call and read the
-// answer rather than the doc: a destroyed scene still holding an open turn, two Search
-// flags that name two different conversations, a named-read list carrying the key that
-// can never name a record, and a merge list that repeats one of its deletions. Each of
-// those used to be answered by quietly dropping the part nobody could honour.
+// Offline interface tests for what a host gets when it asks for something contradictory.
 
 package test
 
@@ -20,9 +15,7 @@ import (
 	memhop "github.com/genosis18m/Long-term-memory-go/api"
 )
 
-// A deleted scene takes the turn it was holding with it: the writes of that round answer
-// that no turn is open rather than landing on a scene that no longer exists, and the next
-// read starts a conversation the domain actually holds.
+// A deleted scene takes the turn it was holding with it.
 func TestInterfaceDeletedSceneClosesTheWritesOnIt(t *testing.T) {
 	llm := newMockLLM(t)
 	db := newTestDB(t, openMockDB(t, filepath.Join(t.TempDir(), "gone.meh"), llm.srv.URL))
@@ -71,9 +64,7 @@ func TestInterfaceDeletedSceneClosesTheWritesOnIt(t *testing.T) {
 	}
 }
 
-// SceneID names a conversation to go on; NewScene asks for a different one. Sending both
-// used to continue the named scene and drop the flag, which reads as "new session" to a
-// host that then writes round one into the old transcript.
+// SceneID names a conversation to go on; NewScene asks for a different one.
 func TestInterfaceSearchRefusesContradictorySceneFlags(t *testing.T) {
 	db, _ := openTestDB(t)
 	sceneID := openSession(t, db)
@@ -94,10 +85,8 @@ func TestInterfaceSearchRefusesContradictorySceneFlags(t *testing.T) {
 	}
 }
 
-// SearchL4{IDs} is the one read a host answers by counting rows, so the reserved key that
-// can never name a record is refused where it appears — the same reason a filter that can
-// match nothing is refused instead of answered with an empty set. A well-formed id that
-// simply is not there stays a legitimate absence.
+// SearchL4{IDs} is the one read a host answers by counting rows, so the reserved key that can never
+// name a record is refused where it appears.
 func TestInterfaceSearchL4RefusesTheReservedKeyInAList(t *testing.T) {
 	db, _ := openTestDB(t)
 	sceneID := openSession(t, db)
@@ -124,9 +113,7 @@ func TestInterfaceSearchL4RefusesTheReservedKeyInAList(t *testing.T) {
 	}
 }
 
-// A merge deletes records, so its id list has to say what it means once: a repeated
-// secondary used to be accepted, retargeting and tombstoning the same topics twice on the
-// strength of a list the caller had lost track of.
+// A merge deletes records, so its id list has to say what it means once.
 func TestInterfaceMergeScenesRefusesADuplicatedSecondary(t *testing.T) {
 	db, _ := openTestDB(t)
 	primary := openSession(t, db)
@@ -153,11 +140,8 @@ func TestInterfaceMergeScenesRefusesADuplicatedSecondary(t *testing.T) {
 	}
 }
 
-// A scene id and the turn's own topic id arrive in the same Search result, so mixing them
-// is the likeliest key mistake a host can make — and a scene never owns archives, so the
-// read would answer empty and a round would look like it recorded nothing. An id that
-// names no record at all stays an empty answer, because a turn that is still open holds
-// content before it holds a topic.
+// A scene id and the turn's own topic id arrive in the same Search result, so mixing them is the
+// likeliest key mistake a host can make.
 func TestInterfaceSearchL4RefusesASceneIDWhereATurnIDBelongs(t *testing.T) {
 	db, _ := openTestDB(t)
 	sceneID := openSession(t, db)
@@ -193,10 +177,8 @@ func TestInterfaceSearchL4RefusesASceneIDWhereATurnIDBelongs(t *testing.T) {
 	}
 }
 
-// Consolidation and a live round overlap in every host loop, and the difference between them
-// is a record: an open turn owns content but no topic yet. So a pass must fuse what has
-// settled and leave the open round's records exactly where that round put them — readable by
-// the key the round's own read minted, and closable afterwards.
+// Consolidation and a live round overlap in every host loop, and the difference between them is a
+// record: an open turn owns content but no topic yet.
 func TestInterfaceDreamLeavesTheOpenTurnAlone(t *testing.T) {
 	llm := newMockLLM(t)
 	db := newTestDB(t, openMockDB(t, filepath.Join(t.TempDir(), "open_turn.meh"), llm.srv.URL,

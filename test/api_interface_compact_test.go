@@ -13,12 +13,8 @@ import (
 	memhop "github.com/genosis18m/Long-term-memory-go/api"
 )
 
-// CompactTo rewrites the whole file from the live records, so it is the one path where a
-// layer can be lost silently: the copy opens, answers, and looks fine while one bucket, one
-// counter, or one domain quietly stopped being carried over. The existing check proves the
-// deleted scene is gone and the graphs survived; this one proves everything else survived
-// too — every read on both domains encodes identically before and after, the file got
-// smaller, and the compacted copy still mints a turn that no earlier round used.
+// CompactTo rewrites the whole file from the live records, so it is the one path where a layer can be
+// lost silently.
 func TestInterfaceCompactedCopyAnswersIdentically(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "corpus.meh")
@@ -219,9 +215,7 @@ func TestInterfaceCompactedCopyAnswersIdentically(t *testing.T) {
 			after1.Topics[len(after1.Topics)-1].TopicID, res.NewTopicID)
 	}
 
-	// A second pass, on a file with nothing dead left to move. Checkpointing first is what
-	// makes the comparison honest: CompactTo writes its own snapshot, so the numbers only
-	// mean the same thing once both files have one.
+	// A second pass, on a file with nothing dead left to move.
 	if err := lib.Checkpoint(); err != nil {
 		t.Fatalf("Checkpoint before the second pass: %v", err)
 	}
@@ -246,11 +240,8 @@ func TestInterfaceCompactedCopyAnswersIdentically(t *testing.T) {
 	if secondStats.RecordCount != live.RecordCount {
 		t.Fatalf("the second pass changed the live set: %d vs %d", secondStats.RecordCount, live.RecordCount)
 	}
-	// Compaction is not a growth machine: with no dead records to reclaim it comes out no
-	// larger than the file it read (measured here: about 150 bytes of slack shaved off the
-	// tail). This is the relation a host planning capacity has to know, since the pair
-	// `Stats` answers is a byte count and a record count — no difference between them is a
-	// volume of space.
+	// Compaction is not a growth machine: with no dead records to reclaim it comes out no larger than the
+	// file it read (measured here: about 150 bytes of slack shaved off the tail).
 	if secondStats.FileBytes > live.FileBytes {
 		t.Fatalf("a compaction of an already-compacted file grew it: %d -> %d bytes", live.FileBytes, secondStats.FileBytes)
 	}
@@ -258,11 +249,8 @@ func TestInterfaceCompactedCopyAnswersIdentically(t *testing.T) {
 		live.FileBytes, secondStats.FileBytes, secondStats.RecordCount)
 }
 
-// A compaction rewrites the log, so it is where a domain's memory of what it was working on
-// either survives or does not. The fixture is deliberately against the old rule: the first
-// conversation on the sub-agent domain has more turns, the second was touched last, and the
-// only correct answer is the one the domain used most recently — which is also the case a
-// restart already relies on, now proven across a rewrite of the file.
+// A compaction rewrites the log, so it is where a domain's memory of what it was working on either
+// survives or does not.
 func TestInterfaceCompactedFileResumesTheDomainLastInUse(t *testing.T) {
 	llm := newMockLLM(t)
 	dir := t.TempDir()
@@ -274,7 +262,7 @@ func TestInterfaceCompactedFileResumesTheDomainLastInUse(t *testing.T) {
 	}
 	worker := mustSub(t, m, llm.srv.URL, "worker")
 
-	// Conversation A: three turns. Conversation B: one, written last.
+	// Conversation A: three turns.
 	var sceneA, sceneB string
 	for i := 0; i < 3; i++ {
 		res, err := worker.Search(memhop.SearchQuery{NewScene: i == 0})

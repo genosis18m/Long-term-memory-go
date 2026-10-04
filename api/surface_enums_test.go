@@ -8,9 +8,7 @@ import (
 	"testing"
 )
 
-// The vocabularies on this surface come in two wire forms: four enums travel as their
-// numbers (content medium, archive kind, utterance speaker, L3 edge kind) and two as words
-// (a plan step's status, an import's conflict mode).
+// The vocabularies on this surface come in two wire forms.
 
 var snakeKey = regexp.MustCompile(`^[a-z][a-z0-9_]*$`)
 

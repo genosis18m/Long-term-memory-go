@@ -1,11 +1,7 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// SearchL4's two time bounds compare against a record's own millisecond stamp. A bound in
-// another unit is never the window it names: as Start, a seconds value sits below every
-// stamp and lets everything through; as End, it sits below every stamp and excludes
-// everything. The write boundary already refuses both scales; this is the same judgement on
-// the read side, so the host gets an error instead of a result set it has to second-guess.
+// SearchL4's two time bounds compare against a record's own millisecond stamp.
 
 package test
 

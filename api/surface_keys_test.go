@@ -11,18 +11,11 @@ import (
 	"testing"
 )
 
-// A host reading this surface builds one table of key names and uses it everywhere: the
-// arguments of a tool call, the JSON it echoes into an event, the diff it logs between two
-// reads. That only holds if every shape crossing the boundary spells its fields the same
-// way, so the rule is machine-checked from the method set outward — walk what every
-// exported method takes and returns, and every struct field reachable from there has to
-// carry a snake_case key. A field added without one passes `go vet` and every test, and
-// shows up as a host's PascalCase key in a tool schema.
+// A host reading this surface builds one table of key names and uses it everywhere: the arguments of a
+// tool call, the JSON it echoes into an event, the diff it logs between two reads.
 var keyPattern = regexp.MustCompile(`^[a-z][a-z0-9_]*$`)
 
-// hiddenWithReason is the whole allowance for a json:"-" on a host-facing shape: one
-// derived value that the engine recomputes on every read and refuses to persist, so the
-// axes stay the only fact on disk and the word can never drift from them.
+// hiddenWithReason is the whole allowance for a json:"-" on a host-facing shape.
 var hiddenWithReason = map[string]string{
 	"MBTIScore.Type": "mbti-hidden-derivation",
 }

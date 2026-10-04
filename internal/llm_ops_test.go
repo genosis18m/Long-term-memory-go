@@ -13,8 +13,8 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/llm"
 )
 
-// assertLLMErr fails unless err carries the LLM error code — extraction
-// surfaces a bad reply as an error, never as a degraded keyword track.
+// assertLLMErr fails unless err carries the LLM error code — extraction surfaces a bad reply as an
+// error, never as a degraded keyword track.
 func assertLLMErr(t *testing.T, err error) {
 	t.Helper()
 	if err == nil {
@@ -25,9 +25,8 @@ func assertLLMErr(t *testing.T, err error) {
 	}
 }
 
-// TestExtractKeywordsFormatRetry verifies the format-constrained retry:
-// after three non-JSON summaries exhaust the token budgets, the retry
-// prompt gets a valid JSON reply.
+// TestExtractKeywordsFormatRetry verifies the format-constrained retry: after three non-JSON summaries
+// exhaust the token budgets, the retry prompt gets a valid JSON reply.
 func TestExtractKeywordsFormatRetry(t *testing.T) {
 	srv := mockLLMServerSeq(t,
 		"这段对话温馨地展现了通过分享童年书籍和家庭时刻",
@@ -45,10 +44,7 @@ func TestExtractKeywordsFormatRetry(t *testing.T) {
 	}
 }
 
-// TestExtractKeywordsUnparseableIsError verifies that a model which never
-// returns JSON fails the call: the keyword track is what a host reads back as
-// its conversation context, so tokenised garbage must not be written as if the
-// model had produced it.
+// TestExtractKeywordsUnparseableIsError verifies that a model which never returns JSON fails the call.
 func TestExtractKeywordsUnparseableIsError(t *testing.T) {
 	srv := mockLLMServerSeq(t, "摘要", "摘要", "摘要", "还是摘要")
 	p := llm.New(LlmConfig{APIURL: srv.URL, APIKey: "test", Model: "mock"})
@@ -59,8 +55,8 @@ func TestExtractKeywordsUnparseableIsError(t *testing.T) {
 	}
 }
 
-// TestExtractKeywordsEmptyResponsesAreError verifies empty replies abort the
-// caller after the retry rather than degrading.
+// TestExtractKeywordsEmptyResponsesAreError verifies empty replies abort the caller after the retry
+// rather than degrading.
 func TestExtractKeywordsEmptyResponsesAreError(t *testing.T) {
 	srv := mockLLMServerSeq(t, "", "", "", "")
 	p := llm.New(LlmConfig{APIURL: srv.URL, APIKey: "test", Model: "mock"})
@@ -68,8 +64,7 @@ func TestExtractKeywordsEmptyResponsesAreError(t *testing.T) {
 	assertLLMErr(t, err)
 }
 
-// TestExtractKeywordsBlankText verifies blank input returns empty keywords
-// without any LLM call.
+// TestExtractKeywordsBlankText verifies blank input returns empty keywords without any LLM call.
 func TestExtractKeywordsBlankText(t *testing.T) {
 	p := llm.New(LlmConfig{APIURL: "http://127.0.0.1:1", APIKey: "test", Model: "mock"})
 	kw, err := llmops.ExtractKeywords(context.Background(), p, "   ")
@@ -86,8 +81,8 @@ func longText() string {
 	return strings.Repeat("今天天气不错我们去爬山看日出。", 300)
 }
 
-// TestExtractKeywordsChunkedMerge verifies long inputs are chunked and
-// per-chunk keywords are merged in order.
+// TestExtractKeywordsChunkedMerge verifies long inputs are chunked and per-chunk keywords are merged
+// in order.
 func TestExtractKeywordsChunkedMerge(t *testing.T) {
 	srv := mockLLMServerSeq(t,
 		`{"keywords":["爬山"]}`,
@@ -110,9 +105,7 @@ func TestExtractKeywordsChunkedMerge(t *testing.T) {
 	}
 }
 
-// TestExtractKeywordsChunkFailureIsError verifies one unparseable chunk fails
-// the whole extraction: the surviving chunks would otherwise read as a complete
-// keyword track while silently missing one part of the text.
+// TestExtractKeywordsChunkFailureIsError verifies one unparseable chunk fails the whole extraction.
 func TestExtractKeywordsChunkFailureIsError(t *testing.T) {
 	srv := mockLLMServerSeq(t,
 		`{"keywords":["爬山"]}`,
@@ -126,8 +119,8 @@ func TestExtractKeywordsChunkFailureIsError(t *testing.T) {
 	assertLLMErr(t, err)
 }
 
-// TestExtractKeywordsTransportFailureIsError verifies a transport failure
-// surfaces as itself rather than as a format failure.
+// TestExtractKeywordsTransportFailureIsError verifies a transport failure surfaces as itself rather
+// than as a format failure.
 func TestExtractKeywordsTransportFailureIsError(t *testing.T) {
 	p := llm.New(LlmConfig{APIURL: "http://127.0.0.1:1/v1", APIKey: "test", Model: "mock"})
 	_, err := llmops.ExtractKeywords(context.Background(), p, "随便聊点什么")

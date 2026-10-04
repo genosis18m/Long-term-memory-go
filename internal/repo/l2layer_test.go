@@ -14,8 +14,8 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/repo/index"
 )
 
-// A scene is a host session: its id comes from the caller, and creating it twice
-// must not rename it, duplicate it, or move it to another L3 domain.
+// A scene is a host session: its id comes from the caller, and creating it twice must not rename it,
+// duplicate it, or move it to another L3 domain.
 func TestCreateSceneL2LeavesAnExistingSceneAlone(t *testing.T) {
 	engine := tempEngine(t)
 	first := core.NewSceneSlot(4242, "session one")
@@ -40,8 +40,8 @@ func TestCreateSceneL2LeavesAnExistingSceneAlone(t *testing.T) {
 	}
 }
 
-// One turn is one topic: both timestamps and the single keyword track land on
-// the record, with the ID derived from the namespaced "turn:" key.
+// One turn is one topic: both timestamps and the single keyword track land on the record, with the ID
+// derived from the namespaced "turn:" key.
 func TestCreateTurnTopicL2WritesSingleTrack(t *testing.T) {
 	engine := tempEngine(t)
 	const sceneID = uint64(7)
@@ -65,10 +65,8 @@ func TestCreateTurnTopicL2WritesSingleTrack(t *testing.T) {
 	}
 }
 
-// TestListTopicsL2FromL2Meta verifies the listing is served by the L2MetaIndex
-// mirror and scoped to the scene it asks about: another scene's turns never appear,
-// depth filters (and clamps to the surface when unset), UserTimestamp orders the
-// result, and a mirror entry rebuilds to the stored record exactly.
+// TestListTopicsL2FromL2Meta verifies the listing is served by the L2MetaIndex mirror and scoped to
+// the scene it asks about.
 func TestListTopicsL2FromL2Meta(t *testing.T) {
 	engine, err := core.Create(filepath.Join(t.TempDir(), "list.meh"))
 	if err != nil {
@@ -144,9 +142,8 @@ func TestListTopicsL2FromL2Meta(t *testing.T) {
 	})
 
 	t.Run("incremental_updates_reflect_in_listing", func(t *testing.T) {
-		// Simulate write-path sync: a new topic of sceneB inserted via Update,
-		// then removed; that scene's listing must follow both, and sceneA's must
-		// not move at all.
+		// Simulate write-path sync: a new topic of sceneB inserted via Update, then removed; that scene's
+		// listing must follow both, and sceneA's must not move at all.
 		newID := uint64(15)
 		tp := core.TopicSlot{ID: newID, SceneID: sceneB, Depth: 1,
 			FusedKeywords: []string{"k5"}, UserTimestamp: 50}
@@ -158,8 +155,8 @@ func TestListTopicsL2FromL2Meta(t *testing.T) {
 	})
 }
 
-// One read of a scene opens one turn: the turn counter moves and the caller
-// gets the bumped record back.
+// One read of a scene opens one turn: the turn counter moves and the caller gets the bumped record
+// back.
 func TestOpenSceneTurnAdvancesTurnSeq(t *testing.T) {
 	engine := tempEngine(t)
 	const sceneID = uint64(4242)
@@ -189,9 +186,7 @@ func TestOpenSceneTurnAdvancesTurnSeq(t *testing.T) {
 	}
 }
 
-// A scene record that exists but will not decode is not an absent one: writing a
-// fresh record over it would reset the turn counter that mints this domain's turn
-// ids, so the turns after it get issued ids the domain already holds.
+// A scene record that exists but will not decode is not an absent one.
 func TestCreateSceneL2RefusesAnUnreadableRecord(t *testing.T) {
 	engine := tempEngine(t)
 	const sceneID = uint64(99)
@@ -216,9 +211,7 @@ func TestCreateSceneL2RefusesAnUnreadableRecord(t *testing.T) {
 	}
 }
 
-// A topic name is the host's, so writing it must not disturb anything the
-// engine put on the record — and the cache path has to agree with the record
-// path, or the same topic reads as named in one and unnamed in the other.
+// A topic name is the host's, so writing it must not disturb anything the engine put on the record.
 func TestRenameTopicL2KeepsTheRestOfTheRecord(t *testing.T) {
 	engine := tempEngine(t)
 	const sceneID = uint64(7)
@@ -245,9 +238,8 @@ func TestRenameTopicL2KeepsTheRestOfTheRecord(t *testing.T) {
 	}
 }
 
-// A name addresses a turn that already settled: naming one that is not there
-// reports ErrNotFound instead of inventing a topic behind an id nothing else
-// refers to.
+// A name addresses a turn that already settled: naming one that is not there reports ErrNotFound
+// instead of inventing a topic behind an id nothing else refers to.
 func TestRenameTopicL2MissingTopic(t *testing.T) {
 	engine := tempEngine(t)
 	const missing = uint64(424242)
@@ -259,9 +251,7 @@ func TestRenameTopicL2MissingTopic(t *testing.T) {
 	}
 }
 
-// Settling a turn twice is the replay path, and only the engine-owned half is
-// rewritten: the label the host gave that turn is not the engine's to erase, so
-// re-distilling the keywords must leave it in place.
+// Settling a turn twice is the replay path, and only the engine-owned half is rewritten.
 func TestCreateTurnTopicL2ReplayKeepsHostName(t *testing.T) {
 	engine := tempEngine(t)
 	const sceneID = uint64(7)
@@ -288,10 +278,7 @@ func TestCreateTurnTopicL2ReplayKeepsHostName(t *testing.T) {
 	}
 }
 
-// The same replay must not move the turn either. Once compression has sunk it
-// under a fused group, that group's summary is what the scene shows in its place:
-// a replay that reset the depth would bring the turn's own originals back to the
-// surface beside the summary, and leave the group one child short.
+// The same replay must not move the turn either.
 func TestCreateTurnTopicL2ReplayKeepsSunkPosition(t *testing.T) {
 	engine := tempEngine(t)
 	const sceneID = uint64(7)
@@ -318,10 +305,8 @@ func TestCreateTurnTopicL2ReplayKeepsSunkPosition(t *testing.T) {
 	}
 }
 
-// A stored record that will not decode leaves the replay unable to say where that
-// turn belongs, so the settle refuses and rewrites nothing: guessing depth 1 would
-// put a second version of one turn on the read path. The read has to name that
-// failure, or a caller cannot tell it apart from a transport error.
+// A stored record that will not decode leaves the replay unable to say where that turn belongs, so the
+// settle refuses and rewrites nothing.
 func TestCreateTurnTopicL2RefusesUndecodableRecord(t *testing.T) {
 	engine := tempEngine(t)
 	const sceneID = uint64(7)
@@ -341,10 +326,8 @@ func TestCreateTurnTopicL2RefusesUndecodableRecord(t *testing.T) {
 	}
 }
 
-// One id names exactly one record kind, and the whole domain shares one address
-// space, so the lenient read's "there is a record here and it is not a topic"
-// answer must stop the settle: writing over it converts that record, and the
-// listing of the kind it was stops seeing it.
+// One id names exactly one record kind, and the whole domain shares one address space, so the lenient
+// read's "there is a record here and it is not a topic" answer must stop the settle.
 func TestCreateTurnTopicL2RefusesAForeignRecordAtTheTurnAddress(t *testing.T) {
 	engine := tempEngine(t)
 	const sceneID = uint64(7)
@@ -361,11 +344,7 @@ func TestCreateTurnTopicL2RefusesAForeignRecordAtTheTurnAddress(t *testing.T) {
 	}
 }
 
-// Two topics at the same depth can share one user timestamp — a fused parent is
-// stamped with its group's earliest turn's timestamp, so any same-depth topic
-// holding that instant ties with it on both sort keys. Ties have to break on
-// something the scan does not decide, or the same scene answers in one order on
-// one read and another order on the next.
+// Two topics at the same depth can share one user timestamp.
 func TestListTopicsL2BreaksTiesOnID(t *testing.T) {
 	engine := tempEngine(t)
 	const sceneID = uint64(7)
@@ -394,10 +373,8 @@ func TestListTopicsL2BreaksTiesOnID(t *testing.T) {
 	}
 }
 
-// A group member the listing names but the payload will not decode is a read
-// failure, not a member that went away. The parent summary is already on disk
-// when this runs, so sinking the rest would leave the scene showing both the
-// group's summary and that member's originals — the whole sink has to stop.
+// A group member the listing names but the payload will not decode is a read failure, not a member
+// that went away.
 func TestCompressTopicsL2RefusesUnreadableMember(t *testing.T) {
 	engine := tempEngine(t)
 	const sceneID = uint64(7)
@@ -428,12 +405,8 @@ func TestCompressTopicsL2RefusesUnreadableMember(t *testing.T) {
 	}
 }
 
-// A sink that failed partway leaves the members it reached hanging on a parent the
-// rollback then erases, and the depth-1 listing is what both `Search` and the next
-// Dream's group picker read — so an unrestored member is a turn that stops being
-// findable without ever becoming part of a summary. The undo has to be as narrow as
-// the sink it reverses: a member that hangs on some other parent, or one this group
-// never named, is not its to move.
+// A sink that failed partway leaves the members it reached hanging on a parent the rollback then
+// erases, and the depth-1 listing is what both `Search` and the next Dream's group picker read.
 func TestRestoreSunkTopicsL2BringsBackOnlyThisGroupsMembers(t *testing.T) {
 	engine := tempEngine(t)
 	const sceneID = uint64(7)
@@ -444,9 +417,8 @@ func TestRestoreSunkTopicsL2BringsBackOnlyThisGroupsMembers(t *testing.T) {
 		{ID: 32, SceneID: sceneID, Depth: 2, ParentID: &thisParent, FusedKeywords: []string{"k2"}, UserTimestamp: 200},
 		{ID: 33, SceneID: sceneID, Depth: 2, ParentID: &otherParent, FusedKeywords: []string{"k3"}, UserTimestamp: 300},
 		{ID: 34, SceneID: sceneID, Depth: 2, ParentID: &thisParent, FusedKeywords: []string{"k4"}, UserTimestamp: 400},
-		// One level from the surface yet already named by a parent: this engine never
-		// writes that shape, a file from an older one can. Undoing must not push it
-		// below the surface, where neither listing would ever show it again.
+		// One level from the surface yet already named by a parent: this engine never writes that shape, a
+		// file from an older one can.
 		{ID: 35, SceneID: sceneID, Depth: 1, ParentID: &thisParent, FusedKeywords: []string{"k5"}, UserTimestamp: 500},
 	} {
 		if err := core.WriteTopicSlot(engine, core.DefaultAgentID, tp.ID, &tp); err != nil {
@@ -514,8 +486,8 @@ func TestRestoreSunkTopicsL2BringsBackOnlyThisGroupsMembers(t *testing.T) {
 	}
 }
 
-// unreadableTopic writes a topic and then replaces its payload with one that will
-// not decode, which is what the enumeration passes below must refuse to be without.
+// unreadableTopic writes a topic and then replaces its payload with one that will not decode, which is
+// what the enumeration passes below must refuse to be without.
 func unreadableTopic(t *testing.T, engine *core.StorageEngine, topic core.TopicSlot) {
 	t.Helper()
 	if err := core.WriteTopicSlot(engine, core.DefaultAgentID, topic.ID, &topic); err != nil {
@@ -533,8 +505,8 @@ func writeTopic(t *testing.T, engine *core.StorageEngine, topic core.TopicSlot) 
 	}
 }
 
-// A child the closure cannot read is still that parent's child: dropping it from
-// the list deletes the parent above a topic nobody will ever cascade again.
+// A child the closure cannot read is still that parent's child: dropping it from the list deletes the
+// parent above a topic nobody will ever cascade again.
 func TestTopicClosureL2RefusesUnreadableChild(t *testing.T) {
 	engine := tempEngine(t)
 	var root uint64 = 1
@@ -546,9 +518,8 @@ func TestTopicClosureL2RefusesUnreadableChild(t *testing.T) {
 	}
 }
 
-// A scene cascade tombstones what this enumeration returns, so a topic of the scene
-// that will not read back has to be reported, not dropped: the deleted scene would
-// otherwise leave a topic naming nothing, listed by nobody and deleted by nobody.
+// A scene cascade tombstones what this enumeration returns, so a topic of the scene that will not read
+// back has to be reported, not dropped.
 func TestTopicIDsBySceneL2RefusesUnreadableTopic(t *testing.T) {
 	engine := tempEngine(t)
 	const sceneID = uint64(7)
@@ -567,10 +538,8 @@ func TestTopicIDsBySceneL2RefusesUnreadableTopic(t *testing.T) {
 	}
 }
 
-// A merge sees the domain once, before it writes anything: a topic it could not
-// read must leave the sibling on its own scene and that scene still there. Moving
-// what did read and then refusing would hand the primary a topic set its own record
-// no longer describes.
+// A merge sees the domain once, before it writes anything: a topic it could not read must leave the
+// sibling on its own scene and that scene still there.
 func TestMergeScenesL2RefusesUnreadableTopic(t *testing.T) {
 	engine := tempEngine(t)
 	const (
@@ -599,9 +568,8 @@ func TestMergeScenesL2RefusesUnreadableTopic(t *testing.T) {
 	}
 }
 
-// listByID — the rule the by-id listings share — skips ids that name nothing
-// and reports a record that will not read back: a listing quietly missing one
-// row is indistinguishable from a row that was deleted.
+// listByID — the rule the by-id listings share — skips ids that name nothing and reports a record that
+// will not read back.
 func TestListScenesL2ListingRules(t *testing.T) {
 	engine := tempEngine(t)
 	live := core.NewSceneSlot(11, "live")
@@ -625,8 +593,8 @@ func TestListScenesL2ListingRules(t *testing.T) {
 	}
 }
 
-// The batch calls take empty id sets straight to the engine: the no-op lives
-// there, so every repo entry point must stay a no-op too.
+// The batch calls take empty id sets straight to the engine: the no-op lives there, so every repo
+// entry point must stay a no-op too.
 func TestEmptyIDSetsAreNoOps(t *testing.T) {
 	engine := tempEngine(t)
 	if err := CompressTopicsL2(engine, core.DefaultAgentID, nil, 1); err != nil {

@@ -1,9 +1,8 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// consolidate.go: the L2 consolidation call point — asks the LLM which adjacent
-// topics share a conversation thread and reconstructs merged keyword tracks into
-// natural-language summaries.
+// consolidate.go: the L2 consolidation call point — asks the LLM which adjacent topics share a
+// conversation thread and reconstructs merged keyword tracks into natural-language summaries.
 
 package llmops
 
@@ -18,8 +17,8 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/repo/core"
 )
 
-// L2Group is one merge the model proposed: the topics it claims share a thread and
-// the text reconstructed from their keywords.
+// L2Group is one merge the model proposed: the topics it claims share a thread and the text
+// reconstructed from their keywords.
 type L2Group struct {
 	NodeHashes    []uint64
 	MergedSummary string
@@ -30,9 +29,7 @@ type ConsolidationOutput struct {
 	L2Groups []L2Group
 }
 
-// systemConsolidate states the contract for one pass. The topic count it aims at is
-// the caller's configured compression floor, not a constant of this package: the
-// prompt must state the number the engine actually runs by.
+// systemConsolidate states the contract for one pass.
 func systemConsolidate(floor int) string {
 	return fmt.Sprintf(`You analyze L2 chat memory topics, identify which adjacent topics belong to the same conversation thread, and reconstruct their keywords into natural text that reads like the original conversation.
 
@@ -59,9 +56,8 @@ Output ONLY valid JSON in this exact shape (no markdown, no code fences):
 Every merged group MUST include non-empty merged_summary.`, floor, floor)
 }
 
-// Consolidate decides whether a batch of L2 topics share a topic and
-// returns compression groups preserving all details. floor is the caller's
-// configured topic count a pass compresses towards — the target the prompt states.
+// Consolidate decides whether a batch of L2 topics share a topic and returns compression groups
+// preserving all details.
 func Consolidate(ctx context.Context, chat Chat, topics []core.TopicSlot, floor int) (*ConsolidationOutput, error) {
 	if len(topics) == 0 {
 		return &ConsolidationOutput{L2Groups: []L2Group{}}, nil
@@ -75,14 +71,13 @@ func Consolidate(ctx context.Context, chat Chat, topics []core.TopicSlot, floor 
 	}, parseConsolidateResponse)
 }
 
-// consolidateFormatRetry is appended to the user prompt for the
-// format-constrained retry.
+// consolidateFormatRetry is appended to the user prompt for the format-constrained retry.
 const consolidateFormatRetry = `
 
 Output ONLY valid JSON in the exact shape from the system prompt. No markdown, no code fences, no commentary.`
 
-// buildConsolidatePrompt lists topics grouped by scene, sorted by user turn
-// time (adjacency matters for merge judgment).
+// buildConsolidatePrompt lists topics grouped by scene, sorted by user turn time (adjacency matters
+// for merge judgment).
 func buildConsolidatePrompt(topics []core.TopicSlot) string {
 	byScene := make(map[uint64][]core.TopicSlot)
 	for _, t := range topics {
@@ -109,10 +104,7 @@ func buildConsolidatePrompt(topics []core.TopicSlot) string {
 	return b.String()
 }
 
-// parseConsolidateResponse parses the LLM reply; node_hashes accept JSON
-// numbers or quoted strings. A group whose members do not parse is an error, not a
-// group quietly dropped: a shorter group list must not read as a model that merged
-// less than it did.
+// parseConsolidateResponse parses the LLM reply; node_hashes accept JSON numbers or quoted strings.
 func parseConsolidateResponse(response string) (*ConsolidationOutput, error) {
 	cleaned := stripCodeBlocks(response)
 	var raw struct {

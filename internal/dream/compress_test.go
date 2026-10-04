@@ -18,8 +18,8 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/repo/index"
 )
 
-// anyKeywords answers every extraction with one keyword track, so a group is
-// rejected only for what the engine itself can object to.
+// anyKeywords answers every extraction with one keyword track, so a group is rejected only for what
+// the engine itself can object to.
 type anyKeywords struct{}
 
 func (anyKeywords) Chat(context.Context, string, string, int) (string, error) {
@@ -32,11 +32,8 @@ func (c anyKeywords) ChatWithRetry(ctx context.Context, system, user string, _, 
 
 func (anyKeywords) MaxOutputTokens() int { return llmops.ConsolidationMaxTokens }
 
-// The model groups by conversation thread and two adjacent threads can both
-// claim one turn; applying both would sink that turn twice. What that leaves
-// behind is the scene showing the turn's own originals one level below every
-// read that reaches it, under a first summary that no longer holds it, beside a
-// second summary standing over a single remaining member.
+// The model groups by conversation thread and two adjacent threads can both claim one turn; applying
+// both would sink that turn twice.
 func TestApplyGroupsRejectsOverlappingGroups(t *testing.T) {
 	engine, err := core.Create(filepath.Join(t.TempDir(), "test.meh"))
 	if err != nil {
@@ -107,11 +104,8 @@ func TestApplyGroupsRejectsOverlappingGroups(t *testing.T) {
 	}
 }
 
-// Members can be disjoint and still share their bounds: a host that stamps several turns
-// with one timestamp gives every group over that batch the same (min,max) pair. The parent
-// id names its members, so this is not a collision — both land, each over its own children
-// with its own summary. A bounds-only key refused the second group here, and the refused
-// pair stayed on the surface for every later pass to be proposed and rejected again.
+// Members can be disjoint and still share their bounds: a host that stamps several turns with one
+// timestamp gives every group over that batch the same (min,max) pair.
 func TestApplyGroupsLandsDisjointGroupsWithOneBoundsPair(t *testing.T) {
 	engine, err := core.Create(filepath.Join(t.TempDir(), "test.meh"))
 	if err != nil {
@@ -183,9 +177,8 @@ func TestApplyGroupsLandsDisjointGroupsWithOneBoundsPair(t *testing.T) {
 	}
 }
 
-// What the collision guard still has to catch is a group landing on an address already in
-// use: the same members proposed again. That is a replay of an applied group, and landing
-// it would put a second parent over children that already answer to one.
+// What the collision guard still has to catch is a group landing on an address already in use: the
+// same members proposed again.
 func TestApplyGroupsRefusesReplayedMemberSet(t *testing.T) {
 	engine, err := core.Create(filepath.Join(t.TempDir(), "test.meh"))
 	if err != nil {
@@ -229,11 +222,7 @@ func TestApplyGroupsRefusesReplayedMemberSet(t *testing.T) {
 	}
 }
 
-// A member that will not read back fails the sink after the parent and its summary
-// are already on disk, so the rollback is what keeps the scene from gaining a
-// surface topic summarising turns that never moved. Undoing it by id is the point:
-// a rollback that enumerated the domain would be refused by this very record and
-// leave the half-applied group exactly where it is.
+// A member that will not read back fails the sink after the parent and its summary are already on.
 func TestApplyGroupsRollsBackTheGroupWhenASinkRefuses(t *testing.T) {
 	engine, err := core.Create(filepath.Join(t.TempDir(), "test.meh"))
 	if err != nil {
@@ -282,11 +271,7 @@ func TestApplyGroupsRollsBackTheGroupWhenASinkRefuses(t *testing.T) {
 	}
 }
 
-// A group the engine cannot see whole is not a group it may fuse. The listing handed
-// to the model is the only source of these ids, so a name it invented (or one whose
-// topic has since gone) would otherwise contribute nothing to the bounds the parent
-// is keyed by, and the sink step would drop it without a word: a summary of two
-// turns left standing over one.
+// A group the engine cannot see whole is not a group it may fuse.
 func TestApplyGroupsRefusesAGroupItCannotSeeWhole(t *testing.T) {
 	engine, err := core.Create(filepath.Join(t.TempDir(), "test.meh"))
 	if err != nil {
@@ -327,10 +312,8 @@ func TestApplyGroupsRefusesAGroupItCannotSeeWhole(t *testing.T) {
 	}
 }
 
-// A one-name group is a proposal this engine cannot apply — a fused parent exists to
-// stand over children — and it is a different fact from "nothing left to
-// consolidate". Skipping it without a word makes the report read as a scene nobody
-// asked to merge, which is exactly the case this pass must not be confused with.
+// A one-name group is a proposal this engine cannot apply — a fused parent exists to stand over
+// children — and it is a different fact from "nothing left to consolidate".
 func TestApplyGroupsCountsADegenerateGroupAsProposedButUnapplied(t *testing.T) {
 	engine, err := core.Create(filepath.Join(t.TempDir(), "test.meh"))
 	if err != nil {
@@ -367,11 +350,8 @@ func TestApplyGroupsCountsADegenerateGroupAsProposedButUnapplied(t *testing.T) {
 	}
 }
 
-// A fused parent is a topic like any other, so the next pass can hand it back as a
-// group member: it sinks to depth 2 and ends level with the turns it summarizes.
-// Depth therefore reports surface (1) versus swallowed (2), never "summary" versus
-// "turn" — and nothing falls out of the depth-2 window SceneContext reads, so the
-// originals under a folded group are still the only place they are said.
+// A fused parent is a topic like any other, so the next pass can hand it back as a group member: it
+// sinks to depth 2 and ends level with the turns it summarizes.
 func TestAFusedParentFoldsIntoALaterGroup(t *testing.T) {
 	engine, err := core.Create(filepath.Join(t.TempDir(), "test.meh"))
 	if err != nil {
@@ -434,11 +414,8 @@ func TestAFusedParentFoldsIntoALaterGroup(t *testing.T) {
 	}
 }
 
-// The summary is the one text a consolidation produces, and its members are already
-// sunk by the time it lands. Stamped with the group's own last turn, a fold of turns
-// that are past the retention window writes a summary already older than the cutoff:
-// the sweep at the head of the next pass deletes it on arrival, and the scene keeps
-// the keyword track with nothing behind it.
+// The summary is the one text a consolidation produces, and its members are already sunk by the time
+// it lands.
 func TestFusedSummaryOutlivesTheTurnsItFolded(t *testing.T) {
 	engine, err := core.Create(filepath.Join(t.TempDir(), "test.meh"))
 	if err != nil {
@@ -481,13 +458,8 @@ func TestFusedSummaryOutlivesTheTurnsItFolded(t *testing.T) {
 	}
 }
 
-// What a scene read holds once a fused group's summary has aged out — the case the recall
-// contract has to answer, because the group's children are the rows a host is told to skip.
-// The prose goes and nothing else goes with it: the parent row stays on the surface, still
-// naming its children and still carrying the track folded out of them, and each swallowed
-// turn keeps its own track too. So a depth-1 row with no summary is a state a reader can
-// detect, and the group's words are on that same row — which is the only place they can be
-// asked for, since the flattened listing carries no parent pointer for a reader to walk down.
+// What a scene read holds once a fused group's summary has aged out — the case the recall contract has
+// to answer, because the group's children are the rows a host is told to skip.
 func TestFusedGroupAgesIntoKeywordTracksNotSilence(t *testing.T) {
 	engine, err := core.Create(filepath.Join(t.TempDir(), "test.meh"))
 	if err != nil {
@@ -544,9 +516,8 @@ func TestFusedGroupAgesIntoKeywordTracksNotSilence(t *testing.T) {
 	if parent.Depth != 1 {
 		t.Fatalf("a fused group's row should stay on the surface, got depth %d", parent.Depth)
 	}
-	// The group's own track is what a reader falls back to once the summary is gone,
-	// and unlike the summary it never ages: keyword extraction refusing to yield a
-	// track is what stops the group from being written at all.
+	// The group's own track is what a reader falls back to once the summary is gone, and unlike the
+	// summary it never ages.
 	if len(parent.FusedKeywords) == 0 {
 		t.Fatalf("the aged group kept no track of its own: %+v", parent)
 	}
@@ -564,13 +535,8 @@ func TestFusedGroupAgesIntoKeywordTracksNotSilence(t *testing.T) {
 	}
 }
 
-// TestAFoldedGroupCanItselfBeFolded covers the second consolidation pass folding a
-// group the first pass created. It does not open a third level: only surface rows are
-// ever sunk, so a sunk row sits at depth 2 whether or not it is itself a group, and the
-// scene read — which stops at depth 2 — therefore never hides a topic. The intermediate
-// group keeps its own summary and its own children still name it as their parent, which
-// is why a reader may skip it without losing a fact: what it said went into the later
-// summary, and every original is still on disk under it.
+// TestAFoldedGroupCanItselfBeFolded covers the second consolidation pass folding a group the first
+// pass created.
 func TestAFoldedGroupCanItselfBeFolded(t *testing.T) {
 	engine, err := core.Create(filepath.Join(t.TempDir(), "test.meh"))
 	if err != nil {

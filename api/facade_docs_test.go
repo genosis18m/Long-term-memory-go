@@ -12,12 +12,8 @@ import (
 	"testing"
 )
 
-// `internal` is not published, so `go doc github.com/genosis18m/Long-term-memory-go/api.Session` is the only
-// documentation a host can read for the methods this facade declares - a method without a
-// comment line is a method no host can learn from short of reading the source, which is the
-// opposite of "integrate and use". This walks the same files the guide-symbol gate parses and
-// requires every exported method of the two handles to be documented, with the count pinned so
-// a broken walk cannot pass by finding nothing.
+// `internal` is not published, so `go doc github.com/genosis18m/Long-term-memory-go/api.Session` is
+// the only documentation a host can read for the methods this facade declares.
 func TestEveryFacadeMethodIsDocumented(t *testing.T) {
 	fset := token.NewFileSet()
 	files, err := os.ReadDir(".")

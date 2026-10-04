@@ -10,14 +10,14 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/common"
 )
 
-// isSnapshotBlobAt reports whether raw starts with a snapshot magic and is
-// long enough for snapshotBlobLength to inspect it.
+// isSnapshotBlobAt reports whether raw starts with a snapshot magic and is long enough for
+// snapshotBlobLength to inspect it.
 func isSnapshotBlobAt(raw []byte) bool {
 	return len(raw) >= 13 && binary.LittleEndian.Uint32(raw[0:4]) == SnapshotMagic
 }
 
-// snapshotBlobLength parses a snapshot blob's total length (0x03 per-agent
-// layout: an id header then that many 16-byte offset entries).
+// snapshotBlobLength parses a snapshot blob's total length (0x03 per-agent layout: an id header then
+// that many 16-byte offset entries).
 func snapshotBlobLength(raw []byte) (int, error) {
 	if len(raw) < 13 {
 		return 0, common.NewError(common.ErrCorruption, "snapshot too short")
@@ -42,8 +42,8 @@ func snapshotBlobLength(raw []byte) (int, error) {
 	return pos + 4, nil
 }
 
-// trimTailSnapshot truncates a trailing snapshot and clears its pointer,
-// keeping the record-frames-before-snapshot invariant. Caller must hold e.mu.
+// trimTailSnapshot truncates a trailing snapshot and clears its pointer, keeping the
+// record-frames-before-snapshot invariant.
 func (e *StorageEngine) trimTailSnapshot() error {
 	h := e.activeHeaderRef()
 	if h.SnapshotOffset == 0 || h.SnapshotLength == 0 {
@@ -60,8 +60,8 @@ func (e *StorageEngine) trimTailSnapshot() error {
 	return e.writeNullSnapshotHeader()
 }
 
-// writeNullSnapshotHeader writes a no-snapshot header (CommitID++, pointers
-// cleared) to the inactive slot and switches. Caller must hold e.mu.
+// writeNullSnapshotHeader writes a no-snapshot header (CommitID++, pointers cleared) to the inactive
+// slot and switches.
 func (e *StorageEngine) writeNullSnapshotHeader() error {
 	nullHdr := copyHeader(e.activeHeaderRef())
 	nullHdr.CommitID++
@@ -75,9 +75,8 @@ func (e *StorageEngine) writeNullSnapshotHeader() error {
 	return nil
 }
 
-// Compact creates a new file at newPath containing only live records,
-// preserving each record's agent domain; the new engine serializes its own
-// record index.
+// Compact creates a new file at newPath containing only live records, preserving each record's agent
+// domain; the new engine serializes its own record index.
 func (e *StorageEngine) Compact(newPath string) error {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
@@ -93,8 +92,8 @@ func (e *StorageEngine) Compact(newPath string) error {
 			newEng.file.Close()
 		}
 	}()
-	// Compact's cost is the flush and the remap each write does, so the copy runs
-	// in batches; the chunk bounds how many payloads are held at once.
+	// Compact's cost is the flush and the remap each write does, so the copy runs in batches; the chunk
+	// bounds how many payloads are held at once.
 	const chunk = 256
 	for agentID, m := range e.index {
 		batch := make([]RecordEntry, 0, chunk)
@@ -109,9 +108,8 @@ func (e *StorageEngine) Compact(newPath string) error {
 		for idHash, offset := range m {
 			rt, _, data, _, _, readErr := RecordData(e.mmap, offset)
 			if readErr != nil {
-				// Which half of the file is damaged decides what to do about it, so
-				// the read keeps its own code — and the record is named, because a
-				// compaction that refused has to say what it refused to move.
+				// Which half of the file is damaged decides what to do about it, so the read keeps its own code — and
+				// the record is named, because a compaction that refused has to say what it refused to move.
 				code := common.CodeOf(readErr)
 				if code != common.ErrCRCMismatch && code != common.ErrCorruption {
 					code = common.ErrCorruption

@@ -1,10 +1,7 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// DTO aliases: the business request/response shapes live in the bottom
-// model package (internal/repo/core/model_dto.go) so the internal/cap
-// packages can consume them without importing the repository layer. The
-// internal package keeps referring to them by their historical names.
+// DTO aliases: the business request/response shapes live in the bottom model package.
 
 package internal
 

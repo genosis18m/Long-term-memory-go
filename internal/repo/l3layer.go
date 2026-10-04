@@ -13,19 +13,12 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/repo/core"
 )
 
-// ReadSharedGraphL3 reads one graph slot by its numeric id. Graphs live in the
-// file-wide shared L3 domain, not in the caller's own, so every read of one goes
-// through SharedPoolAgentID whatever domain asked. An unknown id is whatever the
-// typed record read reports (ErrNotFound).
+// ReadSharedGraphL3 reads one graph slot by its numeric id.
 func ReadSharedGraphL3(engine *core.StorageEngine, graphID uint64) (*core.HypergraphSlot, error) {
 	return core.ReadGraphSlot(engine, core.SharedPoolAgentID, graphID)
 }
 
-// CreateEdgeL3 creates a hyperedge whose id derives from EdgeKeyL3 — one
-// formula for the address and for the semantic key a caller matches on —
-// scoped to the graph, so members must arrive sorted: an unsorted list would
-// address a second edge over the same relation. The kind is part of the
-// identity because a node pair can carry several relations at once.
+// CreateEdgeL3 creates a hyperedge whose id derives from EdgeKeyL3.
 func CreateEdgeL3(engine *core.StorageEngine, agentID uint64, graphID uint64, kind core.GraphEdgeKind, nodeIDs []uint64) (uint64, error) {
 	edgeID := common.HashID(common.FormatHash(graphID) + ":" + EdgeKeyL3(nodeIDs, kind))
 	if err := l3AddressFree(engine, agentID, edgeID); err != nil {
@@ -44,19 +37,12 @@ func CreateEdgeL3(engine *core.StorageEngine, agentID uint64, graphID uint64, ki
 	return edgeID, nil
 }
 
-// EdgeKeyL3 is a hyperedge's semantic identity within a graph: the member
-// nodes and the relation kind. The caller sorts the ids first, since edges are
-// unordered over their members; matching on this key rather than on the hash
-// keeps a re-import idempotent for edges written before the kind joined the id.
+// EdgeKeyL3 is a hyperedge's semantic identity within a graph: the member nodes and the relation kind.
 func EdgeKeyL3(nodeIDs []uint64, kind core.GraphEdgeKind) string {
 	return fmt.Sprintf("%v:%d", nodeIDs, kind)
 }
 
-// ListEdgeL3 lists one graph's edges sorted by id. The order is part of the
-// contract: the index under the collect is a hash map, so an unsorted listing
-// would answer the same call twice in two orders and let a caller's cap fall on
-// an arbitrary subset. The collect is strict: an edge that will not decode is
-// not one less row, it is two members the graph stops relating.
+// ListEdgeL3 lists one graph's edges sorted by id.
 func ListEdgeL3(engine *core.StorageEngine, agentID uint64, graphID uint64) ([]core.HypergraphEdge, error) {
 	all, err := core.CollectAllStrict[core.HypergraphEdge](engine, agentID, core.RecL3GraphEdge)
 	if err != nil {
@@ -74,9 +60,7 @@ func ListEdgeL3(engine *core.StorageEngine, agentID uint64, graphID uint64) ([]c
 	return out, nil
 }
 
-// createGraphL3 writes a graph slot; ID = hash(name). An address some other
-// record already holds is refused (l3AddressFree). EnsureGraphL3 is the
-// exported create: it reuses a slot that is already there.
+// createGraphL3 writes a graph slot; ID = hash(name).
 func createGraphL3(engine *core.StorageEngine, agentID uint64, name string) (uint64, error) {
 	graphID := common.HashID(name)
 	if err := l3AddressFree(engine, agentID, graphID); err != nil {
@@ -95,10 +79,8 @@ func createGraphL3(engine *core.StorageEngine, agentID uint64, name string) (uin
 	return graphID, nil
 }
 
-// EnsureGraphL3 returns the graph of a domain name, creating its slot only when
-// the address holds nothing at all. The id derives from the name asked for, but
-// the stored Name is a label of its own that may have been renamed since —
-// reusing an existing slot keeps that name and its CreatedAt intact.
+// EnsureGraphL3 returns the graph of a domain name, creating its slot only when the address holds
+// nothing at all.
 func EnsureGraphL3(engine *core.StorageEngine, agentID uint64, name string) (uint64, error) {
 	graphID := common.HashID(name)
 	if slot, err := core.ReadGraphSlot(engine, agentID, graphID); err == nil {
@@ -109,10 +91,8 @@ func EnsureGraphL3(engine *core.StorageEngine, agentID uint64, name string) (uin
 	return createGraphL3(engine, agentID, name)
 }
 
-// DeleteGraphL3 cascades: collects all nodes/edges of the graph plus the
-// graph record and deletes them in one batch. Both collections are strict —
-// a member that will not read back has to stop the delete instead of surviving
-// a graph the host was told is gone.
+// DeleteGraphL3 cascades: collects all nodes/edges of the graph plus the graph record and deletes them
+// in one batch.
 func DeleteGraphL3(engine *core.StorageEngine, agentID uint64, id uint64) error {
 	nodes, err := core.CollectAllStrict[core.HypergraphNode](engine, agentID, core.RecL3GraphNode)
 	if err != nil {
@@ -138,12 +118,7 @@ func DeleteGraphL3(engine *core.StorageEngine, agentID uint64, id uint64) error 
 	return err
 }
 
-// UpdateGraphL3 writes a graph slot's label and moves UpdatedAt with it: this
-// function only ever accompanies a change, since the slot clock is what a host
-// reads to ask "which graph did I touch last". A nil name is the stamp an import
-// batch makes for the nodes and edges it just wrote under that graph — the caller
-// that already knows its own content moved, so it never reaches for the nil to make
-// an untouched graph look changed.
+// UpdateGraphL3 writes a graph slot's label and moves UpdatedAt with it.
 func UpdateGraphL3(engine *core.StorageEngine, agentID uint64, id uint64, name *string) (*core.HypergraphSlot, error) {
 	slot, err := core.ReadGraphSlot(engine, agentID, id)
 	if err != nil {
@@ -159,8 +134,7 @@ func UpdateGraphL3(engine *core.StorageEngine, agentID uint64, id uint64, name *
 	return slot, nil
 }
 
-// CreateNodeL3 creates a hypergraph node; ID = hash(graphID:title). A
-// non-empty sourceRef lands on the node's SourceRef.
+// CreateNodeL3 creates a hypergraph node; ID = hash(graphID:title).
 func CreateNodeL3(engine *core.StorageEngine, agentID uint64, graphID uint64, title, nodeType, content string, keywords []string, sourceRef string) (uint64, error) {
 	nodeID := NodeIDL3(graphID, title)
 	if err := l3AddressFree(engine, agentID, nodeID); err != nil {
@@ -191,8 +165,7 @@ func NodeIDL3(graphID uint64, title string) uint64 {
 	return common.HashID(fmt.Sprintf("%s:%s", common.FormatHash(graphID), title))
 }
 
-// ListNodeL3 lists one graph's nodes sorted and strict, for the same reasons
-// ListEdgeL3 is.
+// ListNodeL3 lists one graph's nodes sorted and strict, for the same reasons ListEdgeL3 is.
 func ListNodeL3(engine *core.StorageEngine, agentID uint64, graphID uint64) ([]core.HypergraphNode, error) {
 	all, err := core.CollectAllStrict[core.HypergraphNode](engine, agentID, core.RecL3GraphNode)
 	if err != nil {
@@ -210,9 +183,7 @@ func ListNodeL3(engine *core.StorageEngine, agentID uint64, graphID uint64) ([]c
 	return out, nil
 }
 
-// MutateNodeL3 reads one node, applies mutate and writes it back. The merge
-// policy itself is the caller's; this module keeps record access and membership
-// validation only.
+// MutateNodeL3 reads one node, applies mutate and writes it back.
 func MutateNodeL3(engine *core.StorageEngine, agentID uint64, graphID uint64, title string, mutate func(*core.HypergraphNode)) (uint64, error) {
 	nodeID := NodeIDL3(graphID, title)
 	node, err := core.ReadHypergraphNode(engine, agentID, nodeID)
@@ -229,12 +200,7 @@ func MutateNodeL3(engine *core.StorageEngine, agentID uint64, graphID uint64, ti
 	return nodeID, nil
 }
 
-// l3AddressFree refuses a create whose derived id already holds a record. Every
-// L3 id comes out of host-supplied text — a graph label, "<graph hex>:<title>",
-// an edge's members and kind — and the whole pool shares one id space, so a
-// label can literally spell another kind's derived form. The typed readers
-// answer such a collision with ErrNotFound, the one answer that must not
-// license a write: the record would come back as a type it never was.
+// l3AddressFree refuses a create whose derived id already holds a record.
 func l3AddressFree(engine *core.StorageEngine, agentID uint64, id uint64) error {
 	if engine.Contains(agentID, id) {
 		return common.NewError(common.ErrInvalidQuery,

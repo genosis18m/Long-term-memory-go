@@ -26,9 +26,8 @@ func TestParseTopicIDRejectsReservedZero(t *testing.T) {
 	}
 }
 
-// Every record the append boundary refuses, and why: the kinds own different axes,
-// the consolidation role is the library's, and a record over budget is refused
-// rather than shortened.
+// Every record the append boundary refuses, and why: the kinds own different axes, the consolidation
+// role is the library's, and a record over budget is refused rather than shortened.
 func TestValidateAppendRefusals(t *testing.T) {
 	long := strings.Repeat("字", 2048) // 6144 bytes: over the event budget, under the utterance one
 	cases := []struct {
@@ -57,7 +56,7 @@ func TestValidateAppendRefusals(t *testing.T) {
 		{Kind: core.KindEvent, EventType: "x", Content: "c", CreatedAt: 1},
 		{Kind: core.KindUtterance, Role: core.RoleUser, Content: "c", CreatedAt: 1},
 		{Kind: core.KindUtterance, Role: core.RoleSystem, ContentType: core.ContentImage, Content: "a.png", CreatedAt: 1},
-		// the same payload an event may not carry is fine as an utterance
+		// the same payload an event may not carry is fine as an utterance.
 		{Kind: core.KindUtterance, Role: core.RoleUser, Content: long, CreatedAt: 1},
 	} {
 		if err := ValidateAppend(ok); err != nil {
@@ -81,9 +80,8 @@ func TestValidateAppendRefusals(t *testing.T) {
 	}
 }
 
-// The transcript a distillation reads is the topic's own content in slot order,
-// each line attributed: without the label the sides collapse and the extraction
-// loses who asserted what.
+// The transcript a distillation reads is the topic's own content in slot order, each line attributed:
+// without the label the sides collapse and the extraction loses who asserted what.
 func TestRenderForDistillLabelsEveryLineInSeqOrder(t *testing.T) {
 	utterances := []core.ArchiveSlot{
 		{Seq: 1, Role: core.RoleUser, Content: "问 A"},
@@ -99,8 +97,8 @@ func TestRenderForDistillLabelsEveryLineInSeqOrder(t *testing.T) {
 	}
 }
 
-// newReadFixture builds a domain whose content mirror the writer keeps current,
-// which is what makes a read enumerable at all.
+// newReadFixture builds a domain whose content mirror the writer keeps current, which is what makes a
+// read enumerable at all.
 func newReadFixture(t *testing.T) (*core.StorageEngine, *domain.Context) {
 	t.Helper()
 	engine, err := core.Create(filepath.Join(t.TempDir(), "test.meh"))
@@ -118,9 +116,8 @@ func writeSlot(t *testing.T, engine *core.StorageEngine, ac *domain.Context, in 
 	}
 }
 
-// A turn reads question-first by construction, not by tie-break: the user's text
-// takes Seq 1 and the reply Seq 2. These are archived in the hostile order, in the
-// same millisecond, so only Seq can put them right.
+// A turn reads question-first by construction, not by tie-break: the user's text takes Seq 1 and the
+// reply Seq 2.
 func TestReadOrdersUtterancesBySeqNotWriteOrder(t *testing.T) {
 	engine, ac := newReadFixture(t)
 	const topicID uint64 = 0xfeed
@@ -145,9 +142,8 @@ func TestReadOrdersUtterancesBySeqNotWriteOrder(t *testing.T) {
 	}
 }
 
-// L4 holds a turn's events beside its originals, so a read that asks for one kind
-// must not answer with the other: a conversation shown with a line per recorded
-// operation is not the same text.
+// L4 holds a turn's events beside its originals, so a read that asks for one kind must not answer with
+// the other: a conversation shown with a line per recorded operation is not the same text.
 func TestReadUtterancesExcludesEvents(t *testing.T) {
 	engine, ac := newReadFixture(t)
 	const topicID uint64 = 0xfeed
@@ -175,11 +171,8 @@ func TestReadUtterancesExcludesEvents(t *testing.T) {
 	}
 }
 
-// A hole in Seq is a legal end state for an old turn, and it has two causes this
-// read cannot tell apart: the retention window reclaimed that slot, or the host
-// never wrote it. So the gap is reported as two records with a hole between their
-// Seq values rather than as a failure, and what the gap means is left to a reader
-// that knows its own turn.
+// A hole in Seq is a legal end state for an old turn, and it has two causes this read cannot tell
+// apart: the retention window reclaimed that slot, or the host never wrote it.
 func TestReadReportsSeqGaps(t *testing.T) {
 	engine, ac := newReadFixture(t)
 	const topicID uint64 = 0xfeed

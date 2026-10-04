@@ -1,8 +1,8 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// How far a subgraph read goes: maxDepth counts hops, a non-positive one is no
-// bound, and an edge-kind filter decides which hops exist at all.
+// How far a subgraph read goes: maxDepth counts hops, a non-positive one is no bound, and an edge-kind
+// filter decides which hops exist at all.
 
 package api
 
@@ -11,15 +11,8 @@ import (
 	"testing"
 )
 
-// A subgraph is the one read where the host says how far to go, so that number
-// has to mean one thing: N hops from the start node, and a non-positive N is no
-// bound at all. The chain below is three hops long, which puts every reading on
-// a different node set — a depth that counted levels of the import, or a zero
-// read as "one hop", lands somewhere else and fails here.
-//
-// The second half is what makes the answer usable: every edge it carries names
-// only nodes it also carries. An edge reaching outside would send the host
-// looking up an id this very read refused to return.
+// A subgraph is the one read where the host says how far to go, so that number has to mean one thing:
+// N hops from the start node, and a non-positive N is no bound at all.
 func TestSurfaceSubgraphDepthCountsHopsAndZeroMeansNoBound(t *testing.T) {
 	db := openSurfaceDB(t)
 	imp, err := db.ImportL3([]L3ImportItem{
@@ -96,13 +89,7 @@ func TestSurfaceSubgraphDepthCountsHopsAndZeroMeansNoBound(t *testing.T) {
 	}
 }
 
-// An edge-kind filter decides which hops exist, not merely which edges get
-// listed: a node whose only route in carries a filtered-out kind is not
-// reached, so the answer never holds a node with no visible connection to the
-// start. The other reading — walk everything, then drop the unlisted edges —
-// hands the host orphan nodes it cannot explain, and is what this pins out.
-// The chain alternates kinds (a—b related, b—c dependency, c—d related), so
-// each filter cuts the walk at a different place.
+// An edge-kind filter decides which hops exist, not merely which edges get listed.
 func TestSurfaceSubgraphKindFilterDecidesWhichHopsExist(t *testing.T) {
 	db := openSurfaceDB(t)
 	imp, err := db.ImportL3([]L3ImportItem{

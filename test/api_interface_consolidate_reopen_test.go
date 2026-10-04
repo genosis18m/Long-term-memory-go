@@ -12,22 +12,14 @@ import (
 	memhop "github.com/genosis18m/Long-term-memory-go/api"
 )
 
-// noAutoDreamButCompress keeps the background trigger off (a Dream scheduled mid-test would
-// move the surface under the comparison) while letting the host-driven pass merge: the
-// compress floor gates the model call, so leaving it at its default of 20 would answer "did
-// nothing" for reasons unrelated to what is under test here.
+// noAutoDreamButCompress keeps the background trigger off (a Dream scheduled mid-test would move the
+// surface under the comparison) while letting the host-driven pass merge.
 func noAutoDreamButCompress(d *memhop.MemHopDefaults) {
 	d.SceneDreamTopicThreshold = -1
 	d.DreamCompressMinTopics = 2
 }
 
-// Consolidation is the one pass that rewrites what a scene looks like without deleting
-// anything: the merged turns sink to depth 2 and a group row appears at depth 1, so the
-// listing a host reads depends on a cache that Dream maintains incrementally. A cache that
-// disagrees with the records shows up as a recall whose rows change when the process
-// restarts - turns a host watched disappear, or a group loses the children it summarises.
-// So the answer after a Dream has to be byte-identical to the answer after reopening the
-// same file, where the caches are rebuilt from records.
+// Consolidation is the one pass that rewrites what a scene looks like without deleting anything.
 func TestInterfaceConsolidationSurvivesReopen(t *testing.T) {
 	llm := newMockLLM(t)
 	path := filepath.Join(t.TempDir(), "consolidate.meh")
@@ -83,10 +75,7 @@ func TestInterfaceConsolidationSurvivesReopen(t *testing.T) {
 		if groups == 0 || sunk == 0 {
 			t.Fatalf("%s: the consolidated state is missing from the listing (groups %d, sunk %d)", label, groups, sunk)
 		}
-		// The documented order is (user timestamp, shallower first, id). The secondary key
-		// is not decoration: a fused group carries the timestamp of the first turn it
-		// swallowed, so ties are the normal case, and the host's collapse rules read this
-		// listing linearly - a group that lands among its own originals summarises nothing.
+		// The documented order is (user timestamp, shallower first, id).
 		ties := 0
 		for i := 1; i < len(s2.Topics); i++ {
 			prev, cur := s2.Topics[i-1], s2.Topics[i]

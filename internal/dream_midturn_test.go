@@ -11,12 +11,8 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/repo/core"
 )
 
-// A host that schedules consolidation on a timer runs Dream while the round it is
-// driving is still open. The library holds that turn, and what the round has already
-// written is the only evidence it is halfway through, so consolidation may neither
-// drop the turn held open nor sweep records that are still inside the window: the close
-// that was pending before the Dream still settles the same turn afterwards. What a pass
-// does not exempt is the clock - see TestDreamSweepsAnExpiredMidRoundRecordAndStillClosesTheTurn.
+// A host that schedules consolidation on a timer runs Dream while the round it is driving is still
+// open.
 func TestDreamLeavesTheOpenTurnCloseable(t *testing.T) {
 	srv := mockLLMServer(t, turnKeywords)
 	db := newSearchTestDB(t, srv.URL)
@@ -50,13 +46,8 @@ func TestDreamLeavesTheOpenTurnCloseable(t *testing.T) {
 	}
 }
 
-// Retention measures the stamp, not the round's state: a record appended into a round that is
-// still open is swept as soon as its own clock passes the window, exactly like a settled one.
-// What the pass must not do is take the open turn with it. TestDreamLeavesTheOpenTurnCloseable
-// pins the in-window half; this pins the other side, so nobody reads "Dream spares the round in
-// progress" as "Dream spares everything that round recorded" - the case a host meets when a
-// round sits open across a long pause (a tool result backfilled with its own older stamp, or a
-// suspension outlasting the window).
+// Retention measures the stamp, not the round's state: a record appended into a round that is still
+// open is swept as soon as its own clock passes the window, exactly like a settled one.
 func TestDreamSweepsAnExpiredMidRoundRecordAndStillClosesTheTurn(t *testing.T) {
 	srv := mockLLMServer(t, turnKeywords)
 	db := newSearchTestDB(t, srv.URL)

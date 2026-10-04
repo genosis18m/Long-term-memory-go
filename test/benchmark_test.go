@@ -46,8 +46,8 @@ func loadLocomoSmoke(tb testing.TB) *locomoFixture {
 	return &fx
 }
 
-// benchTurn runs one host turn the way a host runs it: the read that opens the
-// turn, then the one Update that closes it. Neither names the turn.
+// benchTurn runs one host turn the way a host runs it: the read that opens the turn, then the one
+// Update that closes it.
 func benchTurn(tb testing.TB, db *testsupport.Handle, sceneID, user, agent string, ts int64) {
 	tb.Helper()
 	if _, _, err := db.OpenTurn(sceneID); err != nil {
@@ -58,8 +58,7 @@ func benchTurn(tb testing.TB, db *testsupport.Handle, sceneID, user, agent strin
 	}
 }
 
-// benchSession opens a host session (scene) and returns its id. NewScene is what
-// asks for one: an unnamed read continues the session the domain is already on.
+// benchSession opens a host session (scene) and returns its id.
 func benchSession(tb testing.TB, db *testsupport.Handle) string {
 	tb.Helper()
 	res, err := db.Search(memhop.SearchQuery{NewScene: true})
@@ -69,8 +68,8 @@ func benchSession(tb testing.TB, db *testsupport.Handle) string {
 	return res.Scene.SceneID
 }
 
-// BenchmarkUpdateTurn measures the hot write path: one finished turn costs a
-// single LLM distillation plus a topic, two L4 archives and the cache sync.
+// BenchmarkUpdateTurn measures the hot write path: one finished turn costs a single LLM distillation
+// plus a topic, two L4 archives and the cache sync.
 func BenchmarkUpdateTurn(b *testing.B) {
 	fx := loadLocomoSmoke(b)
 	db := testsupport.OpenMemHopB(b)
@@ -95,8 +94,8 @@ func BenchmarkUpdateTurn(b *testing.B) {
 	}
 }
 
-// BenchmarkSceneRead measures the session read: a cache-only lookup of the
-// scene's depth-1 surface, with no LLM call and no embedding.
+// BenchmarkSceneRead measures the session read: a cache-only lookup of the scene's depth-1 surface,
+// with no LLM call and no embedding.
 func BenchmarkSceneRead(b *testing.B) {
 	fx := loadLocomoSmoke(b)
 	db := testsupport.OpenMemHopB(b)
@@ -127,9 +126,8 @@ func BenchmarkSceneRead(b *testing.B) {
 	}
 }
 
-// BenchmarkDreamConsolidation measures the Dream pipeline after seeding >20
-// related turns in one session: real compression with LLM consolidate,
-// summary archive, fused topic, child sink, L1 rebuild and cache rebuild.
+// BenchmarkDreamConsolidation measures the Dream pipeline after seeding >20 related turns in one
+// session.
 func BenchmarkDreamConsolidation(b *testing.B) {
 	db := testsupport.OpenMemHopB(b)
 	defer db.Close()
@@ -158,9 +156,7 @@ func BenchmarkDreamConsolidation(b *testing.B) {
 	}
 }
 
-// BenchmarkMemoryLoop measures the real host memory loop: one-Update turns
-// in one session with the automatic Dream the engine schedules once the
-// session surface passes the threshold, plus periodic L0/L2 verification.
+// BenchmarkMemoryLoop measures the real host memory loop.
 func BenchmarkMemoryLoop(b *testing.B) {
 	db := testsupport.OpenMemHopB(b)
 	defer db.Close()
@@ -187,9 +183,8 @@ func BenchmarkMemoryLoop(b *testing.B) {
 	prevDepth1 := -1
 	turns := 0
 	for b.Loop() {
-		// Cycle the material by index so the benchmark measures steady state:
-		// the session keeps growing past the threshold and the scheduled Dream
-		// keeps compressing it, as in real use.
+		// Cycle the material by index so the benchmark measures steady state: the session keeps growing past
+		// the threshold and the scheduled Dream keeps compressing it, as in real use.
 		text := related[turns%len(related)]
 		ts := base + int64(turns)*1000
 		benchTurn(b, db, sceneID, text, "好的，记下了。", ts)
@@ -218,8 +213,8 @@ func BenchmarkMemoryLoop(b *testing.B) {
 	b.ReportMetric(float64(checks), "l0l2_checks")
 }
 
-// BenchmarkSceneReadLatency reports the session-read latency distribution
-// (min/p50/p95/max in ms) so stability is visible, not just the mean.
+// BenchmarkSceneReadLatency reports the session-read latency distribution (min/p50/p95/max in ms) so
+// stability is visible, not just the mean.
 func BenchmarkSceneReadLatency(b *testing.B) {
 	db := testsupport.OpenMemHopB(b)
 	defer db.Close()

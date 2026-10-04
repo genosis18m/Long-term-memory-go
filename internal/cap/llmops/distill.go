@@ -1,8 +1,8 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// Distill is the L1→L0 distillation call point — derives the agent's
-// emotional state and MBTI-style profile from L1 associative samples.
+// Distill is the L1→L0 distillation call point — derives the agent's emotional state and MBTI-style
+// profile from L1 associative samples.
 
 package llmops
 
@@ -17,16 +17,15 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/repo/core"
 )
 
-// distillMaxTokens bounds one distill call's output; reasoning models can
-// exhaust it mid-JSON, hence the escalation the transport applies.
+// distillMaxTokens bounds one distill call's output; reasoning models can exhaust it mid-JSON, hence
+// the escalation the transport applies.
 const distillMaxTokens = 2048
 
-// distillPersonalityMaxRunes caps the distilled personality summary so the
-// L0 digest stays compact.
+// distillPersonalityMaxRunes caps the distilled personality summary so the L0 digest stays compact.
 const distillPersonalityMaxRunes = 160
 
-// L1Sample is a distill input assembled from an L1 node and its topics (keywords
-// come from linked L2 topics); the prompt reads every field it carries.
+// L1Sample is a distill input assembled from an L1 node and its topics (keywords come from linked L2
+// topics); the prompt reads every field it carries.
 type L1Sample = core.DistillSample
 
 type EmotionScore = core.EmotionScore
@@ -41,9 +40,7 @@ type DistillOutput struct {
 	PerNode map[uint64]core.NodeEmotion
 }
 
-// systemDistill states the reply contract. The personality budget it quotes is the
-// one the parser enforces, so the model never writes to a length the reply is then
-// cut at.
+// systemDistill states the reply contract.
 var systemDistill = fmt.Sprintf(`You analyze an AI agent's L1 associative memory samples and derive its current emotional state, MBTI-style personality dimensions, and a short personality summary.
 
 Output ONLY a JSON object:
@@ -68,8 +65,8 @@ const distillFormatRetry = `
 
 Output ONLY valid JSON per the schema. No markdown, no code fences, no commentary.`
 
-// Distill derives emotional state, MBTI dimensions and a personality
-// summary from L1 node samples for L0 profile merging.
+// Distill derives emotional state, MBTI dimensions and a personality summary from L1 node samples for
+// L0 profile merging.
 func Distill(ctx context.Context, chat Chat, samples []L1Sample) (*DistillOutput, error) {
 	if len(samples) == 0 {
 		return nil, common.NewError(common.ErrLLM, "distill: no samples")
@@ -100,9 +97,7 @@ func buildDistillPrompt(samples []L1Sample) string {
 	return b.String()
 }
 
-// parseDistillResponse reads one reply against the contract. known is the id set
-// this pass put in front of the model: a row naming anything else is dropped, since
-// only a sampled node has somewhere to backfill into.
+// parseDistillResponse reads one reply against the contract.
 func parseDistillResponse(response string, known map[uint64]struct{}) (*DistillOutput, error) {
 	cleaned := stripCodeBlocks(response)
 	var raw struct {

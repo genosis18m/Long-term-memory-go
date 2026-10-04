@@ -1,22 +1,7 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// Acceptance item 4 from the side the host writes from. A relation arrives as one item's
-// `related` list, so which node carries it is whichever side the host happened to be looking at,
-// and the member titles come out of its loop in whatever order they were gathered. If either of
-// those reached the edge's address, the host would have to canonicalize before importing — a
-// conversion the library owns, because the fact it stores is an unordered set plus a kind. This
-// restates one fact three ways (members in another order, the same fact anchored on another
-// member, and the same fact again after a restart) and checks that what genuinely differs — the
-// kind, and the member set — still gets its own edge, so the dedup is not a filter that happens
-// to match everything.
-//
-// What the batch's known-key set is for is sharper than tidiness: an edge's address is derived
-// from that set, so a restatement without this recognition reaches `CreateEdgeL3` and is refused
-// there as an address already held — the host would read "a domain label or node title may not
-// name another record's id" about a fact it simply stated twice. Recognising it as the same fact
-// is what makes a restatement a no-op instead of an error, which is why `errors` being empty is
-// asserted alongside the edge count.
+// Acceptance item 4 from the side the host writes from.
 
 package test
 
@@ -58,9 +43,8 @@ func TestInterfaceRelationIdentityIgnoresOrderAndAnchor(t *testing.T) {
 		return g
 	}
 
-	// The same fact restated from B, with the members in another order — and, in the same batch,
-	// a relation that really is new. The new one is the control: without it, "no edge added"
-	// would be indistinguishable from B's relations never having been looked at.
+	// The same fact restated from B, with the members in another order — and, in the same batch, a
+	// relation that really is new.
 	res, err = db.ImportL3([]memhop.L3ImportItem{
 		{Title: "B", Domain: "proj", NodeType: "file", Content: "the middle",
 			Related: []memhop.L3Relation{

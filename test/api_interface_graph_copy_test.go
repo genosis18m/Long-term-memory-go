@@ -1,11 +1,8 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// One recruited worker, one file of its own — and with it an empty L3 pool, because the
-// project graph is shared inside a file, not across files. So a host that wants the worker
-// to know the project has to copy the graph, and the question this answers is whether that
-// is doable through the public surface alone: read the parent's graph, rebuild the batch,
-// import it. No private type, no id surgery, no re-derivation of addresses.
+// One recruited worker, one file of its own — and with it an empty L3 pool, because the project graph
+// is shared inside a file, not across files.
 
 package test
 
@@ -19,10 +16,8 @@ import (
 	memhop "github.com/genosis18m/Long-term-memory-go/api"
 )
 
-// copyBatch is the recipe, written once so a host can copy it: one item per node, and every
-// hyperedge hung under its lowest member as that item's relation. A hyperedge is an
-// unordered set, so picking one member as the batch's anchor loses nothing — the stored edge
-// is keyed by the sorted member set plus the kind.
+// copyBatch is the recipe, written once so a host can copy it: one item per node, and every hyperedge
+// hung under its lowest member as that item's relation.
 func copyBatch(g *memhop.L3Graph) []memhop.L3ImportItem {
 	title := map[string]string{}
 	for _, n := range g.Nodes {

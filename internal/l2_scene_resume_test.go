@@ -1,12 +1,8 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// Which conversation a domain resumes after a restart is not a detail: it decides what the
-// next `Search` reads back, writes into, and distils. The counter alone could not answer
-// it — two conversations of the same length tie, and the old tie-break picked the smaller
-// id, so a restart sometimes dropped the host into a stream it had not been using. These
-// cases pin the rule on records written by hand, so nothing depends on clock resolution:
-// recency first, the counter only where nothing was ever stamped, the smaller id last.
+// Which conversation a domain resumes after a restart is not a detail: it decides what the next
+// `Search` reads back, writes into, and distils.
 
 package internal
 

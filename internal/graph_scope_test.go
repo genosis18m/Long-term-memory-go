@@ -12,14 +12,8 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/repo/core"
 )
 
-// A relation names its far side by title, and resolution is scoped to the graph the item's
-// own domain resolved into. That scoping is what makes deleting a project domain survivable:
-// an edge reaching into another graph would leave the surviving graph's subgraph walk naming
-// a record that no longer reads — the one divergence this library answers with a hard ErrIO
-// rather than a skipped row. So this pins three things together: a cross-graph relation is
-// refused per item instead of silently resolving, the graph that asked keeps no edge for it,
-// and after that graph is deleted the file is indistinguishable — across a reopen — from one
-// that never imported it.
+// A relation names its far side by title, and resolution is scoped to the graph the item's own domain
+// resolved into.
 func TestGraphRelationsStayInsideTheirOwnGraph(t *testing.T) {
 	srv := mockLLMServer(t, turnKeywords)
 	dir := t.TempDir()

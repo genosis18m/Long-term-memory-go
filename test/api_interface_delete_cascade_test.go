@@ -1,13 +1,8 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// The two corrections a host makes through L2 — "this turn never happened", "this whole
-// session is wrong" — promise more than dropping a row. `DeleteTopic` is documented as taking
-// the turn's originals *and its plan tree* with it, and as taking a fused group's sunk
-// children along; the internal packages assert both, while the host-facing half of the suite
-// only checked that the listing shrinks. So this measures what a host can actually observe:
-// the file stops carrying those records, and a group nobody summarises any more does not
-// leave its members addressable.
+// The two corrections a host makes through L2 — "this turn never happened", "this whole session is
+// wrong" — promise more than dropping a row.
 
 package test
 
@@ -73,9 +68,7 @@ func TestInterfaceDeleteTopicTakesThePlanTreeToo(t *testing.T) {
 	}
 	_, recordsAfter := counts(t, m)
 
-	// The turn owned four content records (two originals, two step-bound events) and two plan
-	// nodes. A cascade that stopped at the topic record would leave the plan nodes counted
-	// here, still swept by every later Dream pass as though the turn existed.
+	// The turn owned four content records (two originals, two step-bound events) and two plan nodes.
 	if dropped := recordsBefore - recordsAfter; dropped < 6 {
 		t.Fatalf("DeleteTopic reclaimed %d records, want the 4 content records plus the 2 plan nodes", dropped)
 	}
@@ -166,10 +159,8 @@ func counts(tb testing.TB, m *memhop.DB) (int64, int64) {
 	return st.FileBytes, st.RecordCount
 }
 
-// Consolidation gives a scene rows the scene listing no longer names directly: the fused
-// parent, and under it the turns it swallowed. A scene delete is only complete if the whole
-// tree goes — so the check runs on a **compacted copy**, where nothing but live records
-// remains and a surviving row cannot hide behind a tombstone or a cache.
+// Consolidation gives a scene rows the scene listing no longer names directly: the fused parent, and
+// under it the turns it swallowed.
 func TestInterfaceDeleteSceneTakesItsFusedGroupWithIt(t *testing.T) {
 	llm := newMockLLM(t)
 	dir := t.TempDir()

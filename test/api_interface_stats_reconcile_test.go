@@ -12,21 +12,8 @@ import (
 	memhop "github.com/genosis18m/Long-term-memory-go/api"
 )
 
-// `DB.Stats` is the only diagnostic a host has, and the decision it is read for — whether to
-// compact — is a decision about the log, not about the caches. Three things have to hold of a
-// correction, and they are read off three different places:
-//
-//   - the record left the live set, so RecordCount fell;
-//   - the correction reached the file, so FileBytes rose — a delete is an appended tombstone.
-//     This is the only witness that survives a checkpoint: `Close` writes the live index into
-//     the snapshot, so a record that no frame ever marked as gone reopens at exactly the count
-//     the live instance reported, and hides until the day a snapshot fails to load and the log
-//     is rebuilt by scanning it;
-//   - and the reopened count still equals the live one, which is the cache half of the same
-//     promise — what the file says is live is what the next process is handed.
-//
-// Together they are also the sentence the facade carries: the two numbers are not two units
-// of one quantity, and the gap between them is exactly what CompactTo is for.
+// `DB.Stats` is the only diagnostic a host has, and the decision it is read for — whether to compact —
+// is a decision about the log, not about the caches.
 func TestInterfaceDeletedRecordsStayDeletedAcrossReopen(t *testing.T) {
 	cases := []struct {
 		name string
@@ -116,15 +103,7 @@ func TestInterfaceDeletedRecordsStayDeletedAcrossReopen(t *testing.T) {
 	}
 }
 
-// The retention sweep is the other way records leave, and the census cannot witness it the
-// same way: one pass sweeps both layers and writes records in the same breath, so neither a
-// falling count nor a growing file separates the two. What does separate them is the report —
-// those two counters exist because the records they name are gone and no before/after diff can
-// be recomputed afterwards — and what the census still owes is that the file agrees with the
-// live index once the caches are rebuilt.
-//
-// The fixture is the seeded transcript with a one-millisecond window: the two turns own four
-// archives and the one settled step is a node, so both counters have an exact answer.
+// The retention sweep is the other way records leave, and the census cannot witness it the same way.
 func TestInterfaceSweptRecordsStaySweptAcrossReopen(t *testing.T) {
 	llm := newMockLLM(t)
 	path := filepath.Join(t.TempDir(), "swept.meh")
@@ -166,15 +145,14 @@ func TestInterfaceSweptRecordsStaySweptAcrossReopen(t *testing.T) {
 	}
 }
 
-// transcript is what one seeded scene owns: its id and the ids of the turns that closed
-// under it, which are the addresses the delete paths take.
+// transcript is what one seeded scene owns: its id and the ids of the turns that closed under it,
+// which are the addresses the delete paths take.
 type transcript struct {
 	sceneID string
 	topics  []string
 }
 
-// mergedAwayScene reads back the scene the merge case just opened. The host's handle on it is
-// the listing, not a counter it keeps, so the case names the scene that is not the survivor.
+// mergedAwayScene reads back the scene the merge case just opened.
 func mergedAwayScene(tb testing.TB, sess *memhop.Session, survivor string) string {
 	tb.Helper()
 	scenes, err := sess.ListScenes("")
@@ -193,8 +171,8 @@ func mergedAwayScene(tb testing.TB, sess *memhop.Session, survivor string) strin
 	return ""
 }
 
-// seedTranscript opens one scene and closes two turns under it, the second turn carrying a
-// plan step, so every path in these tables has a record of its own to remove.
+// seedTranscript opens one scene and closes two turns under it, the second turn carrying a plan step,
+// so every path in these tables has a record of its own to remove.
 func seedTranscript(tb testing.TB, sess *memhop.Session) transcript {
 	tb.Helper()
 	first, err := sess.Search(memhop.SearchQuery{NewScene: true})
@@ -225,8 +203,8 @@ func seedTranscript(tb testing.TB, sess *memhop.Session) transcript {
 	return s
 }
 
-// census reads the two numbers the facade reports together, because which record is live and
-// how much log it costs are the two halves of every decision about compaction.
+// census reads the two numbers the facade reports together, because which record is live and how much
+// log it costs are the two halves of every decision about compaction.
 func census(m *memhop.DB) (bytes, records int64, err error) {
 	st, err := m.Stats()
 	if err != nil {
@@ -235,9 +213,7 @@ func census(m *memhop.DB) (bytes, records int64, err error) {
 	return st.FileBytes, st.RecordCount, nil
 }
 
-// sweepOnly leaves a pass one stage to run: the trigger is manual and the compress floor is
-// out of reach, so a report counter of zero means the sweep found nothing rather than that
-// something else ate the pass.
+// sweepOnly leaves a pass one stage to run.
 func sweepOnly(d *memhop.MemHopDefaults) {
 	d.SceneDreamTopicThreshold = -1
 	d.DreamCompressMinTopics = 100

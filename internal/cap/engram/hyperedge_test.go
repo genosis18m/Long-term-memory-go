@@ -25,8 +25,8 @@ func tempEngine(t *testing.T) *core.StorageEngine {
 	return eng
 }
 
-// mustCreateTopic writes one depth-1 turn topic under sceneID with the given
-// keywords; hyperedge construction reads exactly that single keyword track.
+// mustCreateTopic writes one depth-1 turn topic under sceneID with the given keywords; hyperedge
+// construction reads exactly that single keyword track.
 func mustCreateTopic(t *testing.T, engine *core.StorageEngine, sceneID uint64, userTS int64, kws []string) {
 	t.Helper()
 	id := core.ComputeTurnTopicID(sceneID, uint64(userTS))
@@ -35,9 +35,8 @@ func mustCreateTopic(t *testing.T, engine *core.StorageEngine, sceneID uint64, u
 	}
 }
 
-// TestBuildHyperedges covers edge creation from keyword-overlap Jaccard,
-// threshold filtering, idempotent re-measurement and weight strengthening over a
-// node whose evidence moved.
+// TestBuildHyperedges covers edge creation from keyword-overlap Jaccard, threshold filtering,
+// idempotent re-measurement and weight strengthening over a node whose evidence moved.
 func TestBuildHyperedges(t *testing.T) {
 	engine := tempEngine(t)
 	sceneA := common.HashID("sceneA")
@@ -111,10 +110,6 @@ func TestBuildHyperedges(t *testing.T) {
 }
 
 // An edge that is there but will not read back is not an edge that is missing.
-// Building a fresh one restarts CreatedAt, which is what the decay clock runs on,
-// and writes the full similarity over a weight that had decayed away from it —
-// the record of how weak that association had become is exactly what the rebuild
-// throws away.
 func TestBuildHyperedgesReportsUnreadableEdge(t *testing.T) {
 	engine := tempEngine(t)
 	sceneA, sceneB := common.HashID("sceneA"), common.HashID("sceneB")
@@ -144,12 +139,8 @@ func TestBuildHyperedgesReportsUnreadableEdge(t *testing.T) {
 	}
 }
 
-// The two scenes' keyword sets are the whole input to an edge's weight, so
-// recomputing them over records that have not moved returns the similarity that edge
-// was created from. Taking that as a strengthening puts the weight back where decay
-// found it, every pass, forever: co-occurrence could not fade unless the scenes'
-// vocabulary changed out from under it. A rise needs one endpoint's evidence to have
-// moved, and the same pass that says so gets the rise.
+// The two scenes' keyword sets are the whole input to an edge's weight, so recomputing them over
+// records that have not moved returns the similarity that edge was created from.
 func TestBuildHyperedgesKeepsADecayedEdgeDecayed(t *testing.T) {
 	engine := tempEngine(t)
 	sceneA, sceneB := common.HashID("sceneA"), common.HashID("sceneB")

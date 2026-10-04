@@ -13,8 +13,8 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/repo/core"
 )
 
-// stageStatus classifies a stage outcome into a report status string:
-// ok / cancelled (context errors) / error.
+// stageStatus classifies a stage outcome into a report status string: ok / cancelled (context errors)
+// / error.
 func stageStatus(err error) string {
 	switch {
 	case err == nil:
@@ -26,16 +26,13 @@ func stageStatus(err error) string {
 	}
 }
 
-// AppendStage records one pipeline phase's outcome and wall time in the
-// report; a non-nil err is classified cancelled-vs-error via context errors.
+// AppendStage records one pipeline phase's outcome and wall time in the report; a non-nil err is
+// classified cancelled-vs-error via context errors.
 func AppendStage(rep *core.DreamReport, name string, start time.Time, err error) {
 	rep.Stages = append(rep.Stages, core.DreamStage{Name: name, Status: stageStatus(err), DurationMs: time.Since(start).Milliseconds()})
 }
 
-// StageCancelled reports one pipeline checkpoint's cancellation. The returned
-// error carries ErrCancelled, because an error code 0 is the code of a pass that
-// finished: a stopped pass that reports no code is indistinguishable from one
-// that succeeded.
+// StageCancelled reports one pipeline checkpoint's cancellation.
 func StageCancelled(ctx context.Context, stage string) error {
 	if err := ctx.Err(); err != nil {
 		return common.NewError(common.ErrCancelled,
@@ -44,8 +41,8 @@ func StageCancelled(ctx context.Context, stage string) error {
 	return nil
 }
 
-// stageOutcome is what a stage both reports and returns: its own error when it
-// failed, else this checkpoint's cancellation.
+// stageOutcome is what a stage both reports and returns: its own error when it failed, else this
+// checkpoint's cancellation.
 func stageOutcome(ctx context.Context, stage string, err error) error {
 	if err != nil {
 		return err

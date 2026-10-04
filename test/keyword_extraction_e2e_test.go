@@ -3,10 +3,8 @@
 
 //go:build integration
 
-// Real-LLM regression tests for the keyword-extraction non-JSON bug
-// (meowagent docs/issues/memhop_search_keywords_nonjson.md): long inputs
-// drift toward natural-language summaries; extraction must self-heal, and the
-// turn write that depends on it must never fail because of it.
+// Real-LLM regression tests for the keyword-extraction non-JSON bug (meowagent
+// docs/issues/memhop_search_keywords_nonjson.md).
 
 package test
 
@@ -22,8 +20,8 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/test/testsupport"
 )
 
-// longSessionText renders one full Locomo session as "speaker: text" lines,
-// mirroring the host's whole-session injection that triggered the bug.
+// longSessionText renders one full Locomo session as "speaker: text" lines, mirroring the host's
+// whole-session injection that triggered the bug.
 func longSessionText(t *testing.T, sessionIdx int) string {
 	t.Helper()
 	items := loadLocomo10(t, 1)
@@ -41,12 +39,8 @@ func longSessionText(t *testing.T, sessionIdx int) string {
 	return string(sb)
 }
 
-// TestExtractKeywordsLongInputRealLLM reproduces the original failure mode:
-// a >2000-char whole-session text handed to the real LLM. Extraction now has
-// no local fallback, so the only acceptable outcome is the model's own keyword
-// track — an error here means the configured model cannot hold the JSON output
-// contract at this input length, which is a configuration problem to surface,
-// not something to paper over with tokenised text.
+// TestExtractKeywordsLongInputRealLLM reproduces the original failure mode: a >2000-char whole-session
+// text handed to the real LLM.
 func TestExtractKeywordsLongInputRealLLM(t *testing.T) {
 	cfg := &internal.MemHopConfig{}
 	if err := testsupport.LoadLLMConfig(cfg); err != nil {
@@ -74,10 +68,7 @@ func TestExtractKeywordsLongInputRealLLM(t *testing.T) {
 	}
 }
 
-// TestUpdateLongTurnSettles runs the write chain (real LLM) with whole-session
-// long inputs. The invariant under test is the strict one: either the turn
-// settles with a real keyword track, or the close fails and settles nothing. A
-// topic written with degraded keywords is the outcome that must never happen.
+// TestUpdateLongTurnSettles runs the write chain (real LLM) with whole-session long inputs.
 func TestUpdateLongTurnSettles(t *testing.T) {
 	db := testsupport.OpenMemHop(t)
 	defer db.Close()
@@ -124,8 +115,8 @@ func TestUpdateLongTurnSettles(t *testing.T) {
 	}
 }
 
-// TestExtractKeywordsLongInput pins the capability contract directly: a long
-// rendered transcript must never surface an error, and must yield keywords.
+// TestExtractKeywordsLongInput pins the capability contract directly: a long rendered transcript must
+// never surface an error, and must yield keywords.
 func TestExtractKeywordsLongInput(t *testing.T) {
 	cfg := &internal.MemHopConfig{}
 	if err := testsupport.LoadLLMConfig(cfg); err != nil {

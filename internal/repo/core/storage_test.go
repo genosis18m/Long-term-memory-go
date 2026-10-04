@@ -14,9 +14,8 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/common"
 )
 
-// helper: temp path for a .meh file
-// liveCount reads the number of live records off the index under the lock the
-// index itself needs: the engine keeps no counter beside it.
+// helper: temp path for a .meh file liveCount reads the number of live records off the index under the
+// lock the index itself needs: the engine keeps no counter beside it.
 func liveCount(e *StorageEngine) uint32 {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
@@ -53,7 +52,7 @@ func TestCreateWriteRead(t *testing.T) {
 	if !bytes.Equal(got, data) {
 		t.Fatalf("data mismatch: %q vs %q", got, data)
 	}
-	// NotFound
+	// NotFound.
 	_, _, err = eng.ReadRecord(DefaultAgentID, 99999)
 	if err == nil {
 		t.Fatal("expected error for missing record")
@@ -113,9 +112,8 @@ func TestCheckpointReopen(t *testing.T) {
 	if string(data) != "checkpoint data" {
 		t.Fatalf("data: %q", data)
 	}
-	// The index came back from the checkpoint's snapshot, not from a full scan:
-	// a snapshot Open cannot read is cleared, leaving the header pointing at
-	// nothing.
+	// The index came back from the checkpoint's snapshot, not from a full scan: a snapshot Open cannot
+	// read is cleared, leaving the header pointing at nothing.
 	if eng2.activeHeaderRef().SnapshotOffset == 0 {
 		t.Fatal("snapshot was not consumed; Open fell back to a full scan")
 	}
@@ -164,7 +162,7 @@ func TestDeleteRecordBatch(t *testing.T) {
 	eng.WriteRecord(DefaultAgentID, RecL2Topic, 3, []byte("third"))
 	eng.WriteRecord(DefaultAgentID, RecL2Scene, 4, []byte("scene"))
 
-	// Mixed existing/missing ids: missing ones are skipped without affecting the result
+	// Mixed existing/missing ids.
 	n, err := eng.DeleteRecordBatch(DefaultAgentID, []uint64{1, 2, 99})
 	if err != nil {
 		t.Fatal(err)
@@ -175,7 +173,7 @@ func TestDeleteRecordBatch(t *testing.T) {
 	if liveCount(eng) != 2 {
 		t.Fatalf("count: %d", liveCount(eng))
 	}
-	// Deleted ones unreadable, remaining ones readable
+	// Deleted ones unreadable, remaining ones readable.
 	for _, id := range []uint64{1, 2} {
 		if _, _, err := eng.ReadRecord(DefaultAgentID, id); err == nil {
 			t.Errorf("record %d should be deleted", id)
@@ -187,7 +185,7 @@ func TestDeleteRecordBatch(t *testing.T) {
 	if _, _, err := eng.ReadRecord(DefaultAgentID, 4); err != nil {
 		t.Error("record 4 should survive")
 	}
-	// All missing returns 0
+	// All missing returns 0.
 	n, err = eng.DeleteRecordBatch(DefaultAgentID, []uint64{99})
 	if err != nil || n != 0 {
 		t.Fatalf("missing-only batch: n=%d err=%v", n, err)
@@ -301,9 +299,8 @@ func TestContainsAndIndex(t *testing.T) {
 	}
 }
 
-// The closed-engine contract: every operation answers with the ErrClosed code
-// — read, write, batch delete, checkpoint, a second Close — and the snapshot
-// iterators yield nothing.
+// The closed-engine contract: every operation answers with the ErrClosed code — read, write, batch
+// delete, checkpoint, a second Close — and the snapshot iterators yield nothing.
 func TestClosedEngineAnswersErrClosed(t *testing.T) {
 	p := tempPath(t, "closed")
 	eng, err := Create(p)

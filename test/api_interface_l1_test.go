@@ -1,12 +1,7 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// Acceptance item 2: the host may read L1, and Dream is the one that writes it. The layer
-// had mechanics tests deep inside the packages but no case on the host's own surface, so
-// nothing said out loud what a host actually sees: an empty listing before the first
-// consolidation, one node per conversation after it, an edge between two conversations that
-// talk about the same thing, and what the node's `topic_ids` promise — a snapshot of the
-// last sync, not a live listing.
+// Acceptance item 2: the host may read L1, and Dream is the one that writes it.
 
 package test
 
@@ -65,15 +60,13 @@ func TestInterfaceDreamBuildsTheAssociationLayer(t *testing.T) {
 	if len(firstNode.TopicIDs) != 2 {
 		t.Fatalf("the node lists %+v, want the two turns its scene settled", firstNode.TopicIDs)
 	}
-	// A node synced minutes ago is at (near) full strength: the counter starts at 1 and the
-	// only thing that moves it is decay, which the same pass already ran once. So the value
-	// is just under 1, and nothing about it says "this trace is fading".
+	// A node synced minutes ago is at (near) full strength: the counter starts at 1 and the only thing
+	// that moves it is decay, which the same pass already ran once.
 	if firstNode.Importance <= 0.99 || firstNode.Importance > 1.0 {
 		t.Fatalf("a just-synced node reports importance %v, want 1 minus one small decay", firstNode.Importance)
 	}
-	// Both conversations settled the same keywords, so Dream should judge them related:
-	// the edge is the whole reason the layer exists, and an id is readable only as "these
-	// two nodes share it".
+	// Both conversations settled the same keywords, so Dream should judge them related: the edge is the
+	// whole reason the layer exists, and an id is readable only as "these two nodes share it".
 	if len(firstNode.EdgeIDs) == 0 {
 		t.Fatalf("the first node names no edge: %+v", firstNode)
 	}
@@ -107,10 +100,7 @@ func TestInterfaceDreamBuildsTheAssociationLayer(t *testing.T) {
 	if len(third) != 2 {
 		t.Fatalf("a second Dream minted extra nodes: %+v", third)
 	}
-	// Delete the last turn that scene had left, and the node goes with it at the next
-	// pass: a scene node is a derivation of the turns it names, so a row naming nothing
-	// is not a fading memory but a ghost the decay and the profile would keep pairing.
-	// The scene itself stays listed — deleting its turns is not deleting the conversation.
+	// Delete the last turn that scene had left, and the node goes with it at the next pass.
 	last := nodeFor(t, third, first).TopicIDs
 	if len(last) != 1 {
 		t.Fatalf("the rebuilt snapshot = %+v, want the one surviving turn", last)
@@ -150,12 +140,8 @@ func nodeFor(t *testing.T, nodes []memhop.SceneNodeView, sceneID string) memhop.
 	return memhop.SceneNodeView{}
 }
 
-// The same layer has to disappear with the memory it was drawn from, and the host only ever
-// sees that through ListL1: DeleteScene drops the scene's node right away, and MergeScenes
-// drops the swallowed scene's node while the surviving scene keeps its own name, its anchor
-// and the turns it gained. What a merge or a delete does NOT do is lose a label the host
-// wrote: a named turn comes back named through a consolidation pass, because those rewrites
-// move the tree around the name rather than over it.
+// The same layer has to disappear with the memory it was drawn from, and the host only ever sees that
+// through ListL1.
 func TestInterfaceMemoryDeletionTakesItsNodeWithIt(t *testing.T) {
 	llm := newMockLLM(t)
 	db := newTestDB(t, openMockDB(t, filepath.Join(t.TempDir(), "l1_delete.meh"), llm.srv.URL,
@@ -205,9 +191,7 @@ func TestInterfaceMemoryDeletionTakesItsNodeWithIt(t *testing.T) {
 	if _, err := db.RenameTopic(firstTopic, "帧格式那一轮"); err != nil {
 		t.Fatalf("RenameTopic: %v", err)
 	}
-	// Snapshot every label the host wrote before anything rewrites these records: the
-	// claim is that a pass which sinks a turn into a fused group rewrites around the name,
-	// so it compares the whole transcript row by row rather than following one label.
+	// Snapshot every label the host wrote before anything rewrites these records.
 	before := topicNames(t, db, primary, secondary)
 	rep, err := db.Dream(context.Background(), "")
 	if err != nil {
@@ -253,8 +237,8 @@ func TestInterfaceMemoryDeletionTakesItsNodeWithIt(t *testing.T) {
 	}
 }
 
-// topicNames snapshots a scene's transcript as topic id → the label its host wrote
-// (empty where nobody named that turn).
+// topicNames snapshots a scene's transcript as topic id → the label its host wrote (empty where nobody
+// named that turn).
 func topicNames(tb testing.TB, db *testDB, sceneIDs ...string) map[string]string {
 	tb.Helper()
 	out := map[string]string{}
@@ -270,8 +254,8 @@ func topicNames(tb testing.TB, db *testDB, sceneIDs ...string) map[string]string
 	return out
 }
 
-// sameLabels reports every row both snapshots list under a different label — the shape of
-// a rewrite that went over a host's name instead of around it.
+// sameLabels reports every row both snapshots list under a different label — the shape of a rewrite
+// that went over a host's name instead of around it.
 func sameLabels(tb testing.TB, before, after map[string]string, stage string) {
 	tb.Helper()
 	for id, name := range before {

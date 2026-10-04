@@ -2,12 +2,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 // TimeoutSecs exists for one endpoint shape: a server that takes the connection and is slower to
-// answer than the caller can wait. Nothing is recoverable from that, and a domain's lock is held
-// for as long as its request is outstanding — which is why an unfilled window is refused rather
-// than defaulted to "none". A number only protects its caller if it bites, so this measures the
-// bite: the caller comes back inside the window it named, once (a slow endpoint is not a 429 or a
-// 5xx, so the backoff loop has no business repeating the same wait), and the answer says the
-// endpoint failed rather than that the caller gave up.
+// answer than the caller can wait.
 
 package llm
 
@@ -25,9 +20,7 @@ import (
 )
 
 func TestSlowEndpointIsAbandonedInsideItsOwnWindow(t *testing.T) {
-	// The endpoint answers after twice the window the caller named. Attempts are counted so a
-	// client that repeated the wait cannot pass by luck: one window returns in about a second,
-	// three of them plus the 500ms and 2s backoff cannot, and no runner is three times slower.
+	// The endpoint answers after twice the window the caller named.
 	var attempts atomic.Int32
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !strings.HasSuffix(r.URL.Path, "/chat/completions") {
@@ -36,9 +29,8 @@ func TestSlowEndpointIsAbandonedInsideItsOwnWindow(t *testing.T) {
 		}
 		attempts.Add(1)
 		time.Sleep(2 * time.Second)
-		// A reply that would have been usable had it arrived in time: with no window, this call
-		// returns content instead of an error, which is the outcome the first assertion below
-		// refuses. Making it invalid would let a client that never timed out pass on a parse error.
+		// A reply that would have been usable had it arrived in time: with no window, this call returns
+		// content instead of an error, which is the outcome the first assertion below refuses.
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{"choices":[{"finish_reason":"stop","message":{"role":"assistant","content":"{\"keywords\":[\"late\"]}"}}]}`))
 	}))

@@ -1,17 +1,7 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// The documented host loop, run end to end inside this repository alone: open a file, read a
-// round into the prompt, plan the round step by step, record what each step did against that
-// step, close the round, spawn a second domain in the middle of it all, and run a second
-// round. Item 11 of the host's list is a flow rather than a method, and until now no single
-// case here ran it: the corpus case never touches the plan face, the plan cases never close a
-// turn, and the cross-repo check for this sequence lives outside the repository — so a clone
-// had no way to see whether the pieces fit together without building two other projects.
-//
-// Everything asserted below is read the way a host reads it: hex ids used as the keys they
-// are, enum values compared to the constants they print, and a prompt rendered from the
-// returned shapes with no translation layer in between.
+// The documented host loop, run end to end inside this repository alone.
 
 package test
 
@@ -25,8 +15,8 @@ import (
 	memhop "github.com/genosis18m/Long-term-memory-go/api"
 )
 
-// renderPlan is the whole of what a host needs to turn a PlanTree into prompt text: no ids to
-// resolve, no status words to map, no numbers to cast.
+// renderPlan is the whole of what a host needs to turn a PlanTree into prompt text: no ids to resolve,
+// no status words to map, no numbers to cast.
 func renderPlan(t *testing.T, tree memhop.PlanTree) string {
 	t.Helper()
 	var b strings.Builder
@@ -54,7 +44,6 @@ func TestInterfaceRoundFlowRunsEndToEnd(t *testing.T) {
 		t.Fatalf("Primary: %v", err)
 	}
 
-	// --- round 1: read, plan, record against the plan, close ---
 	first, err := primary.Search(memhop.SearchQuery{NewScene: true})
 	if err != nil {
 		t.Fatalf("Search: %v", err)
@@ -123,7 +112,6 @@ func TestInterfaceRoundFlowRunsEndToEnd(t *testing.T) {
 		t.Fatalf("the event came back without the attribution it was written with: %+v", events[0])
 	}
 
-	// --- a second domain, opened in the middle of the loop, keeps its own memory ---
 	worker, err := m.SubAgent(testLLM(llm.srv.URL), memhop.ProfileInput{Name: "worker", Role: "帮手"})
 	if err != nil {
 		t.Fatalf("SubAgent: %v", err)
@@ -146,7 +134,6 @@ func TestInterfaceRoundFlowRunsEndToEnd(t *testing.T) {
 		t.Fatalf("Agents() = %+v err %v, want the file's two domains", roster, err)
 	}
 
-	// --- round 2 on the primary: a fresh tree, the same scene, the earlier round behind it ---
 	second, err := primary.Search(memhop.SearchQuery{})
 	if err != nil {
 		t.Fatalf("second Search: %v", err)

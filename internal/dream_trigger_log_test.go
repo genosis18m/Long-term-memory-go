@@ -15,11 +15,8 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/repo/core"
 )
 
-// A pass scheduled by a round close can lose the race with the host handing the file back, and the
-// two answers that mean "the host stopped asking" are ErrClosed and ErrCancelled. Warning about
-// those would put a line in every clean exit — and a warning that appears on every exit is a
-// warning nobody reads. A failure the pipeline actually hit still has to reach the log, so this
-// pins both halves: the silent ones and the loud one.
+// A pass scheduled by a round close can lose the race with the host handing the file back, and the two
+// answers that mean "the host stopped asking" are ErrClosed and ErrCancelled.
 func TestScheduledPassLogsOnlyRealFailures(t *testing.T) {
 	srv := slowLLMServer(t, 0, `{"keywords":[]}`)
 
@@ -34,9 +31,8 @@ func TestScheduledPassLogsOnlyRealFailures(t *testing.T) {
 		if err := db.Close(); err != nil {
 			t.Fatal(err)
 		}
-		// The premise of the quiet arm: a pass over a closed database answers with one of the two
-		// codes that mean "the host stopped asking". Without this, silence could just as well mean
-		// the goroutine took some third path this test never intended to cover.
+		// The premise of the quiet arm: a pass over a closed database answers with one of the two codes that
+		// mean "the host stopped asking".
 		_, err = db.RunDream(ac.OpCtx, core.DefaultAgentID, sceneID)
 		if code := common.CodeOf(err); code != common.ErrClosed && code != common.ErrCancelled {
 			t.Fatalf("a pass over a closed database answers %v (code %d), want ErrClosed or ErrCancelled",
@@ -93,8 +89,8 @@ func captureWarnings(t *testing.T) func() string {
 	}
 }
 
-// writer guards the buffer: the logging goroutine and the test are different goroutines, and the
-// wait below orders them only for the record, not for the race detector.
+// writer guards the buffer: the logging goroutine and the test are different goroutines, and the wait
+// below orders them only for the record, not for the race detector.
 type writer struct {
 	mu  *sync.Mutex
 	buf *bytes.Buffer
@@ -106,9 +102,7 @@ func (w *writer) Write(p []byte) (int, error) {
 	return w.buf.Write(p)
 }
 
-// waitForPass blocks until the scheduled pass for one scene leaves the in-flight set. That set is
-// the trigger's own bookkeeping, cleared after the log line is written, so it is what lets this
-// test read the buffer without racing the goroutine.
+// waitForPass blocks until the scheduled pass for one scene leaves the in-flight set.
 func waitForPass(t *testing.T, ac *domain.Context, sceneID uint64) {
 	t.Helper()
 	deadline := time.Now().Add(3 * time.Second)

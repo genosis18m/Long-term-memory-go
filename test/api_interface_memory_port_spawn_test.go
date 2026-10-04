@@ -1,14 +1,8 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// The other half of the deployment the host actually builds: one process, several agents, each
-// behind the same two-method port from `api_interface_memory_port_test.go` — some sharing one
-// file as separate domains, one spawned per task with a file of its own. This is where an
-// integrator learns the rules that are invisible from a single-session adapter: a sub-agent is
-// a domain, not a database, so its rounds never appear in the parent's recall and the other way
-// round; a `.meh` is opened by one instance at a time, so reading what a finished worker left
-// behind means reopening its file rather than holding two handles; and everything a fresh
-// adapter needs is in the file, because the adapter was never given an id to keep.
+// The other half of the deployment the host actually builds: one process, several agents, each behind
+// the same two-method port from `api_interface_memory_port_test.go`.
 
 package test
 
@@ -74,9 +68,7 @@ func TestInterfaceMemoryPortServesSeveralAgentsOnOneFileAndOneFileEach(t *testin
 			strings.Count(rows, "round:"), rows)
 	}
 
-	// A second instance cannot be opened against a file some handle already holds: the exclusive
-	// lock is what makes one file one memory, and it is the reason a host keys memories by path
-	// across files and by id only inside one.
+	// A second instance cannot be opened against a file some handle already holds.
 	if peeker, err := memhop.Open(workerPath, testLLM(llm.srv.URL), memhop.MemHopDefaults{},
 		&memhop.ProfileInput{Name: "peeker"}); err == nil {
 		_ = peeker.Close()

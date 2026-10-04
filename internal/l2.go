@@ -1,9 +1,8 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// L2 scene big methods of the composition root: list / metadata patch /
-// topic naming / merge / delete and the deep scene-context read. The scene
-// steps live in internal/scene.
+// L2 scene big methods of the composition root: list / metadata patch / topic naming / merge / delete
+// and the deep scene-context read.
 
 package internal
 
@@ -17,8 +16,8 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/scene"
 )
 
-// ListScenes returns the domain's scenes, optionally filtered by their L3
-// project-domain anchor: an empty l3ID lists every scene.
+// ListScenes returns the domain's scenes, optionally filtered by their L3 project-domain anchor: an
+// empty l3ID lists every scene.
 func (db *DB) ListScenes(agentID uint64, l3ID string) ([]core.SceneSlot, error) {
 	ac, err := db.lockAgent(agentID)
 	if err != nil {
@@ -48,12 +47,8 @@ func (db *DB) ListScenes(agentID uint64, l3ID string) ([]core.SceneSlot, error) 
 	return out, nil
 }
 
-// UpdateScene corrects a scene's host-facing metadata in one write and returns
-// the scene as stored afterwards: a non-nil Name renames it, a non-nil L3ID
-// anchors it, and an empty L3ID clears the anchor. nil fields keep their stored
-// value, so the library's own "session:<id>" naming and the turn history are
-// never touched by accident. Anchoring is write-once: moving a scene that
-// already has a *different* domain over needs Force, while clearing always does.
+// UpdateScene corrects a scene's host-facing metadata in one write and returns the scene as stored
+// afterwards.
 func (db *DB) UpdateScene(agentID uint64, sceneID string, patch ScenePatch) (core.SceneSlot, error) {
 	ac, err := db.lockAgent(agentID)
 	if err != nil {
@@ -88,9 +83,7 @@ func (db *DB) UpdateScene(agentID uint64, sceneID string, patch ScenePatch) (cor
 		slot.SceneName = *patch.Name
 	}
 	if patch.L3ID != nil {
-		// Only replacing one anchor with another is destructive enough to
-		// need Force: the old value is lost. Clearing is reversible (the
-		// scene is unanchored and can take any domain again), so it does not.
+		// Only replacing one anchor with another is destructive enough to need Force: the old value is lost.
 		if l3Hash != 0 && slot.L3ID != 0 && slot.L3ID != l3Hash && !patch.Force {
 			return core.SceneSlot{}, common.NewError(common.ErrInvalidQuery,
 				fmt.Sprintf("scene %s is anchored to %s; pass Force to re-anchor", sceneID, common.FormatHash(slot.L3ID)))
@@ -98,10 +91,8 @@ func (db *DB) UpdateScene(agentID uint64, sceneID string, patch ScenePatch) (cor
 		slot.L3ID = l3Hash
 	}
 	if *slot == stored {
-		// The patch carried nothing this record does not already hold — an empty
-		// patch is exactly what a host sends to confirm a scene and its anchor
-		// without listing the domain. Appending the identical record would charge
-		// that read by the byte, and a retried write would grow the file per retry.
+		// The patch carried nothing this record does not already hold — an empty patch is exactly what a host
+		// sends to confirm a scene and its anchor without listing the domain.
 		return stored, nil
 	}
 	if err := core.WriteSceneSlot(db.engine, agentID, sceneHash, slot); err != nil {
@@ -110,11 +101,7 @@ func (db *DB) UpdateScene(agentID uint64, sceneID string, patch ScenePatch) (cor
 	return *slot, nil
 }
 
-// RenameTopic gives one topic the name its host chose and returns the topic as
-// stored afterwards. An empty name is refused: a topic is created unnamed, so
-// "" is the absence of a name rather than one. The keyword track and the tree
-// links survive untouched. A topic that is not there is ErrNotFound — nothing
-// is created for it.
+// RenameTopic gives one topic the name its host chose and returns the topic as stored afterwards.
 func (db *DB) RenameTopic(agentID uint64, topicID, name string) (core.TopicSlot, error) {
 	if name == "" {
 		return core.TopicSlot{}, common.NewError(common.ErrInvalidQuery, "topic name is required")
@@ -132,15 +119,14 @@ func (db *DB) RenameTopic(agentID uint64, topicID, name string) (core.TopicSlot,
 	if err != nil {
 		return core.TopicSlot{}, err
 	}
-	// The scene read serves this topic out of the cache, so the record write
-	// has to be mirrored here or the new name stays invisible until the next
-	// consolidation rebuilds the index.
+	// The scene read serves this topic out of the cache, so the record write has to be mirrored here or
+	// the new name stays invisible until the next consolidation rebuilds the index.
 	ac.SyncL2Meta(slot)
 	return *slot, nil
 }
 
-// MergeScenes rewrites all topics of secondary scenes to the primary scene
-// and deletes the secondary records.
+// MergeScenes rewrites all topics of secondary scenes to the primary scene and deletes the secondary
+// records.
 func (db *DB) MergeScenes(agentID uint64, primaryID string, secondaryIDs []string) error {
 	ac, err := db.lockAgent(agentID)
 	if err != nil {
@@ -162,32 +148,21 @@ func (db *DB) MergeScenes(agentID uint64, primaryID string, secondaryIDs []strin
 		return common.NewError(common.ErrInvalidQuery, "primary scene id must not be a secondary", nil)
 	}
 	if len(common.ToSet(hashes)) != len(hashes) {
-		// A merge is destructive and this list is its input: a repeated id says the caller
-		// lost track of which scenes it meant, which is exactly when retargeting and
-		// tombstoning the same topic twice stops being harmless bookkeeping.
+		// A merge is destructive and this list is its input.
 		return common.NewError(common.ErrInvalidQuery, "a secondary scene id is listed twice", nil)
 	}
 	// A merge destroys records, so every id it names must still be a scene.
-	// Naming one the host no longer holds is a mistake to report, not a fold to
-	// pretend succeeded: the batch delete below keys on these ids, so a stale
-	// one can otherwise take the primary's own record with it.
 	if err := db.requireScenes(agentID, append([]uint64{primaryHash}, hashes...)...); err != nil {
 		return err
 	}
-	// An anchor is a membership rather than a label: the merged conversation still belongs
-	// to whichever project domain one of these scenes was anchored to. Decided before any
-	// record is destroyed, because a merge that drops an anchor silently removes a
-	// conversation from the project listing the host reads it out of — and an absent claim
-	// on the survivor is not a competing one. Where the survivor already names a domain,
-	// that claim stands: choosing the survivor was the host's decision.
+	// An anchor is a membership rather than a label: the merged conversation still belongs to whichever
+	// project domain one of these scenes was anchored to.
 	anchor, err := mergedAnchor(db.engine, agentID, primaryHash, hashes)
 	if err != nil {
 		return err
 	}
-	// A merged scene's L1 node goes with it: the merge retargets its topics to the
-	// primary, and nothing names the secondary's node again — the rebuild calls a
-	// node stale by its own topics, which still read back here. It goes first so a
-	// refused merge leaves a scene that still exists to have its node rebuilt.
+	// A merged scene's L1 node goes with it: the merge retargets its topics to the primary, and nothing
+	// names the secondary's node again.
 	for _, secondary := range hashes {
 		if err := repo.DeleteSceneNodeL1(db.engine, agentID, secondary); err != nil {
 			return err
@@ -206,10 +181,8 @@ func (db *DB) MergeScenes(agentID uint64, primaryID string, secondaryIDs []strin
 			return err
 		}
 	}
-	// Mirror the scene retarget in the L2MetaIndex so cached topics match the
-	// merged records (storage write already done), and move the domain's own memory
-	// of which scene it is on: a host that never names a scene would otherwise be
-	// left resuming one the merge just destroyed.
+	// Mirror the scene retarget in the L2MetaIndex so cached topics match the merged records (storage
+	// write already done), and move the domain's own memory of which scene it is on.
 	ac.RetargetL2Meta(primaryHash, common.ToSet(hashes))
 	for _, secondary := range hashes {
 		ac.MoveScene(secondary, primaryHash)
@@ -217,9 +190,8 @@ func (db *DB) MergeScenes(agentID uint64, primaryID string, secondaryIDs []strin
 	return nil
 }
 
-// mergedAnchor decides which L3 domain the surviving scene belongs to once the others are
-// folded into it: 0 means "leave the survivor's claim alone", a non-zero id means "write this
-// one", and an error means the call cannot be answered without the host saying more.
+// mergedAnchor decides which L3 domain the surviving scene belongs to once the others are folded into
+// it.
 func mergedAnchor(engine *core.StorageEngine, agentID, primary uint64, secondaries []uint64) (uint64, error) {
 	survivor, err := core.ReadSceneSlot(engine, agentID, primary)
 	if err != nil {
@@ -258,9 +230,8 @@ func mergedAnchor(engine *core.StorageEngine, agentID, primary uint64, secondari
 	}
 }
 
-// requireScenes resolves every named id against the scene records and reports
-// the first that is not one. A read failure is returned as it stands: "cannot
-// read" is not "no such scene".
+// requireScenes resolves every named id against the scene records and reports the first that is not
+// one.
 func (db *DB) requireScenes(agentID uint64, ids ...uint64) error {
 	scenes, err := repo.ListScenesL2(db.engine, agentID, ids)
 	if err != nil {
@@ -278,16 +249,8 @@ func (db *DB) requireScenes(agentID uint64, ids ...uint64) error {
 	return nil
 }
 
-// SceneContext returns one scene's transcript — topics with depth <= 2 in user
-// timestamp order plus their L4 messages — and writes nothing. The depth is
-// deliberate: a fused group's originals live on the children Dream sank, so
-// stopping at depth 1 (what Search returns) would hide them. Unknown scenes
-// return an error. An empty sceneID reads the scene this domain is working, so a
-// host that runs one agent over one library reads a conversation without holding
-// or naming anything; a domain with no scene yet answers with an empty transcript and no
-// scene named — "nothing has been said here yet" is a fact, not a failure. Minting a scene
-// is still what opening a turn does, and a scene id the host names that is not there stays
-// ErrNotFound.
+// SceneContext returns one scene's transcript — topics with depth <= 2 in user timestamp order plus
+// their L4 messages — and writes nothing.
 func (db *DB) SceneContext(agentID uint64, sceneID string) (*SceneContext, error) {
 	ac, err := db.lockAgent(agentID)
 	if err != nil {
@@ -330,10 +293,7 @@ func (db *DB) SceneContext(agentID uint64, sceneID string) (*SceneContext, error
 	return out, nil
 }
 
-// DeleteTopic removes a topic and its whole subtree (children at any
-// depth), the L4 archives and plan trees they own, and their L2Meta cache
-// entries, so the deleted topic no longer surfaces in any scene read. Deleting
-// a missing topic returns ErrNotFound.
+// DeleteTopic removes a topic and its whole subtree (children at any depth), the L4 archives and plan.
 func (db *DB) DeleteTopic(agentID uint64, topicID string) error {
 	ac, err := db.lockAgent(agentID)
 	if err != nil {
@@ -362,9 +322,7 @@ func (db *DB) DeleteTopic(agentID uint64, topicID string) error {
 	return nil
 }
 
-// DeleteScene removes a scene: its scene record, every topic (all depths),
-// the L4 archives and plan trees those topics own, and their L2Meta cache
-// entries, so the scene disappears from listings and reads.
+// DeleteScene removes a scene.
 func (db *DB) DeleteScene(agentID uint64, sceneID string) error {
 	ac, err := db.lockAgent(agentID)
 	if err != nil {
@@ -387,9 +345,7 @@ func (db *DB) DeleteScene(agentID uint64, sceneID string) error {
 	if err := scene.DeleteCascade(ac, agentID, []uint64{sceneHash}, topics); err != nil {
 		return err
 	}
-	// Drop the L1 scene node right away (its ID is derivable without an
-	// index). The hyperedges still naming it are dropped by the next Dream's decay
-	// pass, which prunes any edge member the domain no longer holds.
+	// Drop the L1 scene node right away (its ID is derivable without an index).
 	if err := repo.DeleteSceneNodeL1(db.engine, agentID, sceneHash); err != nil {
 		return err
 	}

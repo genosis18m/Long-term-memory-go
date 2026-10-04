@@ -134,11 +134,7 @@ func TestImportL3SkipExisting(t *testing.T) {
 	}
 }
 
-// A graph's UpdatedAt is its change clock. It moves for each kind of write a
-// batch can land on the graph — a node created, a node restated, an edge added —
-// and stays put for a batch that only read it. Each case rewinds the stored stamp
-// rather than sleeping, because the clock is millisecond-resolution and two
-// imports can easily fall inside one.
+// A graph's UpdatedAt is its change clock.
 func TestImportL3StampsGraphClock(t *testing.T) {
 	db := newL3TestDB(t)
 	rewind := func(t *testing.T, hexID string, to int64) {
@@ -231,9 +227,8 @@ func TestImportL3RejectsUnknownMode(t *testing.T) {
 	if err == nil || common.CodeOf(err) != common.ErrInvalidQuery {
 		t.Fatalf("expected ErrInvalidQuery, got %v", err)
 	}
-	// A host follows the words inside a refusal, so they have to be the words the type
-	// accepts — and the value it was given has to be there too, or three candidates are
-	// a guess instead of an answer.
+	// A host follows the words inside a refusal, so they have to be the words the type accepts — and the
+	// value it was given has to be there too, or three candidates are a guess instead of an answer.
 	for _, name := range []string{string(L3ImportSkip), string(L3ImportMerge), string(L3ImportOverwrite)} {
 		if !strings.Contains(err.Error(), name) {
 			t.Fatalf("the refusal does not name the mode %q: %v", name, err)
@@ -266,9 +261,7 @@ func TestImportL3SourceRef(t *testing.T) {
 	}
 }
 
-// TestImportL3Relations: Related entries become graph hyperedges regardless
-// of item order (a relation may target a later item), and re-importing the
-// same batch does not duplicate edges (deterministic edge ids).
+// TestImportL3Relations.
 func TestImportL3Relations(t *testing.T) {
 	db := newL3TestDB(t)
 	items := []L3ImportItem{
@@ -299,8 +292,8 @@ func TestImportL3Relations(t *testing.T) {
 	}
 }
 
-// TestImportL3RelationErrors: unresolvable, self-referencing and invalid-kind
-// relations are reported per entry while the node itself still imports.
+// TestImportL3RelationErrors: unresolvable, self-referencing and invalid-kind relations are reported
+// per entry while the node itself still imports.
 func TestImportL3RelationErrors(t *testing.T) {
 	db := newL3TestDB(t)
 	items := []L3ImportItem{{
@@ -330,10 +323,8 @@ func TestImportL3RelationErrors(t *testing.T) {
 	}
 }
 
-// A node pair can carry several kinds of relation at once — "a related to b"
-// and "a part of b" are two facts. An edge id built from the pair alone lets
-// the second write overwrite the first, and the pair ends up with whichever
-// kind landed last.
+// A node pair can carry several kinds of relation at once — "a related to b" and "a part of b" are two
+// facts.
 func TestImportL3KeepsDistinctEdgeKindsOnOnePair(t *testing.T) {
 	db := newL3TestDB(t)
 	items := []L3ImportItem{
@@ -373,8 +364,6 @@ func TestImportL3KeepsDistinctEdgeKindsOnOnePair(t *testing.T) {
 }
 
 // Edges written before the kind joined the edge id keep their pair-only hash.
-// A re-import must recognise them by (graph, sorted pair, kind) instead of
-// landing a second edge that says the same thing.
 func TestImportL3DedupesPairHashedLegacyEdge(t *testing.T) {
 	db := newL3TestDB(t)
 	items := []L3ImportItem{
@@ -410,8 +399,8 @@ func TestImportL3DedupesPairHashedLegacyEdge(t *testing.T) {
 	}
 }
 
-// An id names one record: pointing UpdateL3/DeleteL3 at a node must report
-// "graph not found", not rename the node's record into a graph slot.
+// An id names one record: pointing UpdateL3/DeleteL3 at a node must report "graph not found", not
+// rename the node's record into a graph slot.
 func TestL3GraphWritesRejectNodeID(t *testing.T) {
 	db := newL3TestDB(t)
 	items := []L3ImportItem{{Title: "a", Domain: "p", Content: "a"}}
@@ -433,10 +422,8 @@ func TestL3GraphWritesRejectNodeID(t *testing.T) {
 	}
 }
 
-// TestImportL3NaryHyperedge verifies one relation naming several targets lands
-// as a single edge over the whole member set — the fact the storage layer is
-// shaped for: the edge id hashes the member set, and a BFS from any one member
-// reaches every other over that single edge rather than over a fan of pairs.
+// TestImportL3NaryHyperedge verifies one relation naming several targets lands as a single edge over
+// the whole member set.
 func TestImportL3NaryHyperedge(t *testing.T) {
 	db := newL3TestDB(t)
 	items := []L3ImportItem{
@@ -487,8 +474,8 @@ func TestImportL3NaryHyperedge(t *testing.T) {
 	}
 }
 
-// TestImportL3RelationMemberErrors verifies the arities and member sets a
-// relation may not name are each reported rather than quietly dropped.
+// TestImportL3RelationMemberErrors verifies the arities and member sets a relation may not name are
+// each reported rather than quietly dropped.
 func TestImportL3RelationMemberErrors(t *testing.T) {
 	db := newL3TestDB(t)
 	items := []L3ImportItem{{
@@ -512,7 +499,7 @@ func TestImportL3RelationMemberErrors(t *testing.T) {
 	if res.EdgesCreated != 0 {
 		t.Fatalf("a malformed member set must create no edge, got %d", res.EdgesCreated)
 	}
-	// a valid n-ary relation among them still lands
+	// a valid n-ary relation among them still lands.
 	res2, err := db.ImportL3(core.DefaultAgentID, []L3ImportItem{{
 		Title: "a", Domain: "p", Content: "a",
 		Related: []L3Relation{{Titles: []string{"c"}, Kind: GraphEdgeKind(EdgeRelated)}},
@@ -533,8 +520,6 @@ func nodeIDOf(g *L3Graph, title string) uint64 {
 	}
 	return 0
 }
-
-// ---- graph identity and the L3 -> L2 anchor direction ----
 
 // importOne seeds a one-node graph under domain and returns its id hash.
 func importOne(t *testing.T, db *DB, domain, title string) uint64 {
@@ -565,11 +550,8 @@ func mustAnchor(t *testing.T, engine *core.StorageEngine, sceneID, l3ID uint64) 
 	}
 }
 
-// TestUpdateL3RejectsNameCollision pins the invariant the import router relies
-// on: a domain label addresses exactly one graph. A rename onto a taken label
-// would leave two slots with the same Name, and the batch cache that maps
-// name -> id then resolves the domain to whichever slot the record scan happens
-// to visit last.
+// TestUpdateL3RejectsNameCollision pins the invariant the import router relies on: a domain label
+// addresses exactly one graph.
 func TestUpdateL3RejectsNameCollision(t *testing.T) {
 	db := newL3TestDB(t)
 	alpha := importOne(t, db, "alpha", "a1")
@@ -586,10 +568,8 @@ func TestUpdateL3RejectsNameCollision(t *testing.T) {
 	if g.Slot.Name != "alpha" {
 		t.Fatalf("refused rename changed the name to %q", g.Slot.Name)
 	}
-	// Renaming onto the label the graph already carries succeeds and writes nothing:
-	// the slot clock means "this graph's content changed", so a call that changed
-	// nothing leaves it exactly where it was. That is also what makes a replayed
-	// rename converge instead of making an untouched graph look freshly edited.
+	// Renaming onto the label the graph already carries succeeds and writes nothing: the slot clock means
+	// "this graph's content changed", so a call that changed nothing leaves it exactly where it was.
 	same, err := db.UpdateL3(core.DefaultAgentID, common.FormatHash(alpha), "alpha")
 	if err != nil {
 		t.Fatalf("rename onto the label it carries: %v", err)
@@ -620,10 +600,8 @@ func TestUpdateL3RejectsNameCollision(t *testing.T) {
 	}
 }
 
-// TestImportL3NameCollisionRoutesByDerivation keeps the read path total for a
-// file that already carries two slots under one label (written before the
-// rename check existed): the domain resolves to the graph its id derives from,
-// deterministically, instead of to whichever slot the record scan visits last.
+// TestImportL3NameCollisionRoutesByDerivation keeps the read path total for a file that already
+// carries two slots under one label (written before the rename check existed).
 func TestImportL3NameCollisionRoutesByDerivation(t *testing.T) {
 	db := newL3TestDB(t)
 	alpha := importOne(t, db, "alpha", "a1")
@@ -662,12 +640,7 @@ func TestImportL3NameCollisionRoutesByDerivation(t *testing.T) {
 	}
 }
 
-// A graph slot the pool cannot decode is not a label the pool has free. The
-// import batch seeded its label → graph map from a scan that stepped over what it
-// could not read, so importing that slot's label answered "no such graph" and
-// wrote a second slot under the same name — the domain's nodes then live under two
-// ids, and the graph the host named first keeps what it held, unreachable by
-// label. The refusal also names the record, because nothing else in the engine can.
+// A graph slot the pool cannot decode is not a label the pool has free.
 func TestImportL3RefusesUnreadableGraphSlot(t *testing.T) {
 	db := newL3TestDB(t)
 	alpha := importOne(t, db, "alpha", "a1")
@@ -697,12 +670,7 @@ func TestImportL3RefusesUnreadableGraphSlot(t *testing.T) {
 	}
 }
 
-// A node the pool cannot decode is not a title the graph is missing. The batch
-// loaded its per-graph title set from a listing that stepped over unreadable
-// records, so a Merge import answered "create it" — which lands on the same
-// positional id and rewrites the very record it could not read, while the report
-// counted that under CreatedIDs as something new. The membership index is built
-// once up front now, so the whole batch refuses and nothing is written.
+// A node the pool cannot decode is not a title the graph is missing.
 func TestImportL3RefusesUnreadableNode(t *testing.T) {
 	db := newL3TestDB(t)
 	graph := importOne(t, db, "alpha", "a1")
@@ -729,10 +697,7 @@ func TestImportL3RefusesUnreadableNode(t *testing.T) {
 	}
 }
 
-// TestDeleteL3ClearsSceneAnchors keeps the anchor invariant whole in both
-// directions: writing an anchor is refused when the graph does not exist, so
-// deleting the graph has to drop the anchors that named it — otherwise
-// ListScenes(l3ID) lists sessions under a project domain nothing can resolve.
+// TestDeleteL3ClearsSceneAnchors keeps the anchor invariant whole in both directions.
 func TestDeleteL3ClearsSceneAnchors(t *testing.T) {
 	db := newL3TestDB(t)
 	gone := importOne(t, db, "proj", "p1")
@@ -774,9 +739,8 @@ func TestDeleteL3ClearsSceneAnchors(t *testing.T) {
 	}
 }
 
-// Every L3 read is assembled from a hash-map scan of the shared pool, so without
-// a sort one host would see the same graph in a different order on each call —
-// and a capped node query would fall on an arbitrary subset of it.
+// Every L3 read is assembled from a hash-map scan of the shared pool, so without a sort one host would
+// see the same graph in a different order on each call.
 func TestL3ReadsAreOrderStable(t *testing.T) {
 	db := newL3TestDB(t)
 	items := make([]L3ImportItem, 0, 6)
@@ -862,10 +826,8 @@ func TestL3ReadsAreOrderStable(t *testing.T) {
 	}
 }
 
-// The node listing tolerates a record that will not decode; the subgraph read
-// cannot, because its node set comes from the members the edges name — a member
-// it reaches but cannot read is the pool disagreeing with itself, and answering
-// with a smaller graph would hide that.
+// The node listing tolerates a record that will not decode; the subgraph read cannot, because its node
+// set comes from the members the edges name.
 func TestQueryL3SubgraphReportsUnreadableNode(t *testing.T) {
 	db := newL3TestDB(t)
 	res, err := db.ImportL3(core.DefaultAgentID, []L3ImportItem{
@@ -893,11 +855,8 @@ func TestQueryL3SubgraphReportsUnreadableNode(t *testing.T) {
 	}
 }
 
-// The start node is an id a previous read handed the host, so "no such node" and
-// "the node will not read back" are two different answers: the first sends the host
-// to another node, the second tells it this graph is damaged where it stands.
-// Answering the first for both would let a damaged graph read as an empty one and
-// be re-imported over.
+// The start node is an id a previous read handed the host, so "no such node" and "the node will not
+// read back" are two different answers.
 func TestQueryL3SubgraphReportsUnreadableStartNode(t *testing.T) {
 	db := newL3TestDB(t)
 	res, err := db.ImportL3(core.DefaultAgentID, []L3ImportItem{
@@ -923,10 +882,8 @@ func TestQueryL3SubgraphReportsUnreadableStartNode(t *testing.T) {
 	}
 }
 
-// A graph's cascade is built by enumerating the whole node and edge buckets and
-// keeping the members, so a member that will not read back has to stop the delete:
-// the survivors would keep naming a graph the host was told is gone, and a re-import
-// under the same name would adopt them as its own.
+// A graph's cascade is built by enumerating the whole node and edge buckets and keeping the members,
+// so a member that will not read back has to stop the delete.
 func TestDeleteL3RefusesUnreadableNode(t *testing.T) {
 	db := newL3TestDB(t)
 	res, err := db.ImportL3(core.DefaultAgentID, []L3ImportItem{
@@ -961,12 +918,8 @@ func TestDeleteL3RefusesUnreadableNode(t *testing.T) {
 	}
 }
 
-// Every L3 id derives from text the host supplies and the whole pool shares one id
-// space, so a domain written as "<graph hex>:<title>" hashes to exactly the address of
-// that title's node in that graph. The graph read the create path performs answers
-// such a collision with "no such graph", and taking that as permission stores a graph
-// slot over somebody's node — which then answers to neither kind: the node listing
-// stops naming it, and the record reports a type it never was.
+// Every L3 id derives from text the host supplies and the whole pool shares one id space, so a domain
+// written as "<graph hex>:<title>" hashes to exactly the address of that title's node in that graph.
 func TestImportL3RefusesADomainNamingANodeAddress(t *testing.T) {
 	db := newL3TestDB(t)
 	graphHash := importOne(t, db, "go", "escape-analysis")
@@ -994,11 +947,7 @@ func TestImportL3RefusesADomainNamingANodeAddress(t *testing.T) {
 	}
 }
 
-// The L3 read faces answer with the whole pool or with the record they could not
-// read. A listing one entry short is not a smaller graph: to a host it is a claim
-// that the pool never held that node, and a missing edge is a claim that two nodes
-// are unrelated, because the subgraph walk can only report what the adjacency
-// relates.
+// The L3 read faces answer with the whole pool or with the record they could not read.
 func TestL3ReadsRefuseARecordTheyCannotDecode(t *testing.T) {
 	db := newL3TestDB(t)
 	res, err := db.ImportL3(core.DefaultAgentID, []L3ImportItem{
@@ -1035,9 +984,7 @@ func TestL3ReadsRefuseARecordTheyCannotDecode(t *testing.T) {
 		t.Errorf("QueryL3Nodes over a damaged node = %v, want the read's own code", err)
 	}
 
-	// Put the node back and damage the edge instead: the adjacency decides
-	// reachability, so the subgraph must refuse rather than report the two nodes as
-	// unrelated, and the graph view must not hand back a graph without its edge.
+	// Put the node back and damage the edge instead.
 	if err := core.WriteHypergraphNode(db.engine, core.SharedPoolAgentID, nodeB,
 		&core.HypergraphNode{IDHash: nodeB, GraphID: graphHash, Title: "b", NodeType: "concept"}); err != nil {
 		t.Fatal(err)

@@ -10,12 +10,7 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/repo/core"
 )
 
-// PlanCache holds each topic's plan tree in memory so a tree read costs no engine
-// scan per operation. It is built from the engine when a Context is created and
-// maintained incrementally by whoever writes plan records; it carries no lock of its
-// own, so it is only ever touched while the caller holds Context.Mu. A tree is keyed
-// by the topic of the turn that opened it, so a key exists exactly while at least
-// one of its nodes does.
+// PlanCache holds each topic's plan tree in memory so a tree read costs no engine scan per operation.
 type PlanCache struct {
 	plans map[uint64]*repo.PlanAggregate
 }
@@ -36,8 +31,8 @@ func (pc *PlanCache) Aggregate(topicID uint64) *repo.PlanAggregate {
 	return pc.plans[topicID]
 }
 
-// HasSeq reports whether one topic's live plan tree holds a node at seq — the check a
-// caller runs before binding anything to a step.
+// HasSeq reports whether one topic's live plan tree holds a node at seq — the check a caller runs
+// before binding anything to a step.
 func (pc *PlanCache) HasSeq(topicID uint64, seq uint32) bool {
 	agg := pc.plans[topicID]
 	if agg == nil {
@@ -51,9 +46,8 @@ func (pc *PlanCache) HasSeq(topicID uint64, seq uint32) bool {
 	return false
 }
 
-// Subtree returns the ordinals of one step and every step nested under it,
-// Seq-ascending and including the step itself. An unknown root yields just itself: a
-// step whose record expired still names its own events. Callers hold Context.Mu.
+// Subtree returns the ordinals of one step and every step nested under it, Seq-ascending and including
+// the step itself.
 func (pc *PlanCache) Subtree(topicID uint64, root uint32) []uint32 {
 	agg := pc.plans[topicID]
 	if agg == nil {
@@ -76,16 +70,8 @@ func (pc *PlanCache) Subtree(topicID uint64, root uint32) []uint32 {
 	return out
 }
 
-// NextSeq hands out the next ordinal of one topic's tree, above both the live nodes
-// and `reserved` — the highest ordinal this turn's surviving records still name. The
-// address (topic, ordinal) is shared by a step and the events bound to it, while the two
-// age on separate clocks: a step swept past the retention window leaves an event that
-// names it behind, and an ordinal taken from the live nodes alone would hand that event
-// to a new step — the new step would read as having done the dead step's work. So an
-// ordinal is free again only once nothing speaks of it.
-//
-// The cost is that a turn's numbering can carry a gap: an ordinal reserved by an orphan
-// event is skipped, never reused. Callers hold Context.Mu.
+// NextSeq hands out the next ordinal of one topic's tree, above both the live nodes and `reserved` —
+// the highest ordinal this turn's surviving records still name.
 func (pc *PlanCache) NextSeq(topicID uint64, reserved uint32) uint32 {
 	var top uint32
 	if agg := pc.plans[topicID]; agg != nil {
@@ -101,9 +87,7 @@ func (pc *PlanCache) NextSeq(topicID uint64, reserved uint32) uint32 {
 	return top + 1
 }
 
-// UpsertNode inserts or updates one node in its aggregate, keeping the nodes
-// Seq-ordered. A node's ordinal is never rewritten, so an in-place replacement
-// keeps the same derived IDHash and the same address.
+// UpsertNode inserts or updates one node in its aggregate, keeping the nodes Seq-ordered.
 func (pc *PlanCache) UpsertNode(topicID uint64, node *core.PlanNode) {
 	if node == nil {
 		return
@@ -128,9 +112,8 @@ func (pc *PlanCache) UpsertNode(topicID uint64, node *core.PlanNode) {
 	repo.RecomputePlanAgg(agg)
 }
 
-// RemoveNodes drops specific nodes from the cache — the mirror step of a delete
-// that has already tombstoned them. A tree that loses its last node stops being a
-// live plan. It does not touch the engine.
+// RemoveNodes drops specific nodes from the cache — the mirror step of a delete that has already
+// tombstoned them.
 func (pc *PlanCache) RemoveNodes(topicID uint64, nodeIDs []uint64) {
 	agg := pc.plans[topicID]
 	if agg == nil {
@@ -151,8 +134,7 @@ func (pc *PlanCache) RemoveNodes(topicID uint64, nodeIDs []uint64) {
 	repo.RecomputePlanAgg(agg)
 }
 
-// RemoveTopic drops a whole tree from the cache — the mirror step of a topic
-// delete. It does not touch the engine.
+// RemoveTopic drops a whole tree from the cache — the mirror step of a topic delete.
 func (pc *PlanCache) RemoveTopic(topicID uint64) {
 	delete(pc.plans, topicID)
 }

@@ -21,8 +21,7 @@ func tempEngine(t *testing.T) *core.StorageEngine {
 	return engine
 }
 
-// writeNode stores one L1 scene node carrying count topics, each with its own
-// keyword track.
+// writeNode stores one L1 scene node carrying count topics, each with its own keyword track.
 func writeNode(t *testing.T, engine *core.StorageEngine, id uint64, importance float64, updatedAt int64, count int) {
 	t.Helper()
 	node := core.SceneNode{
@@ -45,10 +44,8 @@ func writeNode(t *testing.T, engine *core.StorageEngine, id uint64, importance f
 	}
 }
 
-// The samples a distillation is asked to read are the best-ranked nodes, not the
-// first ones the scan happened to reach: rank is importance discounted by age, and
-// a cut that dropped either half would send the model a set of scenes chosen by
-// accident. Keywords are capped per sample because each one is a record read.
+// The samples a distillation is asked to read are the best-ranked nodes, not the first ones the scan
+// happened to reach.
 func TestSamplesRanksBeforeCappingAndBoundsEachRow(t *testing.T) {
 	engine := tempEngine(t)
 	now := time.Now().UnixMilli()

@@ -10,17 +10,8 @@ import (
 	"testing"
 )
 
-// A file can hand back its index two ways: the checkpoint's snapshot names each record's
-// frame directly, and a full scan derives the index by replaying the log — where a later
-// frame for an id wins and a tombstone takes the id out. Those are two implementations of
-// one judgement, and only one of them is chosen by an accident of history: whether the
-// snapshot loads, or rotted, or was trimmed by the next delete.
-//
-// So the same bytes must answer identically either way. The fixture carries the three shapes
-// where the two could disagree — an id whose newest frame is behind the snapshot, a record
-// deleted before the checkpoint, and a second domain — and the digest reads payloads, not
-// just ids, because pointing an id at the frame it was overwritten from is exactly the
-// mistake that stays invisible in a set of keys.
+// A file can hand back its index two ways: the checkpoint's snapshot names each record's frame
+// directly, and a full scan derives the index by replaying the log.
 func TestSnapshotAndFullScanAnswerIdentically(t *testing.T) {
 	p := tempPath(t, "two_arms")
 	eng, err := Create(p)
@@ -81,9 +72,8 @@ func TestSnapshotAndFullScanAnswerIdentically(t *testing.T) {
 	}
 }
 
-// digestOf opens the file and renders every record the index names — its agent, type, id and
-// payload — as one comparable string. wantSnapshot says which route the Open has to take, and
-// a route that silently changes is not a weaker test but a different one, so this refuses it.
+// digestOf opens the file and renders every record the index names — its agent, type, id and payload —
+// as one comparable string.
 func digestOf(t *testing.T, path string, wantSnapshot bool) (string, uint64) {
 	t.Helper()
 	eng, err := Open(path)

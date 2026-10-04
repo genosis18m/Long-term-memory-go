@@ -2,16 +2,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 // Acceptance items 9 and 11 say consolidation is the library's job, not a call the host has to
-// schedule: the guide tells a host it "usually does not need to call" Dream, because a scene whose
-// surface passes the threshold gets a pass scheduled at the close of a round. Every offline case in
-// this file's neighbourhood switches that trigger *off* (a pass landing mid-test would race its own
-// assertions), which left the promise with no host-surface witness: a reader could not tell whether
-// the trigger exists at all, or exists only in the guide.
-//
-// This drives the loop the way a host does — Search, work, Update, repeat, and never a Dream call —
-// and waits for the pass to show up in the scene read. The wait is a deadline with a fixed poll, and
-// the test proves its own premise first: the threshold really was crossed and the consolidate call
-// point really was silent before the pass appeared.
+// schedule.
 
 package test
 
@@ -59,9 +50,8 @@ func TestInterfaceConsolidationIsScheduledByTheRoundClose(t *testing.T) {
 	if surface <= threshold {
 		t.Fatalf("the fixture crossed nothing: %d surface rows against a threshold of %d", surface, threshold)
 	}
-	// The counter is read here only to show the pass below was the first: consolidation is asked
-	// for at exactly one place in the library, and this test reached it with round closes —
-	// nothing in this file calls Dream.
+	// The counter is read here only to show the pass below was the first: consolidation is asked for at
+	// exactly one place in the library, and this test reached it with round closes.
 
 	group := ""
 	deadline := time.Now().Add(10 * time.Second)

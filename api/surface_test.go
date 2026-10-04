@@ -1,10 +1,7 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// Public API surface tests: exercise every exported Session and DB method with
-// valid and invalid parameters against a stub LLM server, asserting
-// request/response shapes and the numeric error-code contract. These run without
-// external services.
+// Public API surface tests.
 
 package api
 
@@ -24,9 +21,8 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/common"
 )
 
-// stubLLM returns one union JSON that satisfies every response parser
-// (keywords / l2_groups / emotion+mbti+per_node) with empty merge groups, so
-// consolidation is a no-op.
+// stubLLM returns one union JSON that satisfies every response parser (keywords / l2_groups /
+// emotion+mbti+per_node) with empty merge groups, so consolidation is a no-op.
 func stubLLM() *httptest.Server {
 	content := `{"keywords":["alpha","beta"],` +
 		`"l2_groups":[],` +
@@ -60,8 +56,8 @@ func surfaceProfile() *ProfileInput {
 	return &ProfileInput{Name: "surface-primary", Role: "surface fixture"}
 }
 
-// openSurfaceSession opens a database in a fresh temp dir and binds a session to
-// a sub-agent domain, which is how a host that wants an isolated domain does it.
+// openSurfaceSession opens a database in a fresh temp dir and binds a session to a sub-agent domain,
+// which is how a host that wants an isolated domain does it.
 func openSurfaceSession(t *testing.T, llmURL string) (*DB, *Session) {
 	t.Helper()
 	m, err := Open(filepath.Join(t.TempDir(), "surface.meh"), surfaceLLM(llmURL),
@@ -77,12 +73,7 @@ func openSurfaceSession(t *testing.T, llmURL string) (*DB, *Session) {
 	return m, sess
 }
 
-// closeOnCleanup hands the file back when the test ends. An open handle keeps the engine's
-// exclusive lock, and a locked file cannot be unlinked, so a test that opens one and does
-// not close it fails in t.TempDir's cleanup on Windows rather than in its own assertions.
-// It belongs to the opener, not to each caller: a scenario that closes early to reopen the
-// same path then answers ErrClosed here, which is not a failure; anything else is the
-// close's own I/O error and is reported as one.
+// closeOnCleanup hands the file back when the test ends.
 func closeOnCleanup(tb testing.TB, m *DB) {
 	tb.Helper()
 	tb.Cleanup(func() {
@@ -98,9 +89,8 @@ func openSurfaceDB(t *testing.T) *Session {
 	return sess
 }
 
-// openSurfaceLibrary is openSurfaceDB for the checks that need the file handle or the stub
-// endpoint too — the domain listing lives on DB, not on a Session, and a sub-agent is
-// created by an endpoint of its own.
+// openSurfaceLibrary is openSurfaceDB for the checks that need the file handle or the stub endpoint
+// too.
 func openSurfaceLibrary(t *testing.T) (*DB, *Session, string) {
 	t.Helper()
 	llm := stubLLM()
@@ -118,11 +108,8 @@ func isHexID(s string) bool {
 	return err == nil
 }
 
-// File-level lifecycle (Checkpoint/IsClosed/Close) lives on the DB handle, not
-// on a Session — see TestSurfaceMultiAgent. What the session must guarantee is
-// that a malformed id is rejected as a bad query, not reported as a miss.
-// l3Graph seeds a project domain named name with a one-node import and returns
-// its 16-hex id: a scene may only anchor to a domain that exists.
+// File-level lifecycle (Checkpoint/IsClosed/Close) lives on the DB handle, not on a Session — see
+// TestSurfaceMultiAgent.
 func l3Graph(t *testing.T, db *Session, name string) string {
 	t.Helper()
 	if _, err := db.ImportL3([]L3ImportItem{{Title: name, Domain: name, NodeType: "concept", Content: "seed", Keywords: []string{"k"}}}, L3ImportSkip); err != nil {
@@ -143,9 +130,8 @@ func TestSurfaceLifecycle(t *testing.T) {
 		t.Fatalf("dream on malformed scene id: rep=%v err=%v", rep, err)
 	}
 
-	// A host's hex id has one crossing — the composition root reads it back into the
-	// numeric form, so nothing below it holds an id string. Every entry that names one
-	// therefore refuses a malformed spelling, whichever call now performs the read.
+	// A host's hex id has one crossing — the composition root reads it back into the numeric form, so
+	// nothing below it holds an id string.
 	const bad = "nothex"
 	ghost := common.FormatHash(common.HashID("ghost-scene"))
 	opened, err := db.Search(SearchQuery{})
@@ -209,10 +195,8 @@ func TestSurfaceL0Profile(t *testing.T) {
 	}
 }
 
-// ProfileInput — the argument to Open, SubAgent and UpdateL0 — carries only the four
-// host-owned fields, so an emotion, an MBTI type, a domain identity or a timestamp
-// cannot be sent at all. That a write inherits the distilled half rather than zeroing
-// it is the engine's own contract (TestUpdateL0KeepsDistilledHalf), not restated here.
+// ProfileInput — the argument to Open, SubAgent and UpdateL0 — carries only the four host-owned
+// fields, so an emotion, an MBTI type, a domain identity or a timestamp cannot be sent at all.
 func TestSurfaceL0DistilledHalfIsReadOnly(t *testing.T) {
 	writable := map[string]bool{"Name": true, "Role": true, "Personality": true, "Preferences": true}
 	if got := exportedFieldSet(reflect.TypeFor[ProfileInput]()); !maps.Equal(got, writable) {
@@ -236,8 +220,8 @@ func exportedFieldSet(typ reflect.Type) map[string]bool {
 	return out
 }
 
-// Closed-instance contract: after Close every domain operation is rejected
-// with ErrClosed rather than touching a released engine.
+// Closed-instance contract: after Close every domain operation is rejected with ErrClosed rather than
+// touching a released engine.
 func TestSurfaceClosedContract(t *testing.T) {
 	llm := stubLLM()
 	t.Cleanup(llm.Close)
@@ -293,9 +277,7 @@ func TestSurfaceOpenValidatesArguments(t *testing.T) {
 	}
 }
 
-// A list this package maps encodes as [] even when the record behind it holds none:
-// one field answering null while its neighbours answer [] is two shapes for one
-// answer, and a host decoding into a slice would have to special-case it.
+// A list this package maps encodes as [] even when the record behind it holds none.
 func TestMappedListsEncodeAsEmptyNotNull(t *testing.T) {
 	for _, tc := range []struct {
 		name string

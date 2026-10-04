@@ -22,9 +22,7 @@ func eqIDs(t *testing.T, name string, got, want []uint64) {
 	}
 }
 
-// A settled turn holds two utterances; a turn that recorded operations holds
-// events above them. The two kinds must stay separable, and Seq alone must
-// order both.
+// A settled turn holds two utterances; a turn that recorded operations holds events above them.
 func TestL4IndexSeparatesKindsBySeqOrder(t *testing.T) {
 	idx := NewL4Index()
 	const topic = uint64(7)
@@ -41,10 +39,8 @@ func TestL4IndexSeparatesKindsBySeqOrder(t *testing.T) {
 	}
 }
 
-// An event names a plan step by ordinal, and the two records age separately: the step
-// can be swept while the event that names it survives. The mirror is what the allocator
-// reads to learn which ordinals are still spoken of, so the highest bound one has to be
-// visible here — and a pruned record must stop reserving it.
+// An event names a plan step by ordinal, and the two records age separately: the step can be swept
+// while the event that names it survives.
 func TestL4IndexTracksBoundOrdinals(t *testing.T) {
 	idx := NewL4Index()
 	const topic = uint64(7)
@@ -68,9 +64,7 @@ func TestL4IndexTracksBoundOrdinals(t *testing.T) {
 	}
 }
 
-// Events are appended while the turn runs and the utterances settle afterwards,
-// so an utterance's Seq 1/2 must insert ahead of events already recorded rather
-// than land at the tail and reorder the transcript.
+// Events are appended while the turn runs and the utterances settle afterwards, so an utterance's Seq.
 func TestL4IndexInsertsAnEarlierSeq(t *testing.T) {
 	idx := NewL4Index()
 	const topic = uint64(7)
@@ -83,8 +77,8 @@ func TestL4IndexInsertsAnEarlierSeq(t *testing.T) {
 	eqIDs(t, "events stay ordered", idx.IDs(topic, core.KindEvent), []uint64{13, 14})
 }
 
-// Re-writing a Seq is an in-place overwrite on the disk, so the mirror must
-// replace the slot, not grow a second entry that names a record nobody reads.
+// Re-writing a Seq is an in-place overwrite on the disk, so the mirror must replace the slot, not grow
+// a second entry that names a record nobody reads.
 func TestL4IndexAppendSameSeqReplaces(t *testing.T) {
 	idx := NewL4Index()
 	const topic = uint64(7)
@@ -99,8 +93,8 @@ func TestL4IndexAppendSameSeqReplaces(t *testing.T) {
 	}
 }
 
-// MaxSeq spans kinds, which is what keeps an allocated event off the two slots
-// the turn's originals will claim.
+// MaxSeq spans kinds, which is what keeps an allocated event off the two slots the turn's originals
+// will claim.
 func TestL4IndexMaxSeqSpansKinds(t *testing.T) {
 	idx := NewL4Index()
 	const topic = uint64(7)
@@ -118,9 +112,8 @@ func TestL4IndexMaxSeqSpansKinds(t *testing.T) {
 	}
 }
 
-// Expiry reports without mutating: the caller deletes the records first and only
-// then mirrors the removal, so a failed delete cannot leave the index naming a
-// live record as gone.
+// Expiry reports without mutating: the caller deletes the records first and only then mirrors the
+// removal, so a failed delete cannot leave the index naming a live record as gone.
 func TestL4IndexExpiredBeforeReadsOnly(t *testing.T) {
 	idx := NewL4Index()
 	idx.Append(1, core.SeqUser, 11, core.KindUtterance, 1000, 0)
@@ -146,8 +139,8 @@ func TestL4IndexExpiredBeforeReadsOnly(t *testing.T) {
 	}
 }
 
-// Emptying a topic by removal must drop the topic itself, or a later read
-// addresses an empty entry as if the topic still held content.
+// Emptying a topic by removal must drop the topic itself, or a later read addresses an empty entry as
+// if the topic still held content.
 func TestL4IndexRemoveAllIDsDropsTopic(t *testing.T) {
 	idx := NewL4Index()
 	idx.Append(1, core.SeqUser, 11, core.KindUtterance, 1000, 0)
@@ -155,9 +148,8 @@ func TestL4IndexRemoveAllIDsDropsTopic(t *testing.T) {
 	if got := idx.AllIDs(1); got != nil {
 		t.Fatalf("emptied topic still listed: %v", got)
 	}
-	// AllIDs answers nil for an emptied topic and for one the index never held,
-	// so the entry itself has to be checked: a leftover empty slice would let a
-	// later read address the topic as if it still held content.
+	// AllIDs answers nil for an emptied topic and for one the index never held, so the entry itself has to
+	// be checked.
 	if len(idx.byTopic) != 0 {
 		t.Fatalf("emptied topic still holds an index entry: %v", idx.byTopic)
 	}

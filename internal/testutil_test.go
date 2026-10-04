@@ -30,11 +30,8 @@ func newTestEngine(t *testing.T) *core.StorageEngine {
 	return engine
 }
 
-// newTurnKey opens a scene the way the read path does and hands back the pair a
-// turn-keyed write needs: the scene id and the turn topic id, both hex — the
-// only keys AppendArchive now accepts. The uint64 form comes back too, for
-// tests that read the topic's records straight off the engine. Binds the file's
-// default domain.
+// newTurnKey opens a scene the way the read path does and hands back the pair a turn-keyed write
+// needs: the scene id and the turn topic id, both hex — the only keys AppendArchive now accepts.
 func newTurnKey(t *testing.T, db *DB) (sceneHex, topicHex string, topicID uint64) {
 	return newTurnKeyFor(t, db, core.DefaultAgentID)
 }
@@ -69,8 +66,8 @@ func writeTopic(t *testing.T, engine *core.StorageEngine, agentID uint64, topic 
 	}
 }
 
-// writeTopicCached writes one topic and mirrors it into the domain's L2Meta
-// cache, the way the root's own write path does.
+// writeTopicCached writes one topic and mirrors it into the domain's L2Meta cache, the way the root's
+// own write path does.
 func writeTopicCached(t *testing.T, ac *domain.Context, engine *core.StorageEngine, agentID uint64, topic core.TopicSlot) {
 	t.Helper()
 	writeTopic(t, engine, agentID, topic)
@@ -85,8 +82,8 @@ func mustWriteScene(t *testing.T, engine *core.StorageEngine, agentID uint64, sc
 	}
 }
 
-// chatPath serves the one endpoint the engine calls; any other path 404s, which is
-// how a test notices the engine asking for something it was never configured to use.
+// chatPath serves the one endpoint the engine calls; any other path 404s, which is how a test notices
+// the engine asking for something it was never configured to use.
 func chatPath(h func(w http.ResponseWriter, r *http.Request)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !strings.HasSuffix(r.URL.Path, "/chat/completions") {
@@ -115,17 +112,16 @@ func mockServer(t *testing.T, h func(w http.ResponseWriter, r *http.Request)) *h
 	return srv
 }
 
-// mockLLMServer answers every chat completion request with the same content —
-// the plain stub for tests that only need the LLM call to succeed.
+// mockLLMServer answers every chat completion request with the same content — the plain stub for tests
+// that only need the LLM call to succeed.
 func mockLLMServer(t *testing.T, content string) *httptest.Server {
 	return mockServer(t, func(w http.ResponseWriter, _ *http.Request) {
 		answerCompletion(w, content)
 	})
 }
 
-// mockLLMServerSeq answers successive chat completion requests from contents in
-// order, wrapping around — for a pipeline whose stages must each get their own
-// reply. The cursor is guarded because the server runs on its own goroutine.
+// mockLLMServerSeq answers successive chat completion requests from contents in order, wrapping around
+// — for a pipeline whose stages must each get their own reply.
 func mockLLMServerSeq(t *testing.T, contents ...string) *httptest.Server {
 	var mu sync.Mutex
 	idx := 0
@@ -138,11 +134,8 @@ func mockLLMServerSeq(t *testing.T, contents ...string) *httptest.Server {
 	})
 }
 
-// contractLLMServer answers each of the three LLM contracts with a valid reply of
-// its own, told apart by the system prompt. A stub that answers every call with
-// the keyword track makes a full Dream stop at the distillation stage — and that
-// is the stage's contract working (a reply carrying no emotion/mbti block is no
-// answer), not something a scene-read test means to exercise.
+// contractLLMServer answers each of the three LLM contracts with a valid reply of its own, told apart
+// by the system prompt.
 func contractLLMServer(t *testing.T) *httptest.Server {
 	return mockServer(t, func(w http.ResponseWriter, r *http.Request) {
 		var body struct {
@@ -166,10 +159,8 @@ func contractLLMServer(t *testing.T) *httptest.Server {
 	})
 }
 
-// cancellingLLMServer answers like mockLLMServerSeq and cancels cancel right
-// after replying to the cancelOn-th request (1-based). A test needs that timing
-// when the cancellation must land after a stage has already written: then it is
-// the next checkpoint that exits the pipeline, not a failed model call.
+// cancellingLLMServer answers like mockLLMServerSeq and cancels cancel right after replying to the
+// cancelOn-th request (1-based).
 func cancellingLLMServer(t *testing.T, cancel context.CancelFunc, cancelOn int, contents ...string) *httptest.Server {
 	var mu sync.Mutex
 	idx := 0
@@ -186,8 +177,8 @@ func cancellingLLMServer(t *testing.T, cancel context.CancelFunc, cancelOn int, 
 	})
 }
 
-// countingLLMServer answers every chat request with content and records how
-// many times it was called — the read path must leave the counter at zero.
+// countingLLMServer answers every chat request with content and records how many times it was called —
+// the read path must leave the counter at zero.
 func countingLLMServer(t *testing.T, content string) (*httptest.Server, *atomic.Int64) {
 	calls := &atomic.Int64{}
 	srv := mockServer(t, func(w http.ResponseWriter, _ *http.Request) {
@@ -216,9 +207,8 @@ func (r *recordedRequests) snapshot() []string {
 	return append([]string(nil), r.bodies...)
 }
 
-// recordingLLMServer answers every chat request with content and keeps each
-// request body, so a test can assert what the engine actually sent — that a
-// transcript reached the prompt with its speakers labelled, for instance.
+// recordingLLMServer answers every chat request with content and keeps each request body, so a test
+// can assert what the engine actually sent.
 func recordingLLMServer(t *testing.T, content string) (*httptest.Server, *recordedRequests) {
 	var seen recordedRequests
 	srv := mockServer(t, func(w http.ResponseWriter, r *http.Request) {
@@ -229,8 +219,8 @@ func recordingLLMServer(t *testing.T, content string) (*httptest.Server, *record
 	return srv, &seen
 }
 
-// failingLLMServer returns status for every chat completion request
-// (non-retryable codes only, so tests do not wait out the backoff).
+// failingLLMServer returns status for every chat completion request (non-retryable codes only, so
+// tests do not wait out the backoff).
 func failingLLMServer(t *testing.T, status int) *httptest.Server {
 	return mockServer(t, func(w http.ResponseWriter, _ *http.Request) {
 		http.Error(w, "mock llm failure", status)

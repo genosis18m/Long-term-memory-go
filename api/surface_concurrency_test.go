@@ -1,14 +1,8 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// The concurrency contract is the one an integrating host cannot work around: calls on one
-// domain serialize, calls on different domains do not, and the turn id a `Search` mints is
-// load-bearing — it comes from the scene's counter, so a counter that advanced twice for one
-// open, or a read that wrote without the lock, shows up as two turns minted with the same id
-// and one settled round quietly overwriting another's records. None of that was being tested
-// at the facade: the offline suite runs one caller per domain, and the seven `go func` sites
-// in the repo sit deep inside the engine. This drives many goroutines through the public
-// surface and asserts the outcomes a host can actually observe. Run it under -race.
+// The concurrency contract is the one an integrating host cannot work around: calls on one domain
+// serialize, calls on different domains do not, and the turn id a `Search` mints is load-bearing.
 
 package api
 
@@ -22,11 +16,8 @@ import (
 	"time"
 )
 
-// A host spawning workers gives each its own domain: calls on different domains run in
-// parallel and touch the file under the engine's own rules, while a domain carries exactly
-// one open turn. This drives that pattern through the public surface and checks what the
-// host then sees — every worker's rounds all present on its own scene, nothing visible
-// across domains, and no turn id handed out twice. Run it under -race.
+// A host spawning workers gives each its own domain: calls on different domains run in parallel and
+// touch the file under the engine's own rules, while a domain carries exactly one open turn.
 func TestConcurrentWorkersOnTheirOwnDomains(t *testing.T) {
 	m, _, stubURL := openSurfaceLibrary(t)
 	defer func() { _ = m.Close() }()
@@ -91,9 +82,8 @@ func TestConcurrentWorkersOnTheirOwnDomains(t *testing.T) {
 					return
 				}
 				id := row.TopicID
-				// Two originals from the close, the event appended mid-round, and the
-				// turn_outcome the same close recorded: four rows, none of them another
-				// worker's.
+				// Two originals from the close, the event appended mid-round, and the turn_outcome the same close
+				// recorded: four rows, none of them another worker's.
 				if hits, err := sess.SearchL4(L4Query{TopicID: &id}); err != nil || len(hits) != 4 {
 					failures[worker] = fmt.Sprintf("turn %s owns %d records (err %v), want 4", id, len(hits), err)
 					return
@@ -109,9 +99,7 @@ func TestConcurrentWorkersOnTheirOwnDomains(t *testing.T) {
 	}
 }
 
-// One handle shared across goroutines is still safe on the file — the domain lock
-// serialises it — and a read raced with a background consolidation must answer either the
-// before or the after state, never a half-built one.
+// One handle shared across goroutines is still safe on the file.
 func TestConcurrentReadsDuringWrites(t *testing.T) {
 	m, sess, _ := openSurfaceLibrary(t)
 	defer func() { _ = m.Close() }()
@@ -185,14 +173,8 @@ func TestConcurrentReadsDuringWrites(t *testing.T) {
 	}
 }
 
-// The other shape a spawning host hits is one name asked for twice at once: the model decided to
-// start a worker another goroutine is already starting, or a call was retried while the first was
-// in flight. Two domains under one name is amnesia with no error to read — the roster would list
-// the name once, `SubAgent` would resolve it to whichever id the registry scan happened to keep,
-// and each half of what that worker remembers would sit where nothing points. Registration is
-// serialised on `agentsMu` and the profile is seeded under the domain lock, so this shape has
-// outcomes worth asserting: one id per name inside the process, one roster entry per name on the
-// disk, and a domain that still closes a round afterwards. Run it under -race.
+// The other shape a spawning host hits is one name asked for twice at once: the model decided to start
+// a worker another goroutine is already starting, or a call was retried while the first was in flight.
 func TestSameNameAskedForAtOnceOpensOneDomain(t *testing.T) {
 	llm := stubLLM()
 	t.Cleanup(llm.Close)

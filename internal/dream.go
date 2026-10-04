@@ -1,8 +1,7 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// RunDream of the composition root: one full dream pipeline for a single
-// agent domain. The stage implementations live in internal/dream.
+// RunDream of the composition root: one full dream pipeline for a single agent domain.
 
 package internal
 
@@ -16,14 +15,7 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/dream"
 )
 
-// RunDream runs one full dream pipeline for a single agent domain: parallel
-// L2 compression on the given scene (or every scene of the domain when
-// sceneID is empty), then L1 rebuild/decay, L0 profile/distill; the rebuilt
-// L2Meta cache is installed into the agent context. Any stage failure returns
-// an error together with the partially filled DreamReport, and naming a scene
-// that does not exist is reported as ErrNotFound. The whole pipeline
-// holds the domain lock, so same-agent operations wait while different agents
-// run in parallel.
+// RunDream runs one full dream pipeline for a single agent domain.
 func (db *DB) RunDream(ctx context.Context, agentID uint64, sceneID uint64) (*DreamReport, error) {
 	ac, err := db.lockAgent(agentID)
 	if err != nil {
@@ -32,10 +24,8 @@ func (db *DB) RunDream(ctx context.Context, agentID uint64, sceneID uint64) (*Dr
 	defer ac.Mu.Unlock()
 
 	rep := &DreamReport{}
-	// Retention first: both prunes run on every Dream, even when there is
-	// nothing to consolidate (early return below). Content and plan trees share
-	// one window but not one clock — an L4 record ages on when it was said, a
-	// node on when it was last committed.
+	// Retention first: both prunes run on every Dream, even when there is nothing to consolidate (early
+	// return below).
 	dream.PruneContentStage(ac, agentID, rep)
 	dream.PrunePlanStage(ac, agentID, rep)
 
@@ -68,23 +58,15 @@ func (db *DB) RunDream(ctx context.Context, agentID uint64, sceneID uint64) (*Dr
 	}
 	rep.ConsolidatedScenes = len(succeeded)
 	dream.AppendStage(rep, "l2_compress", start, dream.StageCancelled(ctx, "l2_compress"))
-	// StructureStages owns the next cancellation checkpoint: it sits after the
-	// rebuilt L2Meta is installed, so a cancelled pass still leaves the read path
-	// serving what compression wrote rather than the tree from before it.
+	// StructureStages owns the next cancellation checkpoint.
 	if err := dream.StructureStages(ctx, ac, agentID, rep); err != nil {
 		return rep, err
 	}
 	return rep, nil
 }
 
-// triggerSceneDream schedules one scene's Dream in the background so the
-// caller (the close-time consolidation check) returns immediately instead of
-// blocking on the LLM-heavy pipeline. The goroutine acquires the domain lock
-// itself and exits when RunDream returns or the DB is closed; the per-agent
-// in-flight set prevents stacking multiple Dreams for the same scene. Failures
-// are logged and never fail the caller. RunDream runs under the agent's
-// opCtx, cancelled at Close so a pending Dream never blocks shutdown on
-// LLM calls. Caller must hold ac.Mu.
+// triggerSceneDream schedules one scene's Dream in the background so the caller (the close-time
+// consolidation check) returns immediately instead of blocking on the LLM-heavy pipeline.
 func (db *DB) triggerSceneDream(ac *domain.Context, sceneID uint64) {
 	if _, ok := ac.DreamInFlight[sceneID]; ok {
 		return
@@ -98,11 +80,8 @@ func (db *DB) triggerSceneDream(ac *domain.Context, sceneID uint64) {
 			ac.Mu.Unlock()
 		}()
 		if _, err := db.RunDream(ac.OpCtx, ac.ID, sceneID); err != nil {
-			// Two answers mean the host stopped asking: the database is closed, or this pass was
-			// cancelled by that close. Neither is a consolidation that went wrong — the memory simply
-			// was not consolidated before the file was handed back, which is what closing means — and
-			// a warning on every clean exit is a warning nobody reads, so those two go unreported.
-			// Anything else the pipeline answered is a real failure and stays a warning.
+			// Two answers mean the host stopped asking: the database is closed, or this pass was cancelled by that
+			// close.
 			switch code := common.CodeOf(err); code {
 			case common.ErrClosed, common.ErrCancelled:
 			default:

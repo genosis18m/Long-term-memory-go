@@ -1,14 +1,7 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// The order promise a host actually leans on is not "twice in one process" but "across my
-// restarts": a worker that indexes a listing by position, diffs two recalls, or caches what
-// a scene looked like yesterday is comparing reads taken from different processes. Those two
-// processes do not build their state the same way either — one served its lists from the
-// index it grew while writing, the next restores indexes from the checkpoint snapshot or,
-// when the snapshot lags the format, from a full record scan. So every pure read is taken
-// over a settled file, the file is closed, and each read is taken again on two fresh opens:
-// the bytes have to match.
+// The order promise a host actually leans on is not "twice in one process" but "across my restarts".
 
 package test
 
@@ -106,9 +99,7 @@ func TestInterfaceReadsSurviveAReopenByteForByte(t *testing.T) {
 	}
 }
 
-// snapshotReads encodes every pure read against one handle. Each argument the reads need —
-// a graph id, a node id, a scene id — is taken from that same handle, so a mismatch between
-// two processes is a difference in what the reads answer, never in what was asked of them.
+// snapshotReads encodes every pure read against one handle.
 func snapshotReads(tb testing.TB, db *testDB, m *memhop.DB) ([]string, []string) {
 	tb.Helper()
 	graphs, err := db.ListL3()

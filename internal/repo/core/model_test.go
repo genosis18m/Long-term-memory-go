@@ -45,9 +45,7 @@ func TestProfileSlotRoundtrip(t *testing.T) {
 	if got.EmotionState != p.EmotionState {
 		t.Fatalf("emotion mismatch: %+v", got.EmotionState)
 	}
-	// The type word is not stored — even a word the axes contradict stays off the
-	// disk (this literal's "INTJ" is exactly such a drift), and the word a reader
-	// sees is re-derived from the axes: I/S/T/P here.
+	// The type word is not stored.
 	if got.MBTI.IE != p.MBTI.IE || got.MBTI.NS != p.MBTI.NS ||
 		got.MBTI.TF != p.MBTI.TF || got.MBTI.JP != p.MBTI.JP {
 		t.Fatalf("mbti axes mismatch: %+v", got.MBTI)
@@ -177,9 +175,8 @@ func TestComputeFusedTopicIDDeterministic(t *testing.T) {
 	}
 }
 
-// Two disjoint groups over one pair of bounds is the case the bounds-only key could not
-// hold: the loser was refused on every pass and each pass still cost a consolidation call.
-// Disjoint members must therefore be what separates them.
+// Two disjoint groups over one pair of bounds is the case the bounds-only key could not hold: the
+// loser was refused on every pass and each pass still cost a consolidation call.
 func TestComputeFusedTopicIDSeparatesDisjointGroups(t *testing.T) {
 	first := ComputeFusedTopicID(100, 1000, 1001, []uint64{11, 12})
 	second := ComputeFusedTopicID(100, 1000, 1001, []uint64{13, 14})
@@ -202,9 +199,8 @@ func TestComputeFusedTopicIDConsistency(t *testing.T) {
 	}
 }
 
-// A turn topic and a Dream-fused group can share a scene; the "turn:"
-// namespace is what keeps their IDs apart. The turn counter, not the message
-// timestamps, is what makes consecutive turns distinct.
+// A turn topic and a Dream-fused group can share a scene; the "turn:" namespace is what keeps their
+// IDs apart.
 func TestComputeTurnTopicIDNamespaced(t *testing.T) {
 	turn := ComputeTurnTopicID(100, 1)
 	if turn == ComputeFusedTopicID(100, 1000, 1001, []uint64{11, 12}) {
@@ -234,8 +230,8 @@ func TestArchiveSlotRoundtrip(t *testing.T) {
 	}
 }
 
-// The only archive case carrying a non-zero ContentType: value 0 would
-// round-trip even if the tag were wrong.
+// The only archive case carrying a non-zero ContentType: value 0 would round-trip even if the tag were
+// wrong.
 func TestArchiveSlotImagePath(t *testing.T) {
 	a := ArchiveSlot{
 		IDHash: 3, ContentType: ContentImage, Role: 0,
@@ -249,8 +245,8 @@ func TestArchiveSlotImagePath(t *testing.T) {
 	}
 }
 
-// An operation event is an L4 record now, so the fields only events carry
-// survive the same round trip as the utterances beside them.
+// An operation event is an L4 record now, so the fields only events carry survive the same round trip
+// as the utterances beside them.
 func TestArchiveEventRoundtrip(t *testing.T) {
 	ev := ArchiveSlot{
 		IDHash: HashContent(42, 3), Kind: KindEvent, Seq: 3, ContentType: ContentText,
@@ -264,8 +260,8 @@ func TestArchiveEventRoundtrip(t *testing.T) {
 	}
 }
 
-// Kind is the axis separating a turn's originals from its events, and the
-// undefined end of it must be catchable at the boundary rather than stored.
+// Kind is the axis separating a turn's originals from its events, and the undefined end of it must be
+// catchable at the boundary rather than stored.
 func TestArchiveKindValid(t *testing.T) {
 	if !KindUtterance.Valid() || !KindEvent.Valid() {
 		t.Fatal("defined kinds must validate")
@@ -289,9 +285,8 @@ func TestSceneSlotL3ID(t *testing.T) {
 	}
 }
 
-// A plan node is its own record type: no node/event discriminator, no event
-// fields, and an identity derived from the topic that owns the tree plus the step
-// ordinal inside it.
+// A plan node is its own record type: no node/event discriminator, no event fields, and an identity
+// derived from the topic that owns the tree plus the step ordinal inside it.
 func TestPlanNodeIdentity(t *testing.T) {
 	node := PlanNode{
 		IDHash: HashPlanNode(9, 12), TopicID: 9, Seq: 12, ParentSeq: 3,

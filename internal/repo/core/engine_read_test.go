@@ -9,10 +9,8 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/common"
 )
 
-// An index entry the record area does not back is damage, and it has to reach
-// the caller with a code: the frame decoder answers that spot with io.EOF, a
-// bare error whose code reads 0 — which is the success code — so the refusal
-// would arrive wearing no verdict at all.
+// An index entry the record area does not back is damage, and it has to reach the caller with a code:
+// the frame decoder answers that spot with io.EOF, a bare error whose code reads 0.
 func TestReadRecordCodesAnIndexEntryTheLogDoesNotHold(t *testing.T) {
 	eng, err := Create(tempPath(t, "index-past-log"))
 	if err != nil {

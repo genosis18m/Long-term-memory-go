@@ -19,9 +19,8 @@ func TestDreamReportContract(t *testing.T) {
 	}
 	ctx := context.Background()
 
-	// Nothing to consolidate: a zero-valued success report; both retention
-	// stages still run on every Dream, since they age independent of whether
-	// anything was merged.
+	// Nothing to consolidate: a zero-valued success report; both retention stages still run on every
+	// Dream, since they age independent of whether anything was merged.
 	rep, err := sess.Dream(ctx, "")
 	if err != nil || rep == nil {
 		t.Fatalf("dream on empty domain: rep=%v err=%v", rep, err)

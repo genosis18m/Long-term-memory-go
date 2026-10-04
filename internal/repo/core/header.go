@@ -20,15 +20,7 @@ const (
 	DataStart     = 8192
 )
 
-// FormatVersion is the on-disk file format version. Files below 0x0012 are
-// rejected at Open with no migration path: a 0x0011 profile carries no
-// agent_type, so every domain in such a file decodes as the primary agent —
-// not one wrong value somewhere but the same wrong value in every domain at
-// once, against the rule that a file holds exactly one primary, and nothing
-// reading the file can tell that apart from a file that genuinely means it.
-// That is why a boundary version cannot be tolerated the way a missing
-// optional field can. The per-version change history lives in this constant's
-// git log, not in this comment.
+// FormatVersion is the on-disk file format version.
 const FormatVersion uint16 = 0x0012
 
 var (
@@ -37,15 +29,6 @@ var (
 )
 
 // FileHeader is the on-disk file header (4096 bytes).
-// Layout: magic(4) version(2) reserved(2) commit_id(8) snapshot_off(8)
-// snapshot_len(4) record_count(4) flags(4) record_end(8) reserved
-// crc32(4) tail_magic(4).
-// The bytes at offset 6 are reserved: new files write 0, a legacy file's value
-// is kept as-is, and nothing reads them — neither the version check nor the
-// A/B header choice (CRC + CommitID decide).
-// RecordEnd is the end of the record area (start of the first tail snapshot);
-// zero means "unknown" and Open reconstructs it with a one-time scan, a
-// defence against torn or hand-edited headers.
 type FileHeader struct {
 	Version        uint16
 	Reserved       uint16
@@ -114,10 +97,7 @@ func (h *FileHeader) calculateCRC() uint32 {
 	return crc32.ChecksumIEEE(b[:4088])
 }
 
-// SelectValidHeader picks the header with the highest commit id. Both arguments
-// come from FileHeaderFromBytes, which is the one place a CRC mismatch is
-// refused — a header that reached this far cannot also be an invalid one, so
-// re-deriving its checksum here only cost two serializations per Open.
+// SelectValidHeader picks the header with the highest commit id.
 func SelectValidHeader(a, b *FileHeader) *FileHeader {
 	if a.CommitID >= b.CommitID {
 		return a

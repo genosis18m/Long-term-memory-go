@@ -13,10 +13,7 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/repo/core"
 )
 
-// A rebuild is installed as soon as it is built, so an L1 failure cannot throw it
-// away: the records it was computed from are already on disk, and the cache the
-// domain keeps serving after a dropped rebuild reports topic depths and child
-// links that no longer exist until a later pass succeeds.
+// A rebuild is installed as soon as it is built, so an L1 failure cannot throw it away.
 func TestStructureStagesKeepsRebuildAcrossL1Failure(t *testing.T) {
 	engine, err := core.Create(filepath.Join(t.TempDir(), "test.meh"))
 	if err != nil {

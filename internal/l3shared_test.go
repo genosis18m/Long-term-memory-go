@@ -1,9 +1,8 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// The file-wide shared L3 pool: one file hosts a single knowledge-graph pool
-// (core.SharedPoolAgentID) that every agent domain reads and writes, while
-// scenes, archives and profiles stay domain-local.
+// The file-wide shared L3 pool: one file hosts a single knowledge-graph pool (core.SharedPoolAgentID)
+// that every agent domain reads and writes, while scenes, archives and profiles stay domain-local.
 
 package internal
 
@@ -44,8 +43,8 @@ func createPair(t *testing.T, db *DB) (alpha, beta uint64) {
 	return alpha, beta
 }
 
-// Import as one agent, read and query as another, anchor a scene on it: the
-// pool is file-wide, not per-domain.
+// Import as one agent, read and query as another, anchor a scene on it: the pool is file-wide, not
+// per-domain.
 func TestL3PoolSharedAcrossAgents(t *testing.T) {
 	srv := mockLLMServer(t, `{"keywords":["x"]}`)
 	db, _ := newSharedL3DB(t, srv.URL)
@@ -78,8 +77,8 @@ func TestL3PoolSharedAcrossAgents(t *testing.T) {
 	}
 }
 
-// The shared domain is reserved infrastructure: never listed, never bindable
-// — yet reachable through any live caller.
+// The shared domain is reserved infrastructure: never listed, never bindable — yet reachable through
+// any live caller.
 func TestSharedL3DomainIsReserved(t *testing.T) {
 	srv := mockLLMServer(t, `{"keywords":["x"]}`)
 	db, _ := newSharedL3DB(t, srv.URL)
@@ -97,8 +96,7 @@ func TestSharedL3DomainIsReserved(t *testing.T) {
 	}
 }
 
-// Deleting a graph detaches the scenes that anchor it in every domain, not
-// just the caller's own.
+// Deleting a graph detaches the scenes that anchor it in every domain, not just the caller's own.
 func TestDeleteL3DetachesAnchorsAcrossDomains(t *testing.T) {
 	srv := mockLLMServer(t, `{"keywords":["x"]}`)
 	db, _ := newSharedL3DB(t, srv.URL)
@@ -128,13 +126,8 @@ func TestDeleteL3DetachesAnchorsAcrossDomains(t *testing.T) {
 	}
 }
 
-// The hostile sibling of the sequential case above: a scene anchors the graph
-// while DeleteL3 is mid-detach. The anchor write holds its domain lock across
-// validation and write, and the detach phase takes that same lock, so an
-// anchor either fails validation (graph already gone) or is written first and
-// cleared by the detach — once DeleteL3 returns, no scene carries the deleted
-// id. Breaking either half of that lock discipline leaves a dangling anchor
-// and fails the per-round assertion.
+// The hostile sibling of the sequential case above: a scene anchors the graph while DeleteL3 is
+// mid-detach.
 func TestDeleteL3RaceWithSceneAnchor(t *testing.T) {
 	srv := mockLLMServer(t, `{"keywords":["x"]}`)
 	db, _ := newSharedL3DB(t, srv.URL)
@@ -173,8 +166,8 @@ func TestDeleteL3RaceWithSceneAnchor(t *testing.T) {
 	}
 }
 
-// The shared pool rides the ordinary persistence path: close, reopen, and a
-// registered tenant sees its graphs again.
+// The shared pool rides the ordinary persistence path: close, reopen, and a registered tenant sees its
+// graphs again.
 func TestL3PoolSurvivesRestart(t *testing.T) {
 	srv := mockLLMServer(t, `{"keywords":["x"]}`)
 	db, path := newSharedL3DB(t, srv.URL)
@@ -205,10 +198,7 @@ func TestL3PoolSurvivesRestart(t *testing.T) {
 	}
 }
 
-// Concurrent imports and cross-domain anchor writes race the shared pool:
-// the caller holds only its own domain lock while validating against the
-// pool, so the engine-level record mutex is what keeps these reads clean —
-// the race detector is the assertion, not the return values.
+// Concurrent imports and cross-domain anchor writes race the shared pool.
 func TestL3PoolConcurrentImportAndAnchor(t *testing.T) {
 	srv := mockLLMServer(t, `{"keywords":["x"]}`)
 	db, _ := newSharedL3DB(t, srv.URL)

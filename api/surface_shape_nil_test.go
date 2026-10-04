@@ -10,11 +10,7 @@ import (
 	"testing"
 )
 
-// The stated contract is that a host-visible list is always [] and a map always {}: an
-// absent collection is a fact the host can render, while a nil one is a branch it has to
-// remember to write, and `null` in JSON is a third answer nobody asked for. This walks every
-// read on the session surface twice — before anything has been written, and after a round, a
-// plan step and a graph exist — because the empty case is where a nil leaks through.
+// The stated contract is that a host-visible list is always [] and a map always {}.
 func TestSurfaceReadsNeverReturnNilCollections(t *testing.T) {
 	sess := openSurfaceDB(t)
 
@@ -79,8 +75,7 @@ func TestSurfaceReadsNeverReturnNilCollections(t *testing.T) {
 	reads(true)
 }
 
-// walkNils records every path whose slice or map is nil. A pointer field that is unset is a
-// documented absence (ParentID, the anchor) and is not a collection, so it is not reported.
+// walkNils records every path whose slice or map is nil.
 func walkNils(v reflect.Value, path string, out *[]string) {
 	switch v.Kind() {
 	case reflect.Pointer, reflect.Interface:

@@ -1,10 +1,8 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// Package domain carries one agent domain's state: the Context container
-// (per-domain lock, the caches, a cancellable work context) plus the L2Meta and
-// plan cache maintenance every write path shares. Engine, LLM transport and the
-// three caches all hang off Context.
+// Package domain carries one agent domain's state: the Context container (per-domain lock, the caches,
+// a cancellable work context) plus the L2Meta and plan cache maintenance every write path shares.
 
 package domain
 
@@ -19,9 +17,8 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/repo/index"
 )
 
-// Context is the per-agent state: the domain lock, the L2Meta topic cache, the L4
-// content mirror, the L5 plan cache and Dream bookkeeping. Callers reach every field
-// only while holding Mu.
+// Context is the per-agent state: the domain lock, the L2Meta topic cache, the L4 content mirror, the
+// L5 plan cache and Dream bookkeeping.
 type Context struct {
 	ID uint64
 	Mu sync.Mutex
@@ -34,10 +31,6 @@ type Context struct {
 	L4     *index.L4Index     // content each topic owns: utterances AND events
 	Plans  *PlanCache         // L5 plan tree per topic
 	// Scene and Turn are the two ids a host would otherwise carry across every call.
-	// Scene restores from the records at the domain's first read; Turn has no record
-	// to restore from, so a process that died between opening a turn and closing it
-	// leaves that turn unclosed and the next read reports as much. Both are read and
-	// written under Mu, the domain lock.
 	Scene uint64
 	Turn  uint64
 	// lastUsedStamp is the highest last-used stamp this domain has issued since the
@@ -48,20 +41,17 @@ type Context struct {
 
 	LastActiveAt atomic.Int64 // Unix ms of the last context access (idle sweep)
 
-	// Reclaimed is set by the idle sweep on the context it takes out of the table,
-	// while it holds Mu: a caller already queued on that lock has no other way to
-	// learn that this context is no longer the domain's.
+	// Reclaimed is set by the idle sweep on the context it takes out of the table, while it holds Mu.
 	Reclaimed atomic.Bool
 
-	// OpCtx bounds the agent's cancellable work: the long pipelines and the LLM calls
-	// made while Mu is held, so a lifecycle barrier is not waited out by an LLM
-	// round-trip.
+	// OpCtx bounds the agent's cancellable work: the long pipelines and the LLM calls made while Mu is
+	// held, so a lifecycle barrier is not waited out by an LLM round-trip.
 	OpCtx    context.Context
 	OpCancel context.CancelFunc
 }
 
-// NewContext builds one domain's state with every cache restored from
-// its own records; a reclaimed or fresh domain rebuilds here.
+// NewContext builds one domain's state with every cache restored from its own records; a reclaimed or
+// fresh domain rebuilds here.
 func NewContext(id uint64, parent context.Context, engine *core.StorageEngine, llm llmops.Chat, defaults *config.MemHopDefaults) *Context {
 	ctx, cancel := context.WithCancel(parent)
 	return &Context{
@@ -78,13 +68,8 @@ func NewContext(id uint64, parent context.Context, engine *core.StorageEngine, l
 	}
 }
 
-// NextUsedStamp returns the value to write into a scene record's last_used_at, keeping
-// it strictly increasing within the domain. The field's unit is milliseconds, and two
-// scenes opened inside the same millisecond would otherwise tie — the tie-break is then
-// the smaller scene id, which means the clock decided which conversation a reopened
-// domain resumes: exactly the question this field exists to answer. The floor is
-// per-process memory, so a restored clock that runs backwards can only reorder within
-// one millisecond of its own stamps; nothing across a restart depends on it.
+// NextUsedStamp returns the value to write into a scene record's last_used_at, keeping it strictly
+// increasing within the domain.
 func (c *Context) NextUsedStamp(now int64) int64 {
 	if now <= c.lastUsedStamp {
 		c.lastUsedStamp++

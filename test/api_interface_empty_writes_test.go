@@ -11,16 +11,8 @@ import (
 	memhop "github.com/genosis18m/Long-term-memory-go/api"
 )
 
-// The write surface refuses more than it documents, and a refusal is only worth something to
-// a host if it is the same refusal tomorrow. Each boundary below answers with a code and a
-// sentence naming what was missing — measured before being promised — and each also answers
-// the half that actually matters: what the file looks like afterwards.
-//
-// The asymmetry is deliberate. A round may close with only one side of the dialogue, because a
-// round the agent started has no user line to carry; an event may not be empty, because an
-// event with no content says nothing happened and no reading of that is not a guess. Same
-// split for the outcome word: an empty one records nothing, since a `turn_outcome` row whose
-// word is blank would be listed beside the real ones and read as a verdict nobody gave.
+// The write surface refuses more than it documents, and a refusal is only worth something to a host if
+// it is the same refusal tomorrow.
 func TestInterfaceEmptyWritesRefuseAndStoreNothing(t *testing.T) {
 	llm := newMockLLM(t)
 	path := filepath.Join(t.TempDir(), "empty_writes.meh")
@@ -79,9 +71,7 @@ func TestInterfaceEmptyWritesRefuseAndStoreNothing(t *testing.T) {
 		}
 	}
 
-	// 5. the paired half: a round closed WITH an outcome word carries that word verbatim, in
-	// its own row, beside the two dialogue lines. Blank records nothing and a word records the
-	// word — the same judgement asked from both sides, so neither direction can drift alone.
+	// 5.
 	if _, err := sess.Search(memhop.SearchQuery{}); err != nil {
 		t.Fatalf("open the outcome turn: %v", err)
 	}

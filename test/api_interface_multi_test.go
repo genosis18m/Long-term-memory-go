@@ -1,11 +1,8 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// Offline interface tests for the file-level surface a host holds: the two kinds
-// of domain (the primary a file is opened on, and sub-agents addressed by name)
-// and CompactTo. These are the DB handle's methods, so this file works against
-// the handle directly rather than through the single-domain testDB used
-// elsewhere.
+// Offline interface tests for the file-level surface a host holds: the two kinds of domain (the
+// primary a file is opened on, and sub-agents addressed by name) and CompactTo.
 
 package test
 
@@ -28,8 +25,8 @@ func mustSub(t *testing.T, m *memhop.DB, llmURL, name string) *memhop.Session {
 	return sess
 }
 
-// settleOneTurn opens a session in a domain and closes one turn into it, so
-// the domain holds memory a test can look for.
+// settleOneTurn opens a session in a domain and closes one turn into it, so the domain holds memory a
+// test can look for.
 func settleOneTurn(t *testing.T, sess *memhop.Session, user, agent string) string {
 	t.Helper()
 	res, err := sess.Search(memhop.SearchQuery{NewScene: true})
@@ -42,8 +39,7 @@ func settleOneTurn(t *testing.T, sess *memhop.Session, user, agent string) strin
 	return res.Scene.SceneID
 }
 
-// queryFor is an L4 lookup by keyword — what a host uses to ask "where did we
-// talk about this".
+// queryFor is an L4 lookup by keyword — what a host uses to ask "where did we talk about this".
 func queryFor(keyword string) internal.L4Query {
 	return internal.L4Query{Keyword: keyword}
 }
@@ -56,10 +52,8 @@ func TestInterfaceAgentDomainsAreIsolated(t *testing.T) {
 	sa := mustSub(t, m, llm.srv.URL, "alpha")
 	sb := mustSub(t, m, llm.srv.URL, "beta")
 
-	// A name is the domain's address, so asking twice is one domain: a host calls
-	// this at every startup and treats the name as the key to its own records. The
-	// second handle has to read what the first one settled — proved below, once
-	// there is something to read.
+	// A name is the domain's address, so asking twice is one domain: a host calls this at every startup
+	// and treats the name as the key to its own records.
 	again := mustSub(t, m, llm.srv.URL, "alpha")
 
 	sceneA := settleOneTurn(t, sa, "alpha 的专属话题", "记录 alpha 的事实")
@@ -91,10 +85,8 @@ func TestInterfaceAgentDomainsAreIsolated(t *testing.T) {
 		t.Fatalf("beta cannot read its own originals: %+v err %v", arcs, err)
 	}
 
-	// A profile belongs to one domain too, and each sub-agent domain is stamped
-	// as one: the identity is the library's, not the caller's. The handle itself is
-	// not a field this write can move (TestInterfaceSubAgentNameIsItsHandle), so the
-	// domain-owned text written here is the Role.
+	// A profile belongs to one domain too, and each sub-agent domain is stamped as one: the identity is
+	// the library's, not the caller's.
 	if err := sa.UpdateL0(memhop.ProfileInput{Name: "alpha", Role: "only alpha"}); err != nil {
 		t.Fatalf("UpdateL0: %v", err)
 	}
@@ -151,10 +143,8 @@ func TestInterfaceAgentDomainsAreIsolated(t *testing.T) {
 	}
 }
 
-// A sub-agent domain is addressed by name, so a restart finds the same one
-// instead of minting a second — that is what lets a host treat the name as the
-// key to its own records. A name nobody registered is a new empty domain, not an
-// error and not somebody else's memory.
+// A sub-agent domain is addressed by name, so a restart finds the same one instead of minting a second
+// — that is what lets a host treat the name as the key to its own records.
 func TestInterfaceSubAgentDomainSurvivesReopen(t *testing.T) {
 	llm := newMockLLM(t)
 	path := filepath.Join(t.TempDir(), "reopen.meh")
@@ -178,12 +168,8 @@ func TestInterfaceSubAgentDomainSurvivesReopen(t *testing.T) {
 	}
 }
 
-// A sub-agent's Name is the handle its door is filed under, so `UpdateL0` cannot move
-// it: the write is refused, one name stays in both the roster and the profile, and the
-// door opens the same memory. Before this refusal a host that renamed its worker's
-// profile got a roster saying one thing and a profile another, and opening the worker by
-// its new name answered with an empty domain — amnesia with no error to read. The
-// primary is exempt because nothing addresses it by name, so its label is free text.
+// A sub-agent's Name is the handle its door is filed under, so `UpdateL0` cannot move it: the write is
+// refused, one name stays in both the roster and the profile, and the door opens the same memory.
 func TestInterfaceSubAgentNameIsItsHandle(t *testing.T) {
 	llm := newMockLLM(t)
 	m := openMockDB(t, filepath.Join(t.TempDir(), "names.meh"), llm.srv.URL)
@@ -289,9 +275,8 @@ func TestInterfaceCompactTo(t *testing.T) {
 		t.Fatalf("Close: %v", err)
 	}
 
-	// The copy is a complete database: it opens on its own, carries the live
-	// records and none of what was deleted. It also carries the primary the
-	// original was opened with, which is what lets it open at all.
+	// The copy is a complete database: it opens on its own, carries the live records and none of what was
+	// deleted.
 	reopened := openMockDB(t, taken, llm.srv.URL)
 	t.Cleanup(func() { _ = reopened.Close() })
 	sess, err := reopened.Primary()
@@ -313,14 +298,8 @@ func TestInterfaceCompactTo(t *testing.T) {
 	}
 }
 
-// Isolation is stated as 「scenes, originals, profiles and trajectories are fully separated by
-// domain; the L3 knowledge graph is a file-wide shared pool」. The scan paths are checked by
-// the case above; the addressed-by-id ones are where a forgotten domain argument would leak,
-// and the shared half is where over-isolation would break the tool that reads project knowledge
-// from a sub-agent. Both directions are pinned here.
-// The tenant key is the one host-generated string the library measures in bytes, so the number
-// has to be readable before a spawn rather than learned from the refusal — a name built out of a
-// task title is exactly the thing that overflows, and "one agent per task" is the deployment.
+// Isolation is stated as 「scenes, originals, profiles and trajectories are fully separated by domain;
+// the L3 knowledge graph is a file-wide shared pool」.
 func TestInterfaceSubAgentNameCapIsTheExportedNumber(t *testing.T) {
 	llm := newMockLLM(t)
 	m := openMockDB(t, filepath.Join(t.TempDir(), "names.meh"), llm.srv.URL)
@@ -423,11 +402,8 @@ func TestInterfaceIsolationHoldsOnTheIdAddressedPaths(t *testing.T) {
 		t.Fatalf("beta sees another domain's scenes: %+v err %v", scenes, err)
 	}
 
-	// Merging is the one write that moves rows in bulk, so it is the worst place for a key from
-	// another domain to be accepted quietly: every record the survivor owns would be re-pointed
-	// and the swallowed scene tombstoned, all on ids the caller cannot even read back. The
-	// refusal has to be a refusal — a merge that finds nothing to move and answers "ok" would
-	// tell the host it corrected a memory it never touched.
+	// Merging is the one write that moves rows in bulk, so it is the worst place for a key from another
+	// domain to be accepted quietly.
 	alphaScene, err := alpha.ListScenes("")
 	if err != nil || len(alphaScene) != 1 {
 		t.Fatalf("alpha's own scene listing: %+v err %v", alphaScene, err)
@@ -439,10 +415,7 @@ func TestInterfaceIsolationHoldsOnTheIdAddressedPaths(t *testing.T) {
 	if err := beta.MergeScenes(betaScene[0].SceneID, []string{alphaScene[0].SceneID}); memhop.CodeOf(err) != memhop.ErrNotFound {
 		t.Fatalf("beta merged alpha's scene into its own: want ErrNotFound, got %v", err)
 	}
-	// The same call with the survivor already anchored to a project: the anchor decision returns
-	// early there without ever reading the secondary's record, so this is the shape where only
-	// the upfront "every named id is still a scene of this domain" gate stands between a merge
-	// that answers "ok" and one that did anything at all.
+	// The same call with the survivor already anchored to a project.
 	if _, err := beta.UpdateScene(betaScene[0].SceneID, memhop.ScenePatch{L3ID: &graph}); err != nil {
 		t.Fatalf("anchor beta's scene to the shared graph: %v", err)
 	}

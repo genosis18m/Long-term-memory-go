@@ -83,9 +83,7 @@ func TestCloseNoCheckpointPreservesDiskState(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer eng2.Close()
-	// The header must not have flipped, and the snapshot must still be where
-	// that header says it is: an unreadable snapshot is cleared and replaced by
-	// a full scan, so a surviving pointer means Open consumed it.
+	// The header must not have flipped, and the snapshot must still be where that header says it is.
 	hdr2 := eng2.activeHeaderRef()
 	if hdr2.CommitID != commitID {
 		t.Fatalf("commitID: want %d, got %d", commitID, hdr2.CommitID)
@@ -99,10 +97,8 @@ func TestCloseNoCheckpointPreservesDiskState(t *testing.T) {
 	}
 }
 
-// Snapshot iteration has to stay callable: a scan that yielded with the read lock
-// held would deadlock the moment the body called another engine method, because a
-// waiting writer blocks further RLocks. The id list is copied under the lock and the
-// iteration runs lock-free, which is what every CollectAll* read path relies on.
+// Snapshot iteration has to stay callable: a scan that yielded with the read lock held would deadlock
+// the moment the body called another engine method, because a waiting writer blocks further RLocks.
 func TestIndexCallbackMayReadRecord(t *testing.T) {
 	p := tempPath(t, "iterlock")
 	eng, err := Create(p)

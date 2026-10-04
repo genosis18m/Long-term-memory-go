@@ -1,13 +1,8 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// The scene patch and the topic rename are both partly-idempotent calls: a host
-// re-states what it already knows (a confirm read, a retried write). An append-only
-// file charges for that by the byte, so a call with nothing to change must not append
-// anything — otherwise `UpdateScene(id, ScenePatch{})`, which both guides document as
-// the way to confirm a scene's anchor without listing the domain, grows the file once
-// per look. The real-change case is measured in the same breath: a test that only proves
-// "nothing was written" passes by never writing at all.
+// The scene patch and the topic rename are both partly-idempotent calls: a host re-states what it
+// already knows (a confirm read, a retried write).
 
 package internal
 

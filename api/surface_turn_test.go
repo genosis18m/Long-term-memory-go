@@ -1,8 +1,8 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// Turn-keyed surface: one key's content writes and event read-back, its plan tree,
-// and the retention window that empties it.
+// Turn-keyed surface: one key's content writes and event read-back, its plan tree, and the retention
+// window that empties it.
 
 package api
 
@@ -15,8 +15,8 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/common"
 )
 
-// event builds one turn event as a host appends it: the kind is what makes it a
-// record of what happened rather than a line of dialogue.
+// event builds one turn event as a host appends it: the kind is what makes it a record of what
+// happened rather than a line of dialogue.
 func event(eventType, payload string, ts int64) ArchiveInput {
 	return ArchiveInput{Kind: KindEvent, EventType: eventType, Content: payload, CreatedAt: ts}
 }
@@ -27,8 +27,8 @@ func onStep(slot ArchiveInput, seq uint32) ArchiveInput {
 	return slot
 }
 
-// eventsOf reads one topic's event track the only way the public surface allows: the
-// same key with the Kind condition, in Seq order.
+// eventsOf reads one topic's event track the only way the public surface allows: the same key with the
+// Kind condition, in Seq order.
 func eventsOf(t *testing.T, db *Session, topicID string) []ArchiveSlot {
 	t.Helper()
 	kind := KindEvent
@@ -39,9 +39,8 @@ func eventsOf(t *testing.T, db *Session, topicID string) []ArchiveSlot {
 	return out
 }
 
-// utterancesOf reads one topic's dialogue back as the texts it holds, in Seq order —
-// which is the order a closing call wrote them in, so a turn's question precedes its
-// answer here.
+// utterancesOf reads one topic's dialogue back as the texts it holds, in Seq order — which is the
+// order a closing call wrote them in, so a turn's question precedes its answer here.
 func utterancesOf(t *testing.T, db *Session, topicID string) []string {
 	t.Helper()
 	kind := KindUtterance
@@ -56,9 +55,8 @@ func utterancesOf(t *testing.T, db *Session, topicID string) []string {
 	return texts
 }
 
-// Dream drops events past the 7-day retention window even when there is nothing
-// to consolidate, and no delete API is exposed: a turn keeps the event still
-// inside the window and loses the one outside it.
+// Dream drops events past the 7-day retention window even when there is nothing to consolidate, and no
+// delete API is exposed: a turn keeps the event still inside the window and loses the one outside it.
 func TestSurfaceDreamPrunesExpiredEvents(t *testing.T) {
 	db := openSurfaceDB(t)
 	fresh := time.Now().Add(-time.Hour).UnixMilli()
@@ -80,9 +78,8 @@ func TestSurfaceDreamPrunesExpiredEvents(t *testing.T) {
 		t.Fatalf("both of A's events are inside the window: %+v", got)
 	}
 
-	// The two turns exist but hold no settled topics, so the consolidation stages
-	// have nothing to chew and no LLM call is made; the prune stage is what this
-	// exercises.
+	// The two turns exist but hold no settled topics, so the consolidation stages have nothing to chew and
+	// no LLM call is made; the prune stage is what this exercises.
 	if _, err := db.Dream(context.Background(), ""); err != nil {
 		t.Fatalf("dream: %v", err)
 	}
@@ -134,9 +131,7 @@ func TestSurfaceArchiveAppendAndRead(t *testing.T) {
 	}
 }
 
-// TestSurfaceListScenesByProject verifies scenes anchored to an L3 domain are
-// listed with hex ids once a session opening anchors them, and that two
-// different L3 domains yield DISJOINT scene sets (the exclusion branch).
+// TestSurfaceListScenesByProject verifies scenes anchored to an L3 domain are listed with hex ids.
 func TestSurfaceListScenesByProject(t *testing.T) {
 	db := openSurfaceDB(t)
 	l3A := l3Graph(t, db, "l3-proj-a")
@@ -180,9 +175,7 @@ func TestSurfaceListScenesByProject(t *testing.T) {
 	}
 }
 
-// TestSurfaceUpdateSceneAnchor verifies the anchor correction path: re-anchoring
-// a scene that already has a different domain is rejected (never a silent
-// no-op), Force moves it, and an empty L3ID clears it.
+// TestSurfaceUpdateSceneAnchor verifies the anchor correction path.
 func TestSurfaceUpdateSceneAnchor(t *testing.T) {
 	db := openSurfaceDB(t)
 	l3A := l3Graph(t, db, "cor-a")
@@ -230,13 +223,7 @@ func TestSurfaceUpdateSceneAnchor(t *testing.T) {
 	}
 }
 
-// TestSurfaceReservedTopicID locks the all-zero guard wherever a host still names a
-// turn. Nothing in the library ever mints that key, while it is exactly what an
-// unfilled one decodes to — so a read that answered it would be read back as "this
-// turn holds nothing", and a correction asked for it would hang on an address nobody
-// can name again. The five writes on the open turn carry no key at all: which turn is
-// open is the library's memory of the last Search, and what they refuse is a domain
-// holding no turn (TestTurnWritesRefuseWhenNoTurnIsOpen).
+// TestSurfaceReservedTopicID locks the all-zero guard wherever a host still names a turn.
 func TestSurfaceReservedTopicID(t *testing.T) {
 	db := openSurfaceDB(t)
 	zero := "0000000000000000"
@@ -263,11 +250,8 @@ func TestSurfaceReservedTopicID(t *testing.T) {
 	}
 }
 
-// TestSurfaceAppendArchivePlanBranch pins the split write surface: the plan write
-// face creates a tree one step at a time and AppendArchive writes content — both a
-// bare turn event (no NodeSeq) and an event bound to one created step. The two turns
-// are worked one after the other: a write reaches the turn the library holds, so the
-// bare one is finished before the plan tree opens.
+// TestSurfaceAppendArchivePlanBranch pins the split write surface: the plan write face creates a tree
+// one step at a time and AppendArchive writes content.
 func TestSurfaceAppendArchivePlanBranch(t *testing.T) {
 	db := openSurfaceDB(t)
 	now := time.Now().UnixMilli()
@@ -315,9 +299,8 @@ func TestSurfaceAppendArchivePlanBranch(t *testing.T) {
 	if _, err := db.AppendArchive(onStep(ArchiveInput{Kind: KindEvent, Content: "x", CreatedAt: now + 3}, root)); CodeOf(err) != ErrInvalidQuery {
 		t.Fatalf("empty plan event type: want ErrInvalidQuery, got %v", err)
 	}
-	// An ordinal no step of this turn holds can never name one, so the same rule
-	// refuses it — and nothing about the tree changes on the way out. An integer
-	// address has no malformed spelling to catch: a step either exists or does not.
+	// An ordinal no step of this turn holds can never name one, so the same rule refuses it — and nothing
+	// about the tree changes on the way out.
 	if _, err := db.AppendArchive(onStep(event("x", "p", now+4), 77)); CodeOf(err) != ErrInvalidQuery {
 		t.Fatalf("an ordinal nobody created: want ErrInvalidQuery, got %v", err)
 	}
@@ -345,10 +328,7 @@ func TestSurfaceAppendArchivePlanBranch(t *testing.T) {
 	}
 }
 
-// TestSurfaceIDContract locks the host-facing id surface: the library issues
-// every id, so the facade exposes no integer-to-hex bridge, and the turn key a
-// plan is addressed by is one of them — hex-rendered, library-minted, and never
-// the reserved all-zero token.
+// TestSurfaceIDContract locks the host-facing id surface.
 func TestSurfaceIDContract(t *testing.T) {
 	llm := stubLLM()
 	t.Cleanup(llm.Close)
@@ -363,8 +343,8 @@ func TestSurfaceIDContract(t *testing.T) {
 	}
 }
 
-// TestSurfaceDreamUnknownScene: naming a scene that does not exist is an
-// error, not a zero-valued report that looks like a successful no-op.
+// TestSurfaceDreamUnknownScene: naming a scene that does not exist is an error, not a zero-valued
+// report that looks like a successful no-op.
 func TestSurfaceDreamUnknownScene(t *testing.T) {
 	db := openSurfaceDB(t)
 	ghost := common.FormatHash(common.HashID("no-such-scene"))
@@ -378,12 +358,7 @@ func TestSurfaceDreamUnknownScene(t *testing.T) {
 	}
 }
 
-// A host runs one decision loop per library, and the open turn is the library's own
-// memory now. So the memory has to be per agent domain, not per file and not per
-// process: three loops drive three domains here — the primary and a sub-agent sharing
-// one file, plus a second file in the same process. Each opens a turn, records one
-// line of its own in it, and closes it; the read-back says whether any of them wrote
-// onto another's turn.
+// A host runs one decision loop per library, and the open turn is the library's own memory now.
 func TestEachDomainHoldsItsOwnTurn(t *testing.T) {
 	llm := stubLLM()
 	t.Cleanup(llm.Close)
@@ -440,12 +415,7 @@ func TestEachDomainHoldsItsOwnTurn(t *testing.T) {
 	}
 }
 
-// The host's own decision to run a second agent lands here: mid-round — after the first
-// library opened its turn and while that turn is still open — a second file is opened and a
-// whole round is run through it. Nothing about that disturbs the first round: the turn the
-// first library opened is still the one its close settles, its own events stay its own, and
-// the read that follows continues its own scene. This is the shape of "one library per
-// agent" being safe to grow at runtime rather than only at start-up.
+// The host's own decision to run a second agent lands here: mid-round.
 func TestSecondLibraryOpenedMidRound(t *testing.T) {
 	llm := stubLLM()
 	t.Cleanup(llm.Close)

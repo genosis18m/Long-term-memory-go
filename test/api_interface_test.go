@@ -1,9 +1,8 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// Offline interface tests: exercise the public API surface through memhop.Open
-// with a mock OpenAI-compatible LLM server. No external services required; run
-// with `go test ./test/...`.
+// Offline interface tests: exercise the public API surface through memhop.Open with a mock
+// OpenAI-compatible LLM server.
 
 package test
 
@@ -19,8 +18,8 @@ import (
 	internal "github.com/genosis18m/Long-term-memory-go/internal"
 )
 
-// testDB is the offline test handle: an agent-domain session plus the
-// file-level lifecycle methods of the underlying DB.
+// testDB is the offline test handle: an agent-domain session plus the file-level lifecycle methods of
+// the underlying DB.
 type testDB struct {
 	*memhop.Session
 	m *memhop.DB
@@ -30,8 +29,7 @@ func (h *testDB) Checkpoint() error { return h.m.Checkpoint() }
 func (h *testDB) Close() error      { return h.m.Close() }
 func (h *testDB) IsClosed() bool    { return h.m.IsClosed() }
 
-// CompactTo is a file-level operation, so it lives on the DB handle rather than
-// the session.
+// CompactTo is a file-level operation, so it lives on the DB handle rather than the session.
 func (h *testDB) CompactTo(newPath string) error { return h.m.CompactTo(newPath) }
 
 // testLLM is the mock endpoint every offline scenario opens against.
@@ -39,9 +37,7 @@ func testLLM(url string) memhop.LlmConfig {
 	return memhop.LlmConfig{APIURL: url, APIKey: "mock", Model: "mock-model"}
 }
 
-// openMockDB opens a database backed by the mock LLM at path. Opening a file
-// that is not there yet needs a primary profile, so every scenario supplies the
-// same fixture one. Opts tweak the tuning knobs per scenario.
+// openMockDB opens a database backed by the mock LLM at path.
 func openMockDB(t testing.TB, path, llmURL string, opts ...func(*memhop.MemHopDefaults)) *memhop.DB {
 	t.Helper()
 	defaults := memhop.DefaultMemHopDefaults
@@ -53,10 +49,7 @@ func openMockDB(t testing.TB, path, llmURL string, opts ...func(*memhop.MemHopDe
 	if err != nil {
 		t.Fatalf("Open: %v", err)
 	}
-	// The handle is the opener's to hand back: an open .meh keeps the engine's exclusive
-	// lock, and a locked file cannot be unlinked, so a scenario that forgets to Close fails
-	// in t.TempDir's cleanup on Windows instead of in its own assertions. A scenario that
-	// closes early to reopen the same path answers ErrClosed here, which is not a failure.
+	// The handle is the opener's to hand back.
 	t.Cleanup(func() {
 		if err := m.Close(); err != nil && memhop.CodeOf(err) != memhop.ErrClosed {
 			t.Errorf("close: %v", err)
@@ -86,9 +79,7 @@ func openTestDB(t *testing.T) (*testDB, *mockLLM) {
 	return h, llm
 }
 
-// openSession asks the library for a fresh host session (scene) and returns
-// its hex id. NewScene is what asks: an empty query now continues the domain's
-// current scene, which is how a host running one agent over one library reads.
+// openSession asks the library for a fresh host session (scene) and returns its hex id.
 func openSession(t *testing.T, db *testDB) string {
 	t.Helper()
 	res, err := db.Search(memhop.SearchQuery{NewScene: true})
@@ -98,10 +89,8 @@ func openSession(t *testing.T, db *testDB) string {
 	return res.Scene.SceneID
 }
 
-// openTurn opens the next turn of a session and returns the topic id the
-// library issued for it — the id that turn's content, plan tree and distillation
-// are keyed by, and the one this file reads back. The writes of that turn take no
-// id: the library holds which turn is open.
+// openTurn opens the next turn of a session and returns the topic id the library issued for it — the
+// id that turn's content, plan tree and distillation are keyed by, and the one this file reads back.
 func openTurn(t *testing.T, db *testDB, sceneID string) string {
 	t.Helper()
 	res, err := db.Search(memhop.SearchQuery{SceneID: sceneID})
@@ -111,12 +100,7 @@ func openTurn(t *testing.T, db *testDB, sceneID string) string {
 	return res.NewTopicID
 }
 
-// turn closes the turn the last Search opened, the way a host ends one round: one
-// Update carries the stimulus, the answer and the timestamp, and the library lands
-// them on the slots dialogue owns and distills them into that turn's topic. It
-// returns the topic the turn settled into — which turn that was is the library's to
-// remember, so a caller that wants proof compares this id with the one Search
-// handed back. The error is the close's own, so a caller can pin a rejection.
+// turn closes the turn the last Search opened, the way a host ends one round.
 func turn(db *memhop.Session, user, agent string) (string, error) {
 	topic, err := db.Update(memhop.TurnEnd{
 		Input: user, Output: agent, CreatedAt: time.Now().UnixMilli(),
@@ -140,9 +124,8 @@ func TestInterfaceOpenClose(t *testing.T) {
 	}
 }
 
-// The memory loop contract offline: an empty-id Search mints a session, one
-// Update closes one turn (topic + two originals + exactly one distillation),
-// and the same session read hands it back.
+// The memory loop contract offline: an empty-id Search mints a session, one Update closes one turn
+// (topic + two originals + exactly one distillation), and the same session read hands it back.
 func TestInterfaceSearchUpdateL2L4(t *testing.T) {
 	db, llm := openTestDB(t)
 	sceneID := openSession(t, db)
@@ -195,19 +178,15 @@ func TestInterfaceSearchUpdateL2L4(t *testing.T) {
 		t.Fatalf("the turn topic carries %q, want the three words distilled from it", after.Topics[0].FusedKeywords)
 	}
 
-	// One turn stays the library's turn until the next read: a record still lands
-	// on it, and an empty one is refused where it is written, not where it is
-	// distilled. (A turn cannot be pointed at from elsewhere: with no turn open
-	// every write refuses, which TestInterfaceWritesRefuseWhenNoTurnIsOpen pins.)
+	// One turn stays the library's turn until the next read: a record still lands on it, and an empty one
+	// is refused where it is written, not where it is distilled.
 	if _, err := db.AppendArchive(memhop.ArchiveInput{
 		Kind: memhop.KindUtterance, Role: memhop.RoleUser, CreatedAt: 1,
 	}); err == nil {
 		t.Fatal("an utterance with no content should fail")
 	}
 
-	// A host that runs a second session and then loses it cannot close the turn
-	// that session had opened: the scene going takes its turn, and the write is
-	// refused as a missing turn rather than landing on a scene the host never named.
+	// A host that runs a second session and then loses it cannot close the turn that session had opened.
 	other := openSession(t, db)
 	if err := db.DeleteScene(other); err != nil {
 		t.Fatalf("DeleteScene: %v", err)
@@ -243,10 +222,8 @@ func TestInterfaceSearchUpdateL2L4(t *testing.T) {
 	}
 }
 
-// The turn's writes name no ids, so the one mistake left to a host is writing when
-// the domain holds no open turn — never read, or a turn deleted out from under it.
-// Every one of the five writes refuses with the query code and says which fact it
-// is missing, and none of them guesses a turn to write onto.
+// The turn's writes name no ids, so the one mistake left to a host is writing when the domain holds no
+// open turn — never read, or a turn deleted out from under it.
 func TestInterfaceWritesRefuseWhenNoTurnIsOpen(t *testing.T) {
 	db, llm := openTestDB(t)
 	ts := time.Now().UnixMilli()
@@ -287,9 +264,8 @@ func TestInterfaceWritesRefuseWhenNoTurnIsOpen(t *testing.T) {
 		t.Fatalf("a refused close asked the model %d times, want 0", calls)
 	}
 
-	// The same refusal when the turn is gone rather than never opened: a scene that
-	// goes takes the turn opened on it, and the library does not move that close to
-	// a scene the host never named.
+	// The same refusal when the turn is gone rather than never opened: a scene that goes takes the turn
+	// opened on it, and the library does not move that close to a scene the host never named.
 	sceneID := openSession(t, db)
 	if err := db.DeleteScene(sceneID); err != nil {
 		t.Fatalf("DeleteScene: %v", err)
@@ -308,8 +284,8 @@ func TestInterfaceWritesRefuseWhenNoTurnIsOpen(t *testing.T) {
 	}
 }
 
-// One turn costs exactly one LLM round trip: the distillation of what the turn
-// appended, however many records that is.
+// One turn costs exactly one LLM round trip: the distillation of what the turn appended, however many
+// records that is.
 func TestInterfaceOneDistillationPerTurn(t *testing.T) {
 	db, llm := openTestDB(t)
 	sceneID := openSession(t, db)
@@ -351,10 +327,7 @@ func TestInterfaceL0(t *testing.T) {
 	}
 }
 
-// A model that answers off contract costs the host that turn's distillation and
-// nothing else: the close is refused rather than storing a topic with no keyword
-// track, and the originals the closing call writes itself stay exactly as they
-// were. The turn is still open afterwards, so the host can close it again.
+// A model that answers off contract costs the host that turn's distillation and nothing else.
 func TestInterfaceUpdateRefusesAnOffContractReply(t *testing.T) {
 	db, llm := openTestDB(t)
 	sceneID := openSession(t, db)
@@ -380,9 +353,8 @@ func TestInterfaceUpdateRefusesAnOffContractReply(t *testing.T) {
 	if owned[0].Content != "用户要求重构代码" || owned[1].Content != "好的,我来重构这段代码" {
 		t.Fatalf("the refused close rewrote what it had written: %+v", owned)
 	}
-	// SceneContext is the read that opens no turn, and that is why the check that
-	// nothing settled goes through it: a Search here would replace the very turn the
-	// retry below is meant to close.
+	// SceneContext is the read that opens no turn, and that is why the check that nothing settled goes
+	// through it: a Search here would replace the very turn the retry below is meant to close.
 	ctx, err := db.SceneContext(sceneID)
 	if err != nil {
 		t.Fatalf("SceneContext after the refused close: %v", err)
@@ -402,10 +374,8 @@ func TestInterfaceUpdateRefusesAnOffContractReply(t *testing.T) {
 	}
 }
 
-// Item 1 of the host's list is 「keep the profile in the prompt every round」, and the round's
-// read is the call that carries it: ProfileBrief has to say what the profile holds *now*, not
-// what it held when the last consolidation ran. Whole-replace is what makes this worth testing
-// separately — a preference the host stopped sending is gone from the brief, not still listed.
+// Item 1 of the host's list is 「keep the profile in the prompt every round」, and the round's read is
+// the call that carries it.
 func TestInterfaceProfileBriefReflectsWhatTheHostJustWrote(t *testing.T) {
 	db, _ := openTestDB(t)
 	if err := db.UpdateL0(memhop.ProfileInput{
@@ -442,9 +412,8 @@ func TestInterfaceProfileBriefReflectsWhatTheHostJustWrote(t *testing.T) {
 	if strings.Contains(again.ProfileBrief, "retry") {
 		t.Fatalf("a preference the host stopped sending is still in the brief: %q", again.ProfileBrief)
 	}
-	// The digest is a rendering of the same record GetL0 returns, never a cached copy:
-	// what a host reads back field by field and what it puts in front of the model
-	// cannot disagree after a write.
+	// The digest is a rendering of the same record GetL0 returns, never a cached copy: what a host reads
+	// back field by field and what it puts in front of the model cannot disagree after a write.
 	slot, err := db.GetL0()
 	if err != nil || slot.Name != "改名后的主域" || len(slot.Preferences) != 1 {
 		t.Fatalf("GetL0 after the second write = %+v err %v", slot, err)

@@ -11,8 +11,8 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/test/testsupport"
 )
 
-// TestOpenSmoke verifies that a MemHop database can be opened against the real
-// LLM endpoint and closed cleanly.
+// TestOpenSmoke verifies that a MemHop database can be opened against the real LLM endpoint and closed
+// cleanly.
 func TestOpenSmoke(t *testing.T) {
 	db := testsupport.OpenMemHop(t)
 	defer db.Close()

@@ -14,13 +14,8 @@ import (
 	memhop "github.com/genosis18m/Long-term-memory-go/api"
 )
 
-// What the recall read owes a host is not a judgment call: after the corpus goes in, every
-// settled round must come back — same set, same order, same bytes. QA accuracy over these
-// fixtures needs a real model (the answers are derived, not quoted), so this pins the half
-// that does not: nothing dropped, nothing reordered, nothing altered on the way through the
-// log, and the round a cue points at found by the rule the host's recall uses (substring over
-// the round's own prose). It runs on the offline stub, so it costs no quota and can gate a
-// change to the write or read path.
+// What the recall read owes a host is not a judgment call: after the corpus goes in, every settled
+// round must come back — same set, same order, same bytes.
 func TestInterfaceCorpusRoundTripsVerbatim(t *testing.T) {
 	sample := loadLocomoSample(t, 0)
 	db := openMockDB(t, filepath.Join(t.TempDir(), "corpus.meh"), newMockLLM(t).srv.URL,
@@ -143,9 +138,8 @@ func loadLocomoSample(tb testing.TB, n int) corpusSample {
 	return fx.Items[n]
 }
 
-// pairedRounds folds a session's alternating lines into the library's round shape: one
-// settled round per (asked, answered) pair, which is what `Update` closes. A trailing
-// unpaired line is left out — a round needs both sides.
+// pairedRounds folds a session's alternating lines into the library's round shape: one settled round
+// per (asked, answered) pair, which is what `Update` closes.
 func pairedRounds(tb testing.TB, turns []corpusTurn) []round {
 	tb.Helper()
 	out := make([]round, 0, len(turns)/2)

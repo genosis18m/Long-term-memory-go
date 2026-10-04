@@ -93,8 +93,8 @@ func TestMergeScenesMovesTopics(t *testing.T) {
 	}
 }
 
-// Merging also retargets the cached entries, otherwise the scene read keeps
-// serving topics under a scene id that no longer exists.
+// Merging also retargets the cached entries, otherwise the scene read keeps serving topics under a
+// scene id that no longer exists.
 func TestMergeScenesRetargetsCache(t *testing.T) {
 	engine := newTestEngine(t)
 	db := newTestDB(t, engine)
@@ -119,11 +119,7 @@ func TestMergeScenesRetargetsCache(t *testing.T) {
 	}
 }
 
-// A merged-away scene's L1 node has to go with it. The merge retargets the scene's
-// topics onto the primary, so nothing names that node again — and the rebuild
-// decides staleness from a node's own topics, which still read back — so a ghost
-// node keeps its importance, keeps being distilled into the profile, and keeps
-// pairing with live scenes in every later hyperedge pass.
+// A merged-away scene's L1 node has to go with it.
 func TestMergeScenesRemovesTheMergedSceneNode(t *testing.T) {
 	engine := newTestEngine(t)
 	db := newTestDB(t, engine)
@@ -197,9 +193,8 @@ func TestMergeScenesPrimaryInSecondary(t *testing.T) {
 	}
 }
 
-// TestDeleteTopicRemovesSubtreeAndArchives deleting a topic removes its subtree and
-// every record the subtree's topics own - archives and plan nodes alike, including the
-// ones hanging off a child that was never named - plus their cache entries.
+// TestDeleteTopicRemovesSubtreeAndArchives deleting a topic removes its subtree and every record the
+// subtree's topics own.
 func TestDeleteTopicRemovesSubtreeAndArchives(t *testing.T) {
 	engine := newTestEngine(t)
 	db := newTestDB(t, engine)
@@ -224,9 +219,7 @@ func TestDeleteTopicRemovesSubtreeAndArchives(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	// The child owns records of its own: an archive and a plan step. A cascade that walks only
-	// the id it was handed drops the two topics and leaves these unreachable - invisible until a
-	// reopen rebuilds the counts from records.
+	// The child owns records of its own: an archive and a plan step.
 	childArc := core.HashContent(childID, core.SeqUser)
 	if err := core.WriteArchiveSlot(engine, core.DefaultAgentID, childArc, &core.ArchiveSlot{
 		IDHash: childArc, Kind: core.KindUtterance, Seq: core.SeqUser,
@@ -285,8 +278,7 @@ func TestDeleteTopicNotFound(t *testing.T) {
 	}
 }
 
-// TestDeleteSceneNotFound missing scene returns ErrNotFound (consistent
-// with DeleteTopic).
+// TestDeleteSceneNotFound missing scene returns ErrNotFound (consistent with DeleteTopic).
 func TestDeleteSceneNotFound(t *testing.T) {
 	db := newTestDB(t, newTestEngine(t))
 	if err := db.DeleteScene(core.DefaultAgentID, common.FormatHash(common.HashID("ghost-scene"))); common.CodeOf(err) != common.ErrNotFound {
@@ -294,10 +286,8 @@ func TestDeleteSceneNotFound(t *testing.T) {
 	}
 }
 
-// Every entry that takes a topic key parses it the same way, so the reserved
-// all-zero one is refused by the two that neither write nor read a record either:
-// naming a topic no read can ever serve is not a lookup that misses, it is an id
-// the library never issues.
+// Every entry that takes a topic key parses it the same way, so the reserved all-zero one is refused
+// by the two that neither write nor read a record either.
 func TestTopicKeyEntryPointsRejectReservedZero(t *testing.T) {
 	db := newTestDB(t, newTestEngine(t))
 	const zero = "0000000000000000"
@@ -309,10 +299,8 @@ func TestTopicKeyEntryPointsRejectReservedZero(t *testing.T) {
 	}
 }
 
-// TestDeleteTopicSubtreeComesFromParentID a topic names no children of its own;
-// the tree is the children's ParentID. So deleting one turn leaves the parent and
-// its other children standing, and the scene read still counts exactly the
-// children that remain.
+// TestDeleteTopicSubtreeComesFromParentID a topic names no children of its own; the tree is the
+// children's ParentID.
 func TestDeleteTopicSubtreeComesFromParentID(t *testing.T) {
 	engine := newTestEngine(t)
 	db := newTestDB(t, engine)
@@ -366,8 +354,8 @@ func TestDeleteTopicSubtreeComesFromParentID(t *testing.T) {
 	}
 }
 
-// TestDeleteSceneRemovesEverything deleting a scene removes its record, all
-// topics (all depths), archives and their L2Meta entries.
+// TestDeleteSceneRemovesEverything deleting a scene removes its record, all topics (all depths),
+// archives and their L2Meta entries.
 func TestDeleteSceneRemovesEverything(t *testing.T) {
 	engine := newTestEngine(t)
 	db := newTestDB(t, engine)
@@ -412,11 +400,8 @@ func TestDeleteSceneRemovesEverything(t *testing.T) {
 	}
 }
 
-// The cascade's last whole-bucket enumeration runs before its first tombstone, so a
-// node that will not read back — even one belonging to another turn — stops the
-// delete with everything in place. Tombstoning the scene and its topics first would
-// leave a turn whose tree is still on disk, and a retry could never see that the
-// deletion it is being asked for already happened.
+// The cascade's last whole-bucket enumeration runs before its first tombstone, so a node that will not
+// read back — even one belonging to another turn — stops the delete with everything in place.
 func TestDeleteSceneRefusesWhileThePlanBucketIsUnreadable(t *testing.T) {
 	engine := newTestEngine(t)
 	db := newTestDB(t, engine)
@@ -452,9 +437,7 @@ func TestDeleteSceneRefusesWhileThePlanBucketIsUnreadable(t *testing.T) {
 	}
 }
 
-// A scene is named by the library when it is created; UpdateScene is the
-// host's only way to title one. The title must survive a later Search, which
-// rewrites that very record to bump its hit counter and turn sequence.
+// A scene is named by the library when it is created; UpdateScene is the host's only way to title one.
 func TestUpdateSceneNameSurvivesLaterTurns(t *testing.T) {
 	srv, calls := countingLLMServer(t, turnKeywords)
 	db := newSearchTestDB(t, srv.URL)
@@ -499,11 +482,7 @@ func TestUpdateSceneNameSurvivesLaterTurns(t *testing.T) {
 	}
 }
 
-// The capability regression this layer accepts, proved end to end: once the
-// retention window passes, a topic keeps the keyword track Dream folded out of it
-// and its transcript comes back **empty, not failed** — an expired turn is a legal
-// end state, and a host has to be able to tell that apart from a read that lost a
-// line (which stays a hard ErrIO).
+// The capability regression this layer accepts, proved end to end.
 func TestSceneContextAfterContentRetentionIsEmptyNotAnError(t *testing.T) {
 	srv := contractLLMServer(t)
 	db := newSearchTestDB(t, srv.URL)
@@ -517,9 +496,8 @@ func TestSceneContextAfterContentRetentionIsEmptyNotAnError(t *testing.T) {
 		t.Fatalf("a settled turn should own its two originals, got %d", len(owned))
 	}
 
-	// The appended originals sit at 1000/2000 ms since the epoch, so they are
-	// already far outside any 7-day window: one Dream pass is the whole expiry
-	// path.
+	// The appended originals sit at 1000/2000 ms since the epoch, so they are already far outside any
+	// 7-day window: one Dream pass is the whole expiry path.
 	if _, err := db.RunDream(context.Background(), core.DefaultAgentID, 0); err != nil {
 		t.Fatalf("dream: %v", err)
 	}
@@ -543,19 +521,14 @@ func TestSceneContextAfterContentRetentionIsEmptyNotAnError(t *testing.T) {
 	if len(found.Messages) != 0 {
 		t.Fatalf("swept content still rendered: %+v", found.Messages)
 	}
-	// The keyword track is the durable product, and it is what survives: without
-	// this the read would be indistinguishable from a scene that never had the
-	// turn at all.
+	// The keyword track is the durable product, and it is what survives: without this the read would be
+	// indistinguishable from a scene that never had the turn at all.
 	if len(found.Keywords) == 0 {
 		t.Fatalf("the topic lost the one thing that outlives its content: %+v", found)
 	}
 }
 
-// SceneContext is the recovery read: it opens no turn. The turn counter is not
-// on the host-visible scene record, so the contract is pinned here, where the
-// record itself is readable. A read that consumed a turn would hand the host's
-// next Search an id for a turn nobody opened, and the one it skipped would never
-// settle.
+// SceneContext is the recovery read: it opens no turn.
 func TestSceneContextOpensNoTurn(t *testing.T) {
 	srv := mockLLMServer(t, turnKeywords)
 	db := newSearchTestDB(t, srv.URL)
@@ -564,9 +537,8 @@ func TestSceneContextOpensNoTurn(t *testing.T) {
 	if _, err := db.SceneContext(core.DefaultAgentID, common.FormatHash(sceneID)); err != nil {
 		t.Fatalf("scene context: %v", err)
 	}
-	// The same read with no id named is the same transcript: which scene the domain is
-	// working is the library's memory, so a loop that recalls between its own rounds
-	// needs no id to do it with — and needs no turn, either.
+	// The same read with no id named is the same transcript: which scene the domain is working is the
+	// library's memory, so a loop that recalls between its own rounds needs no id to do it with.
 	blind, err := db.SceneContext(core.DefaultAgentID, "")
 	if err != nil {
 		t.Fatalf("un-named scene context: %v", err)
@@ -599,18 +571,14 @@ func TestSceneContextOpensNoTurn(t *testing.T) {
 	}
 }
 
-// The un-named read answers from the domain's memory of which scene it is on, and that
-// memory restores from the records — so the same transcript comes back after the context
-// is dropped, which is the read a restarted host's recall loop makes first. A domain with
-// no scene yet is ErrNotFound: this read promises to write nothing, and creating a scene
-// is what opening a turn does.
+// The un-named read answers from the domain's memory of which scene it is on, and that memory restores
+// from the records.
 func TestSceneContextWithoutAnIdReadsTheDomainsScene(t *testing.T) {
 	srv := mockLLMServer(t, turnKeywords)
 	db := newSearchTestDB(t, srv.URL)
 
-	// A domain with no session yet answers with an empty transcript: "nothing has been said
-	// here" is a fact this read can give, and giving it writes nothing. Creating a scene is
-	// still what opening a turn does, so the record count stays at zero.
+	// A domain with no session yet answers with an empty transcript: "nothing has been said here" is a
+	// fact this read can give, and giving it writes nothing.
 	empty, err := db.SceneContext(core.DefaultAgentID, "")
 	if err != nil {
 		t.Fatalf("an un-named read of an unread domain: %v", err)
@@ -630,9 +598,8 @@ func TestSceneContextWithoutAnIdReadsTheDomainsScene(t *testing.T) {
 	if err != nil {
 		t.Fatalf("un-named read: %v", err)
 	}
-	// A second conversation, then back to the first through the domain's own memory:
-	// the named read moves it, so the un-named read that follows answers about the
-	// scene the host last pointed at.
+	// A second conversation, then back to the first through the domain's own memory: the named read moves
+	// it, so the un-named read that follows answers about the scene the host last pointed at.
 	if _, err := db.Search(core.DefaultAgentID, SearchQuery{NewScene: true}); err != nil {
 		t.Fatalf("NewScene: %v", err)
 	}

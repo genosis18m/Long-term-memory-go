@@ -15,9 +15,8 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/repo/core"
 )
 
-// A reply is JSON the model may wrap in a fence, and node ids come back as numbers
-// or as quoted strings depending on the model — both shapes have to parse, since
-// a group that fails to parse is a merge the scene never gets.
+// A reply is JSON the model may wrap in a fence, and node ids come back as numbers or as quoted
+// strings depending on the model.
 func TestParseConsolidateResponseAcceptsBothIDShapes(t *testing.T) {
 	out, err := parseConsolidateResponse("```json\n" +
 		`{"l2_groups":[{"node_hashes":[11,"22"],"merged_summary":"合并"}]}` + "\n```")
@@ -36,9 +35,8 @@ func TestParseConsolidateResponseAcceptsBothIDShapes(t *testing.T) {
 	}
 }
 
-// A member id that cannot be parsed is an error rather than a dropped group, and a
-// reply that is not JSON at all is an error rather than an empty merge list: either
-// one silently thinned would read exactly like a model that merged less.
+// A member id that cannot be parsed is an error rather than a dropped group, and a reply that is not
+// JSON at all is an error rather than an empty merge list.
 func TestParseConsolidateResponseRefusesWhatItCannotUse(t *testing.T) {
 	for _, reply := range []string{
 		`{"l2_groups":[{"node_hashes":["nope"]}]}`,
@@ -52,9 +50,7 @@ func TestParseConsolidateResponseRefusesWhatItCannotUse(t *testing.T) {
 	}
 }
 
-// The topic count the prompt aims at is the caller's configured floor, stated
-// twice: a constant here would tell the model to merge to a number the engine
-// never runs by, and rule 2 (never fuse different subjects) outranks it.
+// The topic count the prompt aims at is the caller's configured floor, stated twice.
 func TestSystemConsolidateStatesTheConfiguredFloor(t *testing.T) {
 	prompt := systemConsolidate(40)
 	for _, want := range []string{"down toward 40 or below", "the total is already 40 or fewer"} {
@@ -67,10 +63,8 @@ func TestSystemConsolidateStatesTheConfiguredFloor(t *testing.T) {
 	}
 }
 
-// The MBTI type word is re-derived from the four dimensions, so a reply whose
-// type contradicts its own numbers does not get to keep it. The dimensions
-// themselves are clamped: an out-of-range signal would otherwise flow straight
-// into the profile record.
+// The MBTI type word is re-derived from the four dimensions, so a reply whose type contradicts its own
+// numbers does not get to keep it.
 func TestParseDistillResponseDerivesTypeAndClamps(t *testing.T) {
 	out, err := parseDistillResponse(`{"emotion":{"valence":4,"arousal":-2,"dominance":0.6},`+
 		`"mbti":{"i_e":-9,"n_s":0.2,"t_f":-0.3,"j_p":0.1,"type":"ZZZZ"},`+
@@ -92,9 +86,7 @@ func TestParseDistillResponseDerivesTypeAndClamps(t *testing.T) {
 	}
 }
 
-// Valid JSON that answers none of the contract is not a thin answer, it is no
-// answer: the zeros it decodes to would erase the distilled emotion, and four
-// silent dimensions derive a personality type out of nothing.
+// Valid JSON that answers none of the contract is not a thin answer, it is no answer.
 func TestParseDistillResponseRefusesAReplyWithNoContract(t *testing.T) {
 	for _, reply := range []string{
 		`{}`,
@@ -124,10 +116,8 @@ func TestParseDistillResponseRefusesAReplyWithNoContract(t *testing.T) {
 	}
 }
 
-// The personality budget is one number with two consumers: the prompt that asks
-// the model for it and the parser that cuts to it. Stating it twice let them drift,
-// and a reply written to a length the parser then cuts reads as a truncated
-// sentence in every later prompt.
+// The personality budget is one number with two consumers: the prompt that asks the model for it and
+// the parser that cuts to it.
 func TestSystemDistillStatesTheBudgetTheParserEnforces(t *testing.T) {
 	want := fmt.Sprintf("at most %d characters", distillPersonalityMaxRunes)
 	if !strings.Contains(systemDistill, want) {
@@ -135,9 +125,8 @@ func TestSystemDistillStatesTheBudgetTheParserEnforces(t *testing.T) {
 	}
 }
 
-// A personality past the cap is cut to it rather than refused: the summary goes
-// into the profile record and into every later prompt, so the cap is what keeps
-// one verbose reply from inflating both.
+// A personality past the cap is cut to it rather than refused: the summary goes into the profile
+// record and into every later prompt, so the cap is what keeps one verbose reply from inflating both.
 func TestParseDistillResponseCapsPersonality(t *testing.T) {
 	long := strings.Repeat("话", distillPersonalityMaxRunes+40)
 	out, err := parseDistillResponse(`{"emotion":{},"mbti":{},"personality":"`+long+`","per_node":[]}`, nil)
@@ -149,11 +138,8 @@ func TestParseDistillResponseCapsPersonality(t *testing.T) {
 	}
 }
 
-// A per-node row is kept only when it names a node this pass put in front of the
-// model — as hex that parses and as one of the sampled ids. The id is the
-// backfill's address: a row naming anything else has no node to write to, and
-// handing it down aborts the whole distillation stage on ErrNotFound, every pass,
-// until the model happens to answer differently.
+// A per-node row is kept only when it names a node this pass put in front of the model — as hex that
+// parses and as one of the sampled ids.
 func TestParseDistillResponseKeepsOnlySampledNodeRows(t *testing.T) {
 	known := map[uint64]struct{}{1: {}}
 	out, err := parseDistillResponse(`{"emotion":{},"mbti":{},"personality":"",`+
@@ -177,8 +163,8 @@ func TestParseDistillResponseRefusesNonJSON(t *testing.T) {
 	}
 }
 
-// budgetSpy records every output budget a call point asks the transport for, and
-// answers with something no parser can use, so the whole attempt ladder runs.
+// budgetSpy records every output budget a call point asks the transport for, and answers with
+// something no parser can use, so the whole attempt ladder runs.
 type budgetSpy struct {
 	ceiling    int
 	calls      []int
@@ -198,9 +184,8 @@ func (s *budgetSpy) ChatWithRetry(_ context.Context, _, _ string, primaryMax, re
 
 func (s *budgetSpy) MaxOutputTokens() int { return s.ceiling }
 
-// retryFailsOnce answers the first attempt with something no parser can use and fails
-// every later call — the shape of a format-constrained retry that gets cancelled, or
-// refused by the endpoint.
+// retryFailsOnce answers the first attempt with something no parser can use and fails every later call
+// — the shape of a format-constrained retry that gets cancelled, or refused by the endpoint.
 type retryFailsOnce struct {
 	budgetSpy
 	attempts int
@@ -215,16 +200,13 @@ func (s *retryFailsOnce) Chat(_ context.Context, _, _ string, _ int) (string, er
 	return "", s.failWith
 }
 
-// Both call points make their first attempt through ChatWithRetry, so the two-budget
-// route has to run through the same counting Chat — otherwise the injected failure
-// never reaches the format retry and the test asserts on a call that did not happen.
+// Both call points make their first attempt through ChatWithRetry, so the two-budget route has to run
+// through the same counting Chat.
 func (s *retryFailsOnce) ChatWithRetry(ctx context.Context, system, user string, primaryMax, _ int) (string, error) {
 	return s.Chat(ctx, system, user, primaryMax)
 }
 
-// The retry's own failure is what the host has to hear: an off-contract first reply
-// followed by a cancelled retry is a client that walked away, and reporting the parse
-// error instead sends the host to debug a model that never refused anything.
+// The retry's own failure is what the host has to hear.
 func TestFormatRetryFailureKeepsItsOwnCode(t *testing.T) {
 	for _, fail := range []error{
 		common.NewError(common.ErrCancelled, "llm call cancelled", context.Canceled),
@@ -253,10 +235,8 @@ func TestFormatRetryFailureKeepsItsOwnCode(t *testing.T) {
 	}
 }
 
-// An endpoint configured for 64 output tokens refuses a request for 8192 outright,
-// so no rung of any ladder may ask above the ceiling. The shape is part of the
-// contract too: three widening budgets and then the format-constrained retry at the
-// widest of them.
+// An endpoint configured for 64 output tokens refuses a request for 8192 outright, so no rung of any
+// ladder may ask above the ceiling.
 func TestKeywordLadderStaysWithinTheConfiguredCeiling(t *testing.T) {
 	for _, tc := range []struct {
 		ceiling int
@@ -277,10 +257,8 @@ func TestKeywordLadderStaysWithinTheConfiguredCeiling(t *testing.T) {
 	}
 }
 
-// The truncation retry is where headroom gets spent, and it may spend exactly what
-// the endpoint declared: at or below the design ceiling nothing more is available,
-// and above it that room is what a consolidated summary actually needs. The first
-// attempt never asks above the design ceiling it was built for.
+// The truncation retry is where headroom gets spent, and it may spend exactly what the endpoint
+// declared.
 func TestTruncationRetryEscalatesToTheEndpointCeiling(t *testing.T) {
 	for _, tc := range []struct {
 		ceiling   int
@@ -310,11 +288,8 @@ func TestTruncationRetryEscalatesToTheEndpointCeiling(t *testing.T) {
 	}
 }
 
-// A reply cut off by the output ceiling is not a model that cannot do structured output,
-// and the host tells the two apart only from this error: one is fixed by raising
-// MaxOutputTokens, the other by changing model. Keyword extraction is the call point a
-// reasoning model most often trips - the ladder's own comment says why - so the
-// truncation has to survive the whole ladder rather than be relabelled at the last step.
+// A reply cut off by the output ceiling is not a model that cannot do structured output, and the host
+// tells the two apart only from this error.
 type alwaysTruncated struct {
 	calls int
 }
@@ -326,8 +301,8 @@ func (s *alwaysTruncated) Chat(_ context.Context, _, _ string, maxTokens int) (s
 		common.ErrTruncated)
 }
 
-// Both call points make their first attempt through ChatWithRetry, so the two-budget seam
-// has to run through the same counting Chat.
+// Both call points make their first attempt through ChatWithRetry, so the two-budget seam has to run
+// through the same counting Chat.
 func (s *alwaysTruncated) ChatWithRetry(ctx context.Context, system, user string, primaryMax, _ int) (string, error) {
 	return s.Chat(ctx, system, user, primaryMax)
 }
@@ -354,9 +329,8 @@ func TestKeywordExtractionKeepsATruncationAsTheCeilingItIs(t *testing.T) {
 	}
 }
 
-// Which chunk failed is known only to the chunking loop, and the kind of failure has to
-// survive its wrapping: a truncated chunk is still a ceiling the host can act on, not a
-// complaint about JSON.
+// Which chunk failed is known only to the chunking loop, and the kind of failure has to survive its
+// wrapping: a truncated chunk is still a ceiling the host can act on, not a complaint about JSON.
 func TestChunkedExtractionNamesTheChunkAndKeepsTheCause(t *testing.T) {
 	spy := &alwaysTruncated{}
 	if _, err := ExtractKeywords(context.Background(), spy, strings.Repeat("word ", 1000)); err == nil {

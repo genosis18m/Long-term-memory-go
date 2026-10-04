@@ -11,15 +11,8 @@ import (
 	memhop "github.com/genosis18m/Long-term-memory-go/api"
 )
 
-// Renaming is a whole-record rewrite, and the read shape reports no parent id — a fused parent
-// is recognised only by `ChildCount`, the number of rows naming it. That makes the failure mode
-// of a careless rename visible in exactly two ways, and both are checked here: the renamed turn
-// surfacing again at depth 1 (so the group's summary and its original sit side by side), and the
-// parent's child count dropping (so the host is told one fewer turn belongs to that group than
-// the consolidation actually folded).
-//
-// The name must also survive a reopen: a rename that only reached the cache would look right
-// until the process restarts.
+// Renaming is a whole-record rewrite, and the read shape reports no parent id — a fused parent is
+// recognised only by `ChildCount`, the number of rows naming it.
 func TestInterfaceRenamingAFoldedTurnKeepsItFolded(t *testing.T) {
 	llm := newMockLLM(t)
 	path := filepath.Join(t.TempDir(), "rename_folded.meh")

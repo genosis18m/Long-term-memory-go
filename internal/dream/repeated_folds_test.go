@@ -1,18 +1,8 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// Consolidation folds what the surface listing offers, and the group it builds is itself a
-// surface row — so a later pass can fold the fold. Two such passes are already pinned; this one
-// asks where that chain ends, because the answer is a memory claim: a sunk row is rewritten one
-// level deeper, and `CompressTopicsL2` **deletes** a member that would reach `MaxDepth`. A turn
-// deleted there is not "buried" — the scene read flattens to depth 2, and that listing is the
-// only way a host learns a topic id exists, so the row's summary, its keyword track and the
-// originals addressed by its id all stop being reachable.
-//
-// So this folds until the surface can no longer offer a pair (six passes at most) and requires
-// that folding terminates by collapsing to one surface row rather than by deepening: no written
-// turn disappears, no row sits below the read's cap, and every parent a row names is a row the
-// read lists.
+// Consolidation folds what the surface listing offers, and the group it builds is itself a surface row
+// — so a later pass can fold the fold.
 
 package dream
 

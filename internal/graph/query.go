@@ -12,17 +12,15 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/repo/core"
 )
 
-// NodeFilter is a graph-scoped node query with its conditions already parsed:
-// a nil IDs means no id filter, and Keyword is expected lower-cased. Every
-// condition that is set has to hold.
+// NodeFilter is a graph-scoped node query with its conditions already parsed: a nil IDs means no id
+// filter, and Keyword is expected lower-cased.
 type NodeFilter struct {
 	IDs      map[uint64]struct{}
 	Keyword  string
 	NodeType string
 }
 
-// Matches reports whether one node of the requested graph satisfies every
-// condition the filter sets.
+// Matches reports whether one node of the requested graph satisfies every condition the filter sets.
 func (f NodeFilter) Matches(n core.HypergraphNode) bool {
 	if f.IDs != nil {
 		if _, ok := f.IDs[n.IDHash]; !ok {
@@ -38,8 +36,8 @@ func (f NodeFilter) Matches(n core.HypergraphNode) bool {
 	return true
 }
 
-// matchesKeyword is a case-insensitive substring test over the node's title,
-// content and keyword track; kw must already be lower-cased.
+// matchesKeyword is a case-insensitive substring test over the node's title, content and keyword
+// track; kw must already be lower-cased.
 func matchesKeyword(n core.HypergraphNode, kw string) bool {
 	if strings.Contains(strings.ToLower(n.Title), kw) {
 		return true
@@ -55,15 +53,14 @@ func matchesKeyword(n core.HypergraphNode, kw string) bool {
 	return false
 }
 
-// CheckSubgraphStart verifies the start node of a subgraph walk exists and belongs
-// to the graph being walked; both ids are the caller's parsed numerics.
+// CheckSubgraphStart verifies the start node of a subgraph walk exists and belongs to the graph being
+// walked; both ids are the caller's parsed numerics.
 func CheckSubgraphStart(engine *core.StorageEngine, agentID uint64, graphHash, startHash uint64) error {
 	startNode, err := core.ReadHypergraphNode(engine, agentID, startHash)
 	if err != nil {
 		if common.CodeOf(err) != common.ErrNotFound {
-			// A start node that exists but will not read back is not a start node that
-			// is missing: the first sends the host elsewhere, the second says the graph
-			// is damaged here.
+			// A start node that exists but will not read back is not a start node that is missing: the first sends
+			// the host elsewhere, the second says the graph is damaged here.
 			return err
 		}
 		return common.NewError(common.ErrNotFound, "start node not found", err)
@@ -75,10 +72,8 @@ func CheckSubgraphStart(engine *core.StorageEngine, agentID uint64, graphHash, s
 	return nil
 }
 
-// SubgraphAdjacency builds the undirected adjacency map from the graph's edges
-// (restricted to edgeKinds when non-empty) and returns the kept edges alongside. An
-// edge that will not read back stops the build: the adjacency decides reachability,
-// so a gap in it is not one less edge but a member the walk can no longer reach.
+// SubgraphAdjacency builds the undirected adjacency map from the graph's edges (restricted to
+// edgeKinds when non-empty) and returns the kept edges alongside.
 func SubgraphAdjacency(engine *core.StorageEngine, agentID uint64, graphID uint64, edgeKinds []core.GraphEdgeKind) (map[uint64]map[uint64]struct{}, []core.HypergraphEdge, error) {
 	adj := make(map[uint64]map[uint64]struct{})
 	var edges []core.HypergraphEdge
@@ -96,11 +91,8 @@ func SubgraphAdjacency(engine *core.StorageEngine, agentID uint64, graphID uint6
 	return adj, edges, nil
 }
 
-// BfsWithinDepth returns the ids reachable from start within maxDepth hops (level order,
-// one hop per round), including start itself. A non-positive maxDepth sets no bound and the
-// walk runs to the reachable component — the same reading `limit` carries on every other
-// L3 and L4 read, so one zero means one thing across the surface. The walk cannot spin:
-// a node is visited once, so a cycle in the hypergraph ends the round rather than the run.
+// BfsWithinDepth returns the ids reachable from start within maxDepth hops (level order, one hop per
+// round), including start itself.
 func BfsWithinDepth(start uint64, adj map[uint64]map[uint64]struct{}, maxDepth int) map[uint64]struct{} {
 	visited := map[uint64]struct{}{start: {}}
 	queue := []uint64{start}

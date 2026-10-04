@@ -10,10 +10,8 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/repo/core"
 )
 
-// Whoever opens a file acts on this probe to decide whether the primary domain
-// still needs a profile, so "no record" and "record I cannot read" have to stay
-// two answers: collapsing them would let a transient failure read as an empty
-// domain and get seeded over.
+// Whoever opens a file acts on this probe to decide whether the primary domain still needs a profile,
+// so "no record" and "record I cannot read" have to stay two answers.
 func TestHasProfileL0TellsAbsentFromUnreadable(t *testing.T) {
 	engine := tempEngine(t)
 

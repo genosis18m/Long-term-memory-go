@@ -1,9 +1,7 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// L1 read surface of the composition root: the order it promises and the empty
-// domain's answer. The values on a node are Dream's, so nothing here writes one
-// — the nodes are placed directly to test the read.
+// L1 read surface of the composition root: the order it promises and the empty domain's answer.
 
 package internal
 
@@ -14,10 +12,7 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/repo/core"
 )
 
-// The index underneath is a hash map, so insertion order says nothing about read
-// order: without an explicit sort the same domain answers the same call twice in
-// two different orders, and a host diffing two reads — or a client rendering one
-// as JSON — sees churn that means nothing.
+// The index underneath is a hash map, so insertion order says nothing about read order.
 func TestListL1SortsByIDHash(t *testing.T) {
 	db := newTestDB(t, newTestEngine(t))
 	// Deliberately scrambled, and none of them in sorted-id order.
@@ -53,9 +48,7 @@ func TestListL1SortsByIDHash(t *testing.T) {
 	}
 }
 
-// A domain nobody has consolidated yet holds no nodes. The answer is an empty
-// list rather than nil so the facade renders it as [] and a host can range over
-// it without a nil check meaning two different things.
+// A domain nobody has consolidated yet holds no nodes.
 func TestListL1OnAnUndreamedDomainIsEmptyNotNil(t *testing.T) {
 	db := newTestDB(t, newTestEngine(t))
 	nodes, err := db.ListL1(core.DefaultAgentID)
@@ -70,9 +63,7 @@ func TestListL1OnAnUndreamedDomainIsEmptyNotNil(t *testing.T) {
 	}
 }
 
-// One node the engine cannot return is reported, not left out: a host comparing
-// two scenes' memory footprints cannot tell "Dream never built that node" apart
-// from "this record is damaged" when the listing is just shorter.
+// One node the engine cannot return is reported, not left out.
 func TestListL1ReportsUnreadableNode(t *testing.T) {
 	db := newTestDB(t, newTestEngine(t))
 	damaged := core.SceneNodeID(7)

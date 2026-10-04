@@ -13,16 +13,8 @@ import (
 	memhop "github.com/genosis18m/Long-term-memory-go/api"
 )
 
-// An agent framework hands its memory organ a port of its own shape and expects it filled;
-// meowire's is two methods over three small structs. This file declares that shape **here**,
-// as a mirror — MemHop does not import the framework and the framework does not import
-// MemHop, and neither should have to. The point of the mirror is the compile-time assertion
-// below plus one measured question: how much does a host still have to convert?
-//
-// The answer the assertions give: an ordinal-free, id-free round trip, where the only fields
-// that change representation are `Content` (a string on the memory side, bytes on the port
-// side), `Kind`, and the outcome word — and the port's timestamps pass through untouched,
-// because both sides already mean Unix milliseconds.
+// An agent framework hands its memory organ a port of its own shape and expects it filled; meowire's
+// is two methods over three small structs.
 type portRecord struct {
 	Key     string
 	Kind    string
@@ -47,8 +39,8 @@ type port interface {
 	Remember(ctx context.Context, facts portFacts) error
 }
 
-// memhopPort is the whole adapter: one session handle, no id bookkeeping, no cache of scene
-// or turn — the library holds those, so the adapter has nothing to keep in sync.
+// memhopPort is the whole adapter: one session handle, no id bookkeeping, no cache of scene or turn —
+// the library holds those, so the adapter has nothing to keep in sync.
 type memhopPort struct{ sess *memhop.Session }
 
 var _ port = (*memhopPort)(nil)
@@ -64,10 +56,8 @@ func (p *memhopPort) Recall(ctx context.Context, q portQuery) ([]portRecord, err
 	var out []portRecord
 	for _, row := range scenes.Topics {
 		id := row.TopicID
-		// The cue is not a retrieval key here: this engine keeps no relevance index, and a match
-		// invented on it would be the adapter guessing. What the round holds is read back whole,
-		// and `q.CellID` is the host's own name for a memory — this adapter was built for that
-		// cell, so nothing is looked up by it either.
+		// The cue is not a retrieval key here: this engine keeps no relevance index, and a match invented on
+		// it would be the adapter guessing.
 		slots, err := p.sess.SearchL4(memhop.L4Query{TopicID: &id})
 		if err != nil {
 			return nil, err
@@ -98,10 +88,8 @@ func TestInterfaceFrameworkPortShapesFitWithoutIdBookkeeping(t *testing.T) {
 	p := &memhopPort{sess: sess}
 	ctx := context.Background()
 
-	// The framework's two timepoints are the whole protocol: Recall before every Think,
-	// Remember once at the invocation's terminal point. Driven in that order the adapter keeps
-	// no state of its own — and driven out of it, Remember answers "no turn is open", which is
-	// the library refusing rather than guessing a round nobody opened.
+	// The framework's two timepoints are the whole protocol: Recall before every Think, Remember once at
+	// the invocation's terminal point.
 	if first, err := p.Recall(ctx, portQuery{CellID: "cell-1", Cue: "端口"}); err != nil || len(first) != 0 {
 		t.Fatalf("a recall on a memory with nothing said yet must answer empty, not fail: %d records, %v",
 			len(first), err)
@@ -131,10 +119,8 @@ func TestInterfaceFrameworkPortShapesFitWithoutIdBookkeeping(t *testing.T) {
 	if byKind["utterance"] != 2 {
 		t.Fatalf("the port read back %v, want the pair of utterances this round closed: %+v", byKind, records)
 	}
-	// A port `Kind` word is the same lowercase spelling the memory side prints, so the host
-	// needs no table of its own to name a record.
-	//
-	// The timestamp crosses with no unit conversion at all: both sides mean milliseconds.
+	// A port `Kind` word is the same lowercase spelling the memory side prints, so the host needs no table
+	// of its own to name a record.
 	if content == "" || created == 0 {
 		t.Fatalf("the round's own text did not come back through the port: %q %d", content, created)
 	}

@@ -16,10 +16,7 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/repo/core"
 )
 
-// A tree whose in-flight step will not read back is not a finished tree: the
-// sweep's exemption is computed from every node of the tree, so the one node that
-// would hold it alive is exactly the one that can go missing. The stale step stays
-// until a pass that sees the whole tree runs.
+// A tree whose in-flight step will not read back is not a finished tree.
 func TestPrunePlanStageSkipsWhenTheTreeIsIncomplete(t *testing.T) {
 	engine, err := core.Create(filepath.Join(t.TempDir(), "test.meh"))
 	if err != nil {

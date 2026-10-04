@@ -1,8 +1,8 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// Shared mock OpenAI-compatible LLM server for the offline interface
-// tests; dispatches by the system prompt of each LLM call point.
+// Shared mock OpenAI-compatible LLM server for the offline interface tests; dispatches by the system
+// prompt of each LLM call point.
 
 package test
 
@@ -17,20 +17,15 @@ import (
 	"testing"
 )
 
-// mockLLM serves OpenAI-compatible /chat/completions and dispatches by the
-// system prompt of each LLM call point; call counters are exposed.
+// mockLLM serves OpenAI-compatible /chat/completions and dispatches by the system prompt of each LLM
+// call point; call counters are exposed.
 type mockLLM struct {
 	srv *httptest.Server
-	// calls counts each call point. The counter sits behind a mutex because a consolidation pass
-	// the round close scheduled runs on its own goroutine: without the lock, a test reading what
-	// the model was asked races the handler that answers it — which is why every case that cares
-	// about counts used to switch that trigger off instead of observing it.
+	// calls counts each call point.
 	mu    sync.Mutex
 	calls map[string]int
-	// offContract, when set, is what every call point gets back instead of its own
-	// contractual reply — the injection point for a model that answers off contract.
-	// Set it before the call under test; the handler only reads it. The call counters
-	// still tick, so a test can tell "refused after asking" from "never asked".
+	// offContract, when set, is what every call point gets back instead of its own contractual reply — the
+	// injection point for a model that answers off contract.
 	offContract string
 }
 
@@ -100,8 +95,8 @@ func (m *mockLLM) count(what string) int {
 	return m.calls[what]
 }
 
-// consolidateReply builds a merge group from the first two topic ids echoed
-// in the consolidate user prompt ("- id=... depth=..." lines).
+// consolidateReply builds a merge group from the first two topic ids echoed in the consolidate user
+// prompt ("- id=...
 func consolidateReply(user string) string {
 	idRe := regexp.MustCompile(`id=(\d+)`)
 	ids := idRe.FindAllStringSubmatch(user, -1)

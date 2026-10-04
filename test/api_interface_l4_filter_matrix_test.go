@@ -11,17 +11,8 @@ import (
 	memhop "github.com/genosis18m/Long-term-memory-go/api"
 )
 
-// The facade documents one exception among the L4 conditions: `IDs` is the only one answered
-// by id rather than by a scan **when it is the only one set**. That clause is where a silent
-// failure hides — a fast path keyed on "ids present" would keep answering by id when other
-// conditions are present too, and a host would get records it explicitly filtered out. Since
-// the same facade says the set conditions AND together, the host's reading is that a filter is
-// never weakened by a companion filter. Measured here as three invariants:
-//
-//   - the two `Kind` halves rejoin into the unfiltered read, in the same order;
-//   - `IDs` alone answers exactly the set it names, and `IDs` plus a condition answers the
-//     subset that condition selects;
-//   - an id that is not there is skipped rather than failing the read.
+// The facade documents one exception among the L4 conditions: `IDs` is the only one answered by id
+// rather than by a scan **when it is the only one set**.
 func TestInterfaceL4FiltersComposeRatherThanShortCircuit(t *testing.T) {
 	llm := newMockLLM(t)
 	path := filepath.Join(t.TempDir(), "filter_matrix.meh")
@@ -52,10 +43,8 @@ func TestInterfaceL4FiltersComposeRatherThanShortCircuit(t *testing.T) {
 	all := readIDs(t, sess, memhop.L4Query{TopicID: &id})
 	utterances := readIDs(t, sess, memhop.L4Query{TopicID: &id, Kind: ptr(memhop.KindUtterance)})
 	events := readIDs(t, sess, memhop.L4Query{TopicID: &id, Kind: ptr(memhop.KindEvent)})
-	// Exactly: the pair of dialogue lines, the event bound to the step, and the turn_outcome
-	// the close recorded. Every assertion below picks its subset out of these four, so the
-	// counts are pinned rather than sampled — a fixture that quietly grew a row would make the
-	// partition test pass on its own.
+	// Exactly: the pair of dialogue lines, the event bound to the step, and the turn_outcome the close
+	// recorded.
 	if len(all) != 4 || len(utterances) != 2 || len(events) != 2 {
 		t.Fatalf("the fixture is not the shape this matrix assumes: all=%d utterances=%d events=%d",
 			len(all), len(utterances), len(events))
@@ -74,22 +63,15 @@ func TestInterfaceL4FiltersComposeRatherThanShortCircuit(t *testing.T) {
 	if got := readIDs(t, sess, memhop.L4Query{IDs: all, Kind: ptr(memhop.KindEvent)}); !sameSet(got, events) {
 		t.Fatalf("IDs+Kind answered %v, want the events %v — the id path ignored the companion filter", got, events)
 	}
-	// Same again with a keyword: the match is on stored text alone. The word chosen here lives
-	// only in the event — "retry_policy" would not have worked, because this round's answer
-	// line names it too, and a two-of-four answer would then prove nothing about the id path.
+	// Same again with a keyword: the match is on stored text alone.
 	if got := readIDs(t, sess, memhop.L4Query{IDs: all, Keyword: "grep"}); len(got) != 1 || got[0] != events[0] {
 		t.Fatalf("IDs+Keyword answered %v, want exactly the event holding that word %s", got, events[0])
 	}
-	// A step's closure is how a host re-reads what one step did without pulling the whole turn
-	// back. Only the event bound to it belongs here: the round's `turn_outcome` row carries no
-	// step at all (NodeSeq 0 = attributed to nothing), so "every event of this turn" is not the
-	// same set and must not come back as the answer.
+	// A step's closure is how a host re-reads what one step did without pulling the whole turn back.
 	if got := readIDs(t, sess, memhop.L4Query{TopicID: &id, NodeSeq: step}); !sameSet(got, []string{events[0]}) {
 		t.Fatalf("the step's closure answered %v, want only the event bound to it %s", got, events[0])
 	}
-	// An id that names nothing is "not selected", not an error, and it must not swallow the ids
-	// beside it. Chosen non-zero on purpose: the reserved zero key is refused at the entry, which
-	// is a different contract and is pinned where it belongs.
+	// An id that names nothing is "not selected", not an error, and it must not swallow the ids beside it.
 	if got := readIDs(t, sess, memhop.L4Query{IDs: []string{"7777777777777777", events[0]}}); len(got) != 1 ||
 		got[0] != events[0] {
 		t.Fatalf("a read naming one absent id answered %v, want the one live id", got)
@@ -112,8 +94,8 @@ func readIDs(t *testing.T, sess *memhop.Session, q memhop.L4Query) []string {
 	return out
 }
 
-// within returns `all` restricted to the ids named by the partitions, so the comparison is on
-// the unfiltered read's own order rather than on whatever order two separate queries settled in.
+// within returns `all` restricted to the ids named by the partitions, so the comparison is on the
+// unfiltered read's own order rather than on whatever order two separate queries settled in.
 func within(all []string, parts ...[]string) []string {
 	want := map[string]bool{}
 	for _, p := range parts {
@@ -130,8 +112,8 @@ func within(all []string, parts ...[]string) []string {
 	return out
 }
 
-// sameOrder is the exact-sequence comparison, for assertions where both sides
-// come from one query width whose order the read itself pins.
+// sameOrder is the exact-sequence comparison, for assertions where both sides come from one query
+// width whose order the read itself pins.
 func sameOrder(a, b []string) bool {
 	if len(a) != len(b) {
 		return false
@@ -144,12 +126,7 @@ func sameOrder(a, b []string) bool {
 	return true
 }
 
-// sameSet compares membership only. The two reads this test joins answer in two
-// different documented orders — a topic-scoped read in Seq, a domain-wide read
-// in (CreatedAt, id) — and the fixture's two stamps can land in the same
-// millisecond on a fast runner, letting the id tie-break disagree with Seq (the
-// CI failure that split this from sameOrder). Which rows survive a companion
-// filter is the claim here; each width's own order is the order gate's business.
+// sameSet compares membership only.
 func sameSet(a, b []string) bool {
 	if len(a) != len(b) {
 		return false

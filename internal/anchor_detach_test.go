@@ -12,13 +12,7 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/repo/core"
 )
 
-// The sibling of TestDeleteL3DetachesAnchorsAcrossDomains, which covers a live tenant
-// context. Two things that case cannot see: a domain whose in-memory context has already been
-// reclaimed by the idle sweep (the detach walks the tenant registry, not the live contexts,
-// and must reach it anyway), and whether the scenes themselves survive the detach — a listing
-// by the deleted graph answers empty either way, so that assertion alone would also pass if
-// the sweep deleted scenes. A dangling anchor is not cosmetic: it is an id the host cannot
-// resolve, which it would hand straight back to Search or UpdateScene and hear ErrNotFound.
+// The sibling of TestDeleteL3DetachesAnchorsAcrossDomains, which covers a live tenant context.
 func TestDeleteL3DetachesAnchorsInReclaimedDomains(t *testing.T) {
 	srv := mockLLMServer(t, turnKeywords)
 	path := filepath.Join(t.TempDir(), "anchors.meh")

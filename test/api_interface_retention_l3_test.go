@@ -12,18 +12,8 @@ import (
 	memhop "github.com/genosis18m/Long-term-memory-go/api"
 )
 
-// The retention window is measured in wall-clock time and everything a turn leaves behind is
-// inside it — but the knowledge graph is not a turn's record. It is the file's shared pool:
-// one project's nodes, imported once and read by every domain as a tool, with its own clock
-// that only moves when its content changes. A host that lets the engine consolidate for a
-// month must be able to answer the same `l3_query` on day 31, and nothing in the sweep's
-// shape says so out loud: the window is a single number, and the only thing separating "how
-// long a turn outlives" from "how long anything outlives" is which records the sweep is
-// allowed to name.
-//
-// So the sweep runs here for real — the turn's own archives must go, or this proves the
-// window never fired rather than that it stopped at the graph — and then the reads a bound
-// tool uses have to answer as they did before.
+// The retention window is measured in wall-clock time and everything a turn leaves behind is inside it
+// — but the knowledge graph is not a turn's record.
 func TestInterfaceTheRetentionWindowStopsAtTheKnowledgeGraph(t *testing.T) {
 	llm := newMockLLM(t)
 	path := filepath.Join(t.TempDir(), "retention_l3.meh")

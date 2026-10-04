@@ -10,10 +10,8 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/repo/core"
 )
 
-// writeSlot fabricates one content record the way the library would have written
-// it: a Seq of its own, and the id that (topic, Seq) hashes to. A hand-invented id
-// names a record no slot addresses, and a repeated Seq now means one slot being
-// rewritten, so a fixture that ignores both stops describing the store.
+// writeSlot fabricates one content record the way the library would have written it: a Seq of its own,
+// and the id that (topic, Seq) hashes to.
 func writeSlot(t *testing.T, engine *core.StorageEngine, topicID, seq uint64,
 	kind core.ArchiveKind, content string, createdAt int64, ctype core.ContentType) core.ArchiveSlot {
 	t.Helper()
@@ -51,10 +49,8 @@ func TestSearchL4ByID(t *testing.T) {
 	}
 }
 
-// The all-zero key is the unset value of every record's owning id, so no turn
-// ever settled content under it. Naming it as a filter is a host saying it holds
-// no key at all — it has to be refused like every other entry that takes a turn
-// key, not answered as an empty list that reads like a turn with nothing in it.
+// The all-zero key is the unset value of every record's owning id, so no turn ever settled content
+// under it.
 func TestSearchL4RefusesReservedZeroTopic(t *testing.T) {
 	db := newTestDB(t, newTestEngine(t))
 	zero := "0000000000000000"
@@ -63,9 +59,8 @@ func TestSearchL4RefusesReservedZeroTopic(t *testing.T) {
 	}
 }
 
-// TestSearchL4TopicOnly pins the read a host needs after a turn: naming only
-// the topic (or only the content type) must resolve that turn's originals
-// instead of falling through to an empty result.
+// TestSearchL4TopicOnly pins the read a host needs after a turn: naming only the topic (or only the
+// content type) must resolve that turn's originals instead of falling through to an empty result.
 func TestSearchL4TopicOnly(t *testing.T) {
 	engine := newTestEngine(t)
 	db := newTestDB(t, engine)
@@ -89,10 +84,8 @@ func TestSearchL4TopicOnly(t *testing.T) {
 	}
 }
 
-// One turn's events are a plan step at a time for the host: the step's ordinal
-// filters the attribution down to what belongs to it, inside the turn that owns
-// them — and a step's read covers its whole branch, which is only knowable from
-// the tree, so the steps have to have been created there.
+// One turn's events are a plan step at a time for the host: the step's ordinal filters the attribution
+// down to what belongs to it, inside the turn that owns them.
 func TestSearchL4ByNodeSeq(t *testing.T) {
 	engine := newTestEngine(t)
 	db := newTestDB(t, engine)
@@ -140,9 +133,7 @@ func TestSearchL4ByNodeSeq(t *testing.T) {
 			}
 		}
 	}
-	// A step's work includes what its sub-steps did: once a step is split, the
-	// events land on the children, and a read answering only for the parent's own
-	// line would report a step that did one thing when it did three.
+	// A step's work includes what its sub-steps did.
 	want(root, own, kid, leaf)
 	want(child, kid, leaf)
 	want(grand, leaf)
@@ -158,8 +149,8 @@ func TestSearchL4ByNodeSeq(t *testing.T) {
 	}
 }
 
-// A step address means nothing outside the turn holding its records, and a read
-// that took one without a topic would sweep the whole domain.
+// A step address means nothing outside the turn holding its records, and a read that took one without
+// a topic would sweep the whole domain.
 func TestNodeSeqFilterNeedsTopicID(t *testing.T) {
 	engine := newTestEngine(t)
 	db := newTestDB(t, engine)
@@ -213,8 +204,7 @@ func TestSearchL4TopicFilter(t *testing.T) {
 	}
 }
 
-// TestSearchL4TypeFilter: the optional content-type filter narrows results
-// within the query modes.
+// TestSearchL4TypeFilter: the optional content-type filter narrows results within the query modes.
 func TestSearchL4TypeFilter(t *testing.T) {
 	engine := newTestEngine(t)
 	db := newTestDB(t, engine)
@@ -232,9 +222,7 @@ func TestSearchL4TypeFilter(t *testing.T) {
 	}
 }
 
-// Kind is a condition like any other, and a topic's two kinds are now stored
-// together — so an unfiltered read of a topic has to return both, and each Kind
-// has to cut the other away on every read route.
+// Kind is a condition like any other, and a topic's two kinds are now stored together.
 func TestSearchL4KindCondition(t *testing.T) {
 	engine := newTestEngine(t)
 	db := newTestDB(t, engine)
@@ -275,9 +263,8 @@ func TestSearchL4KindCondition(t *testing.T) {
 	}
 }
 
-// The archive keyword is matched case-insensitively, like the L3 node keyword:
-// a host that types "RUST" into either layer gets the same set back. Limit caps
-// the result from the newest end, because the read is ordered oldest first.
+// The archive keyword is matched case-insensitively, like the L3 node keyword: a host that types
+// "RUST" into either layer gets the same set back.
 func TestSearchL4KeywordCaseAndLimit(t *testing.T) {
 	engine := newTestEngine(t)
 	db := newTestDB(t, engine)
@@ -308,9 +295,8 @@ func TestSearchL4KeywordCaseAndLimit(t *testing.T) {
 	}
 }
 
-// A filter set to a value outside the vocabulary matches nothing, and an empty list
-// is exactly what "this turn holds none" looks like. The append boundary refuses
-// those same values, so a read may not answer them with a shorter list.
+// A filter set to a value outside the vocabulary matches nothing, and an empty list is exactly what
+// "this turn holds none" looks like.
 func TestSearchL4RefusesUndefinedFilterValues(t *testing.T) {
 	engine := newTestEngine(t)
 	db := newTestDB(t, engine)
@@ -326,11 +312,8 @@ func TestSearchL4RefusesUndefinedFilterValues(t *testing.T) {
 	}
 }
 
-// Allocating a slot (Seq 0) is the library choosing an address, and the number it
-// chooses comes from the content mirror — whose rebuild skips a record it cannot
-// decode. Such a record is therefore invisible there while its slot lives on in the
-// id (topic, Seq) hashes to, and taking it would turn a record no one can read into
-// this topic's line, with the id the caller gets back naming that other content.
+// Allocating a slot (Seq 0) is the library choosing an address, and the number it chooses comes from
+// the content mirror — whose rebuild skips a record it cannot decode.
 func TestAppendArchiveRefusesASlotItCannotRead(t *testing.T) {
 	engine := newTestEngine(t)
 	db := newTestDB(t, engine)

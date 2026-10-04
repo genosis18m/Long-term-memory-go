@@ -11,12 +11,8 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/repo/core"
 )
 
-// A round that has been opened but not closed has no topic row: the row is minted by
-// `Search` and created by `Update`. So the scene read — which is what a recall loop uses
-// between its own steps — cannot show the round in progress, and a loop that recalls
-// several times per round never feeds its own half-written content back to the model.
-// What the round DID record is not lost: it is readable mid-round under the minted topic
-// id, and it appears as that turn's messages once the turn settles.
+// A round that has been opened but not closed has no topic row: the row is minted by `Search` and
+// created by `Update`.
 func TestOpenTurnIsAbsentUntilItSettles(t *testing.T) {
 	srv := mockLLMServer(t, turnKeywords)
 	db := newSearchTestDB(t, srv.URL)
@@ -84,8 +80,8 @@ func TestOpenTurnIsAbsentUntilItSettles(t *testing.T) {
 	if len(closed.Keywords) == 0 {
 		t.Fatalf("settling left the turn with no keyword track: %+v", closed)
 	}
-	// What the round recorded mid-round is now part of the turn: the line it appended plus
-	// the two dialogue slots `Update` filled. The event stays out of the transcript.
+	// What the round recorded mid-round is now part of the turn: the line it appended plus the two
+	// dialogue slots `Update` filled.
 	var sawAppended bool
 	for _, m := range closed.Messages {
 		if m.Content == uttered.Content {
@@ -102,9 +98,8 @@ func TestOpenTurnIsAbsentUntilItSettles(t *testing.T) {
 		t.Fatalf("settled utterances = %d, want 2 slots + the recorded line: %+v", len(closed.Messages), closed.Messages)
 	}
 
-	// Positive control on the same read: open a second turn and the listing still answers
-	// with exactly the settled one. So "absent" above is this read's rule, not a listing
-	// that fails to see anything.
+	// Positive control on the same read: open a second turn and the listing still answers with exactly the
+	// settled one.
 	next, err := db.Search(core.DefaultAgentID, SearchQuery{SceneID: common.FormatHash(sceneID)})
 	if err != nil {
 		t.Fatalf("open the next turn: %v", err)

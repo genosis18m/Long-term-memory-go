@@ -14,15 +14,9 @@ import (
 const SnapshotMagic uint32 = 0x534E4150
 
 // SnapshotVersion 0x03 serializes the per-agent record index and nothing else.
-// Older blobs are rejected at load (see checkSnapshotEnvelope); a rejected
-// snapshot costs one full record scan at Open, not the file (see
-// restoreFromSnapshot).
 const SnapshotVersion uint8 = 0x03
 
 // BuildSnapshot serializes the per-agent record index into a single blob.
-// Format: MAGIC(4) VERSION(1) AGENT_COUNT(4) then per agent AGENT_ID(8)
-// COUNT(4) entries(16 each), CRC32(4). A domain with no live records is
-// omitted, so an empty index serializes to the envelope alone.
 func BuildSnapshot(index map[uint64]map[uint64]uint64) []byte {
 	agents := make([]uint64, 0, len(index))
 	total := 0
@@ -68,8 +62,8 @@ func ParseSnapshot(raw []byte) (map[uint64]map[uint64]uint64, error) {
 	return idx, nil
 }
 
-// checkSnapshotEnvelope validates length, CRC, magic and version of a
-// snapshot blob (CRC covers everything but its own trailing 4 bytes).
+// checkSnapshotEnvelope validates length, CRC, magic and version of a snapshot blob (CRC covers
+// everything but its own trailing 4 bytes).
 func checkSnapshotEnvelope(raw []byte) error {
 	if len(raw) < 13 { // magic(4) + version(1) + agent_count(4) + crc(4) minimum
 		return common.NewError(common.ErrCorruption, "snapshot too short")
@@ -89,8 +83,8 @@ func checkSnapshotEnvelope(raw []byte) error {
 	return nil
 }
 
-// parseSnapshotAgent reads one agent section (id header then offset entries)
-// starting at pos; next is the offset after the section.
+// parseSnapshotAgent reads one agent section (id header then offset entries) starting at pos; next is
+// the offset after the section.
 func parseSnapshotAgent(raw []byte, pos int) (agentID uint64, m map[uint64]uint64, next int, err error) {
 	if pos+12 > len(raw)-4 {
 		return 0, nil, 0, common.NewError(common.ErrCorruption, "snapshot agent header truncated")

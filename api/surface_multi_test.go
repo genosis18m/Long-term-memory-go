@@ -1,8 +1,7 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// Session surface tests: every exported method of the domain handle, exercised
-// against a stub LLM.
+// Session surface tests: every exported method of the domain handle, exercised against a stub LLM.
 
 package api
 
@@ -10,22 +9,17 @@ import (
 	"testing"
 )
 
-// turnStamp is one turn's closing time in milliseconds — the unit every timestamp here
-// carries. Update records the stimulus and the answer with the one timestamp a host
-// hands it, so both dialogue lines carry this value.
+// turnStamp is one turn's closing time in milliseconds — the unit every timestamp here carries.
 const turnStamp = 1_700_000_060_000
 
-// settleTurn closes the turn the way a host does: Update writes the two originals onto
-// the slots dialogue owns and distills them into the topic Search opened, whose
-// distilled track comes back. A closing call names no ids: which turn is open is the
-// library's own memory of the last Search, so a scenario that wants a particular turn
-// closed has to do the read that opens it.
+// settleTurn closes the turn the way a host does: Update writes the two originals onto the slots
+// dialogue owns and distills them into the topic Search opened, whose distilled track comes back.
 func settleTurn(sess *Session, userText, agentText string) (*TopicSlot, error) {
 	return sess.Update(TurnEnd{Input: userText, Output: agentText, CreatedAt: turnStamp})
 }
 
-// TestSurfaceSessionMethods exercises the full Session surface of one domain
-// handle so every method is covered end to end.
+// TestSurfaceSessionMethods exercises the full Session surface of one domain handle so every method is
+// covered end to end.
 func TestSurfaceSessionMethods(t *testing.T) {
 	llm := stubLLM()
 	t.Cleanup(llm.Close)
@@ -49,9 +43,8 @@ func TestSurfaceSessionMethods(t *testing.T) {
 	if _, err := settleTurn(s, "session boot memory", "session reply"); err != nil {
 		t.Fatalf("session update: %v", err)
 	}
-	// What the turn holds is found by keyword under the key Search issued — the
-	// dialogue lines Update wrote, and the event appended below while this turn is
-	// still the one the library holds.
+	// What the turn holds is found by keyword under the key Search issued — the dialogue lines Update
+	// wrote, and the event appended below while this turn is still the one the library holds.
 	hits, err := s.SearchL4(L4Query{Keyword: "session boot"})
 	if err != nil || len(hits) != 1 || hits[0].TopicID != topicID {
 		t.Fatalf("settled turn content = %+v err=%v", hits, err)

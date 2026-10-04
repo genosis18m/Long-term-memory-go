@@ -1,13 +1,8 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// Acceptance items 2 and 9 on the premise the host actually deploys: several agent domains
-// share one .meh file, and each one's consolidation stays inside its own domain. Two claims,
-// both silent if broken. The first is the association layer — co-occurrence pairs scenes whose
-// keyword sets overlap, and the overlap here is maximal *across* the domain line, so a build
-// that reached past its own domain would pair up immediately. The second is retention: the
-// sweep drops records past the window, and a neighbour's aged record is nobody else's to
-// collect — including from the report, whose count is the one place a host learns what left.
+// Acceptance items 2 and 9 on the premise the host actually deploys: several agent domains share one
+// .meh file, and each one's consolidation stays inside its own domain.
 
 package test
 
@@ -24,19 +19,15 @@ import (
 func TestInterfaceDreamStaysInsideItsOwnDomain(t *testing.T) {
 	llm := newMockLLM(t)
 	path := filepath.Join(t.TempDir(), "two_domains.meh")
-	// 60s, not 1s: the window has to separate the day-old record from the rest at
-	// any runner's pace. Settling the turns ahead of the Dream already costs real
-	// LLM round trips, and a 1s window let a slow runner's own turns age out with
-	// the planted record (the CI failure that widened this).
+	// 60s, not 1s: the window has to separate the day-old record from the rest at any runner's pace.
 	knobs := func(d *memhop.MemHopDefaults) { d.ContentRetentionMs = 60000 }
 
 	m := openMockDB(t, path, llm.srv.URL, knobs)
 	alpha := newTestDB(t, m)
 	beta := mustSub(t, m, llm.srv.URL, "beta-domain")
 
-	// Two conversations per domain, in the same words: the stub endpoint answers every
-	// keyword request with one fixed set, so any two scenes here score the same similarity —
-	// including a pair straddling the domain line.
+	// Two conversations per domain, in the same words: the stub endpoint answers every keyword request
+	// with one fixed set, so any two scenes here score the same similarity.
 	for _, sess := range []*memhop.Session{alpha.Session, beta} {
 		for i := 0; i < 2; i++ {
 			settleOneTurn(t, sess, "用户要求重构代码", "好的,我来重构这段代码")
@@ -128,10 +119,8 @@ func TestInterfaceDreamStaysInsideItsOwnDomain(t *testing.T) {
 	}
 }
 
-// onlyEdge asserts the shape one domain of two conversations must come out as: two scene nodes,
-// and exactly one edge which both of them name. A pairing that reached into another domain would
-// add an edge to one of these nodes' lists, and an edge naming a foreign endpoint would show up
-// as the two nodes disagreeing about which edge is theirs.
+// onlyEdge asserts the shape one domain of two conversations must come out as: two scene nodes, and
+// exactly one edge which both of them name.
 func onlyEdge(t *testing.T, who string, nodes []memhop.SceneNodeView) string {
 	t.Helper()
 	if len(nodes) != 2 {
@@ -144,8 +133,8 @@ func onlyEdge(t *testing.T, who string, nodes []memhop.SceneNodeView) string {
 	return nodes[0].EdgeIDs[0]
 }
 
-// domainState renders everything one domain can read about itself, so a neighbour's
-// consolidation is checked as an absence of change rather than against a list of fields.
+// domainState renders everything one domain can read about itself, so a neighbour's consolidation is
+// checked as an absence of change rather than against a list of fields.
 func domainState(t *testing.T, sess *memhop.Session) string {
 	t.Helper()
 	scenes, err := sess.ListScenes("")

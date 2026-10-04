@@ -25,18 +25,16 @@ func TestStatusRoundTrip(t *testing.T) {
 	if _, err := StatusToU8(PlanStatus("bogus")); err == nil {
 		t.Fatal("unknown status must be rejected")
 	}
-	// pending left the vocabulary with the whole-tree declaration: a step is
-	// created in progress, so there is no "planned but not started" state to name.
-	// The write side has to refuse the word rather than accept it under in_progress.
+	// pending left the vocabulary with the whole-tree declaration: a step is created in progress, so there
+	// is no "planned but not started" state to name.
 	if _, err := StatusToU8(PlanStatus("pending")); err == nil {
 		t.Fatal("the retired pending status must be rejected")
 	}
 	if _, err := StatusToU8(PlanStatus("running")); err == nil {
 		t.Fatal("the retired running status must be rejected")
 	}
-	// The read side must refuse too: Status is the one bare uint8 in a plan node
-	// whose meaning crosses file versions, and a fallback would render a step the
-	// engine cannot name as one it can.
+	// The read side must refuse too: Status is the one bare uint8 in a plan node whose meaning crosses
+	// file versions, and a fallback would render a step the engine cannot name as one it can.
 	if _, err := StatusToString(9); err == nil {
 		t.Fatal("an undefined stored status must be reported, not defaulted")
 	}
@@ -53,8 +51,8 @@ func TestStatusRoundTrip(t *testing.T) {
 	}
 }
 
-// A created step starts in progress, so the zero value a fresh record carries is a
-// state the surface can name — nothing has to remember to stamp a status.
+// A created step starts in progress, so the zero value a fresh record carries is a state the surface
+// can name — nothing has to remember to stamp a status.
 func TestFreshNodeStatusIsNameable(t *testing.T) {
 	got, err := StatusToString(core.PlanNode{}.Status)
 	if err != nil {

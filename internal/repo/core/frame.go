@@ -12,15 +12,13 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/common"
 )
 
-// RecordHeaderSize is type(1)+flags(1)+length(4)+agent_id(8)+id_hash(8)+crc32(4)
-// = 26 bytes; CRC covers header plus data so a torn write is detected on
-// Open. 0x0008 added agent_id to the frame so one file hosts multiple
-// agents with physically separated record domains.
+// RecordHeaderSize is type(1)+flags(1)+length(4)+agent_id(8)+id_hash(8)+crc32(4) = 26 bytes; CRC
+// covers header plus data so a torn write is detected on Open.
 const RecordHeaderSize = 26
 
 const FlagDeleted uint8 = 0x01
 
-// Record type constants. 0x0E is unused — a turn's events are L4 content.
+// Record type constants.
 const (
 	RecL0Profile   uint8 = 0x01
 	RecL1SceneNode uint8 = 0x02
@@ -37,15 +35,12 @@ const (
 	RecAgentRegistry uint8 = 0x10
 )
 
-// DefaultAgentID is the implicit zero domain — the one a file is opened on, and
-// the domain a single-agent database keeps all of its records in. It carries no
-// registration record: a file can hold it without ever having listed one.
+// DefaultAgentID is the implicit zero domain — the one a file is opened on, and the domain a
+// single-agent database keeps all of its records in.
 const DefaultAgentID uint64 = 0
 
-// SharedPoolAgentID is the reserved file-wide domain that holds the shared record
-// pool: the L3 knowledge graph. One file hosts a single pool that every agent
-// domain reads and writes. It is never handed out as a tenant, never listed, and
-// cannot be deleted or bound to a Session.
+// SharedPoolAgentID is the reserved file-wide domain that holds the shared record pool: the L3
+// knowledge graph.
 const SharedPoolAgentID uint64 = 0x4C33000000000000 // ASCII "L3"
 
 func EncodeRecord(agentID uint64, recordType, flags uint8, idHash uint64, data []byte) []byte {
@@ -62,9 +57,7 @@ func EncodeRecord(agentID uint64, recordType, flags uint8, idHash uint64, data [
 	return buf
 }
 
-// RecordData decodes a record at offset into a GC-safe data copy. io.EOF at
-// region end or zero-filled space; ErrCorruption on truncated header/body;
-// ErrCRCMismatch on a whole frame whose content disagrees with its checksum.
+// RecordData decodes a record at offset into a GC-safe data copy.
 func RecordData(mmap []byte, offset uint64) (recordType, flags uint8, data []byte, agentID, idHash uint64, err error) {
 	off := int(offset)
 	if off == len(mmap) {
@@ -84,9 +77,8 @@ func RecordData(mmap []byte, offset uint64) (recordType, flags uint8, data []byt
 	if recordType == 0 && flags == 0 && dataLen == 0 && agentID == 0 && idHash == 0 {
 		return 0, 0, nil, 0, 0, io.EOF
 	}
-	// The declared length comes out of the file, so it is compared in unsigned
-	// arithmetic against what actually remains: narrowed to an int first on a 32-bit
-	// build, a rotted 4 GiB-sized value would flip sign and slice past this frame.
+	// The declared length comes out of the file, so it is compared in unsigned arithmetic against what
+	// actually remains.
 	frameStart := uint64(off) + RecordHeaderSize
 	if uint64(dataLen) > uint64(len(mmap))-frameStart {
 		return 0, 0, nil, 0, 0, common.NewError(

@@ -1,8 +1,8 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// Search is a scene-scoped read: a scene is the host's session, so Search
-// neither guesses which scene a message belongs to nor distills anything.
+// Search is a scene-scoped read: a scene is the host's session, so Search neither guesses which scene
+// a message belongs to nor distills anything.
 package internal
 
 import (
@@ -22,8 +22,8 @@ func newSearchTestDB(t *testing.T, llmURL string) *DB {
 	return db
 }
 
-// A domain with no scene yet gets its first one on an empty SceneID: the record
-// lands on disk under a library-generated name, and the optional L3 anchor applies.
+// A domain with no scene yet gets its first one on an empty SceneID: the record lands on disk under a
+// library-generated name, and the optional L3 anchor applies.
 func TestSearchCreatesSceneWhenIDEmpty(t *testing.T) {
 	srv := mockLLMServer(t, `{"keywords":["unused"]}`)
 	db := newSearchTestDB(t, srv.URL)
@@ -57,10 +57,8 @@ func TestSearchCreatesSceneWhenIDEmpty(t *testing.T) {
 	}
 }
 
-// An empty SceneID continues the domain's own session — the read that starts one is
-// the one that opens it — and NewScene is the only way to start another. When the
-// domain no longer remembers which scene it was on, the records answer: the scene
-// whose turn counter ran furthest, not the one created last.
+// An empty SceneID continues the domain's own session — the read that starts one is the one that opens
+// it — and NewScene is the only way to start another.
 func TestSearchContinuesItsSceneUnlessAskedForANewOne(t *testing.T) {
 	srv := mockLLMServer(t, `{"keywords":["x"]}`)
 	db := newSearchTestDB(t, srv.URL)
@@ -92,9 +90,7 @@ func TestSearchContinuesItsSceneUnlessAskedForANewOne(t *testing.T) {
 		t.Errorf("a created scene falls back to session:<id>, got %q", second.Scene.SceneName)
 	}
 
-	// Bring the first session's counter ahead of the new one's, then drop the
-	// context: the read that follows has nothing to continue from but the records,
-	// and it must not pick the scene that was created last.
+	// Bring the first session's counter ahead of the new one's, then drop the context.
 	if _, err := db.Search(core.DefaultAgentID, SearchQuery{SceneID: common.FormatHash(first.Scene.SceneID)}); err != nil {
 		t.Fatalf("named Search: %v", err)
 	}
@@ -113,8 +109,8 @@ func TestSearchContinuesItsSceneUnlessAskedForANewOne(t *testing.T) {
 	}
 }
 
-// A non-empty SceneID must already exist: the library never creates a scene
-// the host did not open, and Settle relies on that to reject stray turns.
+// A non-empty SceneID must already exist: the library never creates a scene the host did not open, and
+// Settle relies on that to reject stray turns.
 func TestSearchRejectsUnknownScene(t *testing.T) {
 	srv := mockLLMServer(t, `{"keywords":["x"]}`)
 	db := newSearchTestDB(t, srv.URL)
@@ -125,8 +121,8 @@ func TestSearchRejectsUnknownScene(t *testing.T) {
 	}
 }
 
-// The read surface is the scene's depth-1 set in turn order; sunk history
-// (depth 2+) stays out of the host's context.
+// The read surface is the scene's depth-1 set in turn order; sunk history (depth 2+) stays out of the
+// host's context.
 func TestSearchReadsSceneSurface(t *testing.T) {
 	srv := mockLLMServer(t, `{"keywords":["x"]}`)
 	db := newSearchTestDB(t, srv.URL)
@@ -156,8 +152,8 @@ func TestSearchReadsSceneSurface(t *testing.T) {
 	}
 }
 
-// Search costs no LLM call and writes no memory record: the scene record is the
-// only thing it touches, and only to open a turn.
+// Search costs no LLM call and writes no memory record: the scene record is the only thing it touches,
+// and only to open a turn.
 func TestSearchIsReadOnlyAndCallsNoLLM(t *testing.T) {
 	srv, calls := countingLLMServer(t, `{"keywords":["should not be called"]}`)
 	db := newSearchTestDB(t, srv.URL)
@@ -190,9 +186,8 @@ func TestSearchIsReadOnlyAndCallsNoLLM(t *testing.T) {
 	}
 }
 
-// Each read opens exactly one turn: the topic id it hands back comes from the
-// scene's own turn counter, so reopens advance it and never repeat it. Opening
-// a turn mints no record — the surface stays as it was until Settle distills.
+// Each read opens exactly one turn: the topic id it hands back comes from the scene's own turn
+// counter, so reopens advance it and never repeat it.
 func TestSearchOpensOneTurnPerRead(t *testing.T) {
 	srv := mockLLMServer(t, `{"keywords":["x"]}`)
 	db := newSearchTestDB(t, srv.URL)
@@ -233,8 +228,8 @@ func TestSearchOpensOneTurnPerRead(t *testing.T) {
 	}
 }
 
-// A stored profile shows up as a compact digest in ProfileBrief while the
-// full Profile stays available.
+// A stored profile shows up as a compact digest in ProfileBrief while the full Profile stays
+// available.
 func TestSearchReturnsProfileBrief(t *testing.T) {
 	srv := mockLLMServer(t, `{"keywords":["rust"]}`)
 	db := newSearchTestDB(t, srv.URL)
@@ -261,10 +256,7 @@ func TestSearchReturnsProfileBrief(t *testing.T) {
 	}
 }
 
-// A dangling anchor is refused before the scene exists. The fresh scene id is
-// minted inside this call and never handed back on the refusal path, so a scene
-// written first would stay on disk as a listing entry the host cannot name,
-// re-anchor, or delete.
+// A dangling anchor is refused before the scene exists.
 func TestSearchRefusesAnUnknownAnchorWithoutLeavingAScene(t *testing.T) {
 	srv := mockLLMServer(t, `{"keywords":["unused"]}`)
 	db := newSearchTestDB(t, srv.URL)
@@ -278,11 +270,8 @@ func TestSearchRefusesAnUnknownAnchorWithoutLeavingAScene(t *testing.T) {
 	}
 }
 
-// Naming a scene that already exists together with an anchor is a mistake about
-// when anchors are set, and the refusal says so on the argument alone: looking
-// the named graph up would turn "this scene is already here" into a not-found
-// (3001) about a record the host never asked to read, and would reach into the
-// file-wide shared pool inside the caller's domain lock to say nothing new.
+// Naming a scene that already exists together with an anchor is a mistake about when anchors are set,
+// and the refusal says so on the argument alone.
 func TestSearchRefusesAnAnchorOnAnExistingSceneWithoutLookingItUp(t *testing.T) {
 	srv := mockLLMServer(t, `{"keywords":["unused"]}`)
 	db := newSearchTestDB(t, srv.URL)
@@ -304,12 +293,8 @@ func TestSearchRefusesAnAnchorOnAnExistingSceneWithoutLookingItUp(t *testing.T) 
 	}
 }
 
-// The same rule on the path where the host names no scene: an anchor handed in
-// while the domain is already mid-conversation is refused on the argument alone,
-// and the message says what to do instead. The anchor here does not resolve, so a
-// lookup-first implementation would report a missing graph (3001) about a record
-// the host never asked to read. The refusal must also not be the continue path
-// breaking: the same read without an anchor stays on this scene.
+// The same rule on the path where the host names no scene: an anchor handed in while the domain is
+// already mid-conversation is refused on the argument alone, and the message says what to do instead.
 func TestSearchRefusesAnAnchorWhileContinuingItsScene(t *testing.T) {
 	srv := mockLLMServer(t, `{"keywords":["unused"]}`)
 	db := newSearchTestDB(t, srv.URL)

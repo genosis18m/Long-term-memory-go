@@ -1,19 +1,7 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// Offline interface tests for the L5 plan tree and the turn's event track (L4
-// content). A host drives this the way meowagent does, one loop iteration per
-// turn: `Search` reads the scene and opens the turn about to run, the host adds
-// steps one at a time with `PlanNodeAdd` (parentSeq 0 opens the tree) and restates
-// one with `PlanNodeUpdate`, each step's work goes into L4 with `AppendArchive`
-// bound to one created step, and `Update` closes the turn's dialogue into its
-// topic. None of those writes names the turn: the tree, the events and the close all
-// go to the turn the domain holds open, so a turn is planned start to finish before
-// the next one opens. What a host still carries across a restart is the turn's topic
-// id, and what it can still read of an older turn through that id is its event track —
-// the plan tree of a turn that is no longer the open one has no read. Every assertion
-// below reads the tree through `PlanState` rather than trusting the call that changed
-// it.
+// Offline interface tests for the L5 plan tree and the turn's event track (L4 content).
 
 package test
 
@@ -28,8 +16,6 @@ import (
 )
 
 // mustCreate adds one step to the open turn's plan tree and returns its ordinal.
-// parent 0 hangs it at the top level; this is the only way a step comes into
-// existence.
 func mustCreate(t *testing.T, db *testDB, parent uint32, title string) uint32 {
 	t.Helper()
 	seq, err := db.PlanNodeAdd(parent, title)
@@ -39,8 +25,8 @@ func mustCreate(t *testing.T, db *testDB, parent uint32, title string) uint32 {
 	return seq
 }
 
-// mustUpdate restates one step of the open turn's tree: its status, plus a summary
-// where the host has one.
+// mustUpdate restates one step of the open turn's tree: its status, plus a summary where the host has
+// one.
 func mustUpdate(t *testing.T, db *testDB, seq uint32, status memhop.PlanStatus, summary string) {
 	t.Helper()
 	if err := db.PlanNodeUpdate(memhop.PlanStep{Seq: seq, Status: status, Summary: summary}); err != nil {
@@ -79,9 +65,8 @@ func findPlanNode(t *testing.T, tree memhop.PlanTree, seq uint32) memhop.PlanNod
 	return *found
 }
 
-// mustEvents reads one turn's event track: its own topic id with the kind
-// condition, which is all a host has left for that read — and the only one that
-// still reaches a turn other than the open one.
+// mustEvents reads one turn's event track: its own topic id with the kind condition, which is all a
+// host has left for that read — and the only one that still reaches a turn other than the open one.
 func mustEvents(t *testing.T, db *testDB, key string) []memhop.ArchiveSlot {
 	t.Helper()
 	kind := memhop.KindEvent
@@ -96,8 +81,8 @@ func planEvent(ts int64, kind, payload string) memhop.ArchiveInput {
 	return memhop.ArchiveInput{Kind: memhop.KindEvent, EventType: kind, Content: payload, CreatedAt: ts}
 }
 
-// mustAppend writes one event into the open turn's content, binding it to a plan
-// step when nodeSeq names one (0 leaves it bound to nothing).
+// mustAppend writes one event into the open turn's content, binding it to a plan step when nodeSeq
+// names one (0 leaves it bound to nothing).
 func mustAppend(t *testing.T, db *testDB, nodeSeq uint32, ev memhop.ArchiveInput) {
 	t.Helper()
 	ev.NodeSeq = nodeSeq
@@ -106,8 +91,8 @@ func mustAppend(t *testing.T, db *testDB, nodeSeq uint32, ev memhop.ArchiveInput
 	}
 }
 
-// renderTree flattens the open turn's plan forest into one line, so a before/after
-// comparison says what moved instead of leaking a Go map diff.
+// renderTree flattens the open turn's plan forest into one line, so a before/after comparison says
+// what moved instead of leaking a Go map diff.
 func renderTree(t *testing.T, db *testDB) string {
 	t.Helper()
 	var b strings.Builder
@@ -123,10 +108,8 @@ func renderTree(t *testing.T, db *testDB) string {
 	return b.String()
 }
 
-// One turn is one plan, and the open turn is the only handle a write has: the tree
-// it opens reads back under the topic Search minted for it, and two turns never
-// share a tree — not even a step ordinal, which addresses a step inside one turn and
-// nowhere else. So the turns run one at a time: open, plan, close.
+// One turn is one plan, and the open turn is the only handle a write has: the tree it opens reads back
+// under the topic Search minted for it, and two turns never share a tree.
 func TestInterfacePlanTreeLivesOnItsTurn(t *testing.T) {
 	db, _ := openTestDB(t)
 	sceneID := openSession(t, db)
@@ -168,8 +151,8 @@ func TestInterfacePlanTreeLivesOnItsTurn(t *testing.T) {
 	}
 }
 
-// A created tree folds a parent's conclusion out of its children once every child
-// has settled, and a refused write leaves nothing behind.
+// A created tree folds a parent's conclusion out of its children once every child has settled, and a
+// refused write leaves nothing behind.
 func TestInterfacePlanAddAndFold(t *testing.T) {
 	db, _ := openTestDB(t)
 	sceneID := openSession(t, db)
@@ -182,9 +165,8 @@ func TestInterfacePlanAddAndFold(t *testing.T) {
 	mustUpdate(t, db, c1, done, "改动收敛到 3 个文件")
 	mustUpdate(t, db, c2, done, "测试全绿")
 
-	// The fold is not a verdict on the parent: a parent is Done only because the
-	// host says so, so an open parent keeps an empty Summary even with every child
-	// settled. A fresh step starts in progress with no status to state.
+	// The fold is not a verdict on the parent: a parent is Done only because the host says so, so an open
+	// parent keeps an empty Summary even with every child settled.
 	if got := findPlanNode(t, mustPlanState(t, db), root); got.Status != string(memhop.PlanStatusInProgress) || got.Summary != "" {
 		t.Fatalf("an undeclared-done parent was folded: %+v", got)
 	}
@@ -249,11 +231,8 @@ func TestInterfacePlanAddAndFold(t *testing.T) {
 	}
 }
 
-// Each turn plans its own tree, and building one never reaches back into a tree an
-// earlier turn opened: the ordinals, the titles and the folded summaries a turn wrote
-// stay that turn's. A plan tree is addressed by the turn that is open, so the turns
-// are played one after another — and each one's tree is read while that turn is still
-// the domain's, which is the only moment the public surface can name it.
+// Each turn plans its own tree, and building one never reaches back into a tree an earlier turn
+// opened: the ordinals, the titles and the folded summaries a turn wrote stay that turn's.
 func TestInterfacePlanTreesStayPerTurn(t *testing.T) {
 	db, _ := openTestDB(t)
 	sceneID := openSession(t, db)
@@ -272,9 +251,7 @@ func TestInterfacePlanTreesStayPerTurn(t *testing.T) {
 		t.Fatalf("the first turn's tree grew before it closed: %+v", got)
 	}
 
-	// The second turn lays out four steps and finishes them. Its tree starts empty:
-	// the step the earlier turn numbered 1 is not inherited, and this turn's own
-	// first step takes that same number under its own key.
+	// The second turn lays out four steps and finishes them.
 	second := openTurn(t, db, sceneID)
 	if got := mustPlanState(t, db); got.TotalCount != 0 {
 		t.Fatalf("the second turn inherited the first's tree: %+v", got)
@@ -307,9 +284,8 @@ func TestInterfacePlanTreesStayPerTurn(t *testing.T) {
 		t.Fatalf("closed %s, want the second turn (%s)", closed, second)
 	}
 
-	// The third turn is where "跑测试" turns out to have parts: its own step 3
-	// splits into three, and the parent is settled last so the fold can name what
-	// the whole step did.
+	// The third turn is where "跑测试" turns out to have parts: its own step 3 splits into three, and the
+	// parent is settled last so the fold can name what the whole step did.
 	third := openTurn(t, db, sceneID)
 	if got := mustPlanState(t, db); got.TotalCount != 0 {
 		t.Fatalf("the third turn inherited a tree: %+v", got)
@@ -361,9 +337,7 @@ func TestInterfaceTurnEventsKeyToTheirOwnTurn(t *testing.T) {
 		t.Fatalf("close the first turn: %v", err)
 	}
 
-	// Turn two: a step, and two events bound to it. The read of each turn is
-	// addressed by its own id, which is why the first turn's track is still a
-	// witness that nothing from this turn leaked into it.
+	// Turn two: a step, and two events bound to it.
 	planTurn := openTurn(t, db, sceneID)
 	step := mustCreate(t, db, 0, "开始")
 	mustAppend(t, db, step, planEvent(ts+1, "plan_step", "开始"))
@@ -390,12 +364,8 @@ func TestInterfaceTurnEventsKeyToTheirOwnTurn(t *testing.T) {
 	}
 }
 
-// A restart clears the domain's memory of which turn was open, so what has to come
-// back from disk is what the records can still answer: the turn's trajectory events
-// in Seq order with their payloads and their step attribution, and the plan cache
-// rebuilt well enough to still expand one step into its subtree. The subtree read is
-// the witness that the tree itself was rebuilt and not just the content index —
-// an unkeyed cache answers a subtree with the step alone.
+// A restart clears the domain's memory of which turn was open, so what has to come back from disk is
+// what the records can still answer.
 func TestInterfacePlanAndTrajectorySurviveReopen(t *testing.T) {
 	llm := newMockLLM(t)
 	path := filepath.Join(t.TempDir(), "reopen.meh")
@@ -445,9 +415,8 @@ func TestInterfacePlanAndTrajectorySurviveReopen(t *testing.T) {
 			t.Fatalf("rebuilt index keyed an event away from its turn: %+v", e)
 		}
 	}
-	// Asking for one step's work means that step and everything nested under it, and
-	// the set comes out of the plan cache: the child's event only answers to the
-	// parent's query if the reopened cache rebuilt the edge between them.
+	// Asking for one step's work means that step and everything nested under it, and the set comes out of
+	// the plan cache.
 	underRoot, err := reopened.SearchL4(memhop.L4Query{TopicID: &turnID, NodeSeq: root})
 	if err != nil {
 		t.Fatalf("read the root's subtree after reopen: %v", err)
@@ -473,10 +442,7 @@ func TestInterfacePlanAndTrajectorySurviveReopen(t *testing.T) {
 	}
 }
 
-// The number AppendArchive hands back is the record's address: naming it again rewrites
-// that slot in place rather than stacking a second version of one fact, which is what
-// makes a host's at-least-once write loop converge. Every earlier call site discarded the
-// return and re-read the slot, so the replay contract itself was unproven.
+// The number AppendArchive hands back is the record's address.
 func TestInterfaceAppendReturnsTheAddressAReplayRewrites(t *testing.T) {
 	db, _ := openTestDB(t)
 	sceneID := openSession(t, db)
@@ -523,10 +489,8 @@ func TestInterfaceAppendReturnsTheAddressAReplayRewrites(t *testing.T) {
 	}
 }
 
-// PlanNodeUpdate restates one step, and a field the host leaves out is not a request to
-// erase it: the title and the summary a previous round wrote stay. Only Status has no
-// blank spelling. The title half was pinned; the summary half — the one a host fills in
-// when a step finishes — is what this case adds.
+// PlanNodeUpdate restates one step, and a field the host leaves out is not a request to erase it: the
+// title and the summary a previous round wrote stay.
 func TestInterfacePlanUpdateKeepsTheSummaryItWasNotGiven(t *testing.T) {
 	db, _ := openTestDB(t)
 	sceneID := openSession(t, db)
@@ -558,12 +522,7 @@ func TestInterfacePlanUpdateKeepsTheSummaryItWasNotGiven(t *testing.T) {
 	}
 }
 
-// A folded parent summary is the branch's conclusion, so it has to keep following the
-// branch: a step added under a parent the host already declared Done, or a settled child
-// re-opened and finished with different text, must not leave the parent stating a summary
-// of the branch as it looked earlier. Host text is a different thing — a summary the host
-// wrote itself is never clobbered, and the two are told apart by the fold's own shape
-// (children's conclusions joined in creation order), not by extra state on the record.
+// A folded parent summary is the branch's conclusion, so it has to keep following the branch.
 func TestInterfaceParentFoldFollowsTheBranchItSummarizes(t *testing.T) {
 	db, _ := openTestDB(t)
 	sceneID := openSession(t, db)
@@ -613,10 +572,8 @@ func TestInterfaceParentFoldFollowsTheBranchItSummarizes(t *testing.T) {
 	}
 }
 
-// A step's subtree is a property of the tree that turn wrote, not of the turn the domain
-// happens to be holding open: a host that comes back later for 「what did step 1 of that
-// round do, including its sub-steps」 must get the same closure it would have got while the
-// round was live. Reading the live turn's tree is the easy case; this reads a closed one.
+// A step's subtree is a property of the tree that turn wrote, not of the turn the domain happens to be
+// holding open.
 func TestInterfaceStepSubtreeReadsBackAfterTheTurnClosed(t *testing.T) {
 	db, _ := openTestDB(t)
 	sceneID := openSession(t, db)

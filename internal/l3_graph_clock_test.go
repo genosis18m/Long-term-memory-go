@@ -10,11 +10,8 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/repo/core"
 )
 
-// The graph slot's UpdatedAt answers "when did this graph last change", not "when was a
-// read or an import last aimed at it" — so a host that lists its project knowledge by
-// recency gets recency of content, not of access. The batch therefore keeps two sets: the
-// graphs it resolved a domain into (which GraphIDs reports) and the graphs whose nodes or
-// edges it actually wrote (which are the only ones it stamps).
+// The graph slot's UpdatedAt answers "when did this graph last change", not "when was a read or an
+// import last aimed at it".
 func TestGraphSlotClockAnswersChangeNotAccess(t *testing.T) {
 	db := newL3TestDB(t)
 	proj := []L3ImportItem{
@@ -121,11 +118,7 @@ func TestGraphSlotClockAnswersChangeNotAccess(t *testing.T) {
 		t.Fatalf("a batch that wrote nothing advanced the clocks: proj=%d ops=%d, want 1000 and 2000", got[projID], got[opsID])
 	}
 
-	// Writing two nodes of one graph moves that graph's clock and leaves the other exactly
-	// where it was: which graphs get stamped is which graphs' contents were written, so the
-	// pair of answers pins the stamped set from both sides. The log growing is the witness
-	// that this batch really wrote — a batch that wrote nothing would leave the same two
-	// clocks and pass the two assertions below for the wrong reason.
+	// Writing two nodes of one graph moves that graph's clock and leaves the other exactly where it was.
 	sizeBefore, _, err := db.Stats()
 	if err != nil {
 		t.Fatalf("Stats: %v", err)

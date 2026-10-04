@@ -1,9 +1,8 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// Offline interface tests: exercise the public API surface through
-// api.Open against a mock OpenAI-compatible LLM server. No external
-// services required; run with `go test ./test/...`.
+// Offline interface tests: exercise the public API surface through api.Open against a mock
+// OpenAI-compatible LLM server.
 
 package test
 
@@ -19,9 +18,7 @@ import (
 func TestInterfaceTurnEvents(t *testing.T) {
 	db, _ := openTestDB(t)
 	sceneID := openSession(t, db)
-	// The content key is a turn's topic id — minted by Search and never typed by
-	// hand. It is also the only turn these writes can reach: AppendArchive names
-	// nothing, it goes where the open turn is.
+	// The content key is a turn's topic id — minted by Search and never typed by hand.
 	session := openTurn(t, db, sceneID)
 	ts := time.Now().UnixMilli()
 
@@ -38,9 +35,8 @@ func TestInterfaceTurnEvents(t *testing.T) {
 	if _, err := turn(db.Session, "读一下 a.go 并改掉拼写", "已读取 a.go 并改掉拼写"); err != nil {
 		t.Fatalf("turn: %v", err)
 	}
-	// The key has to be a turn the library actually opened, or the rest of this
-	// test would only prove that a made-up id round-trips. Read after the close:
-	// this Search opens the next turn, and every write of this one is already in.
+	// The key has to be a turn the library actually opened, or the rest of this test would only prove that
+	// a made-up id round-trips.
 	if surface, err := db.Search(api.SearchQuery{SceneID: sceneID}); err != nil ||
 		!slices.ContainsFunc(surface.Topics, func(topic api.TopicSlot) bool { return topic.ID == session }) {
 		t.Fatalf("key %s is not a topic of scene %s: %+v err %v", session, sceneID, surface.Topics, err)
@@ -50,10 +46,7 @@ func TestInterfaceTurnEvents(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read events: %v", err)
 	}
-	// Slots 1 and 2 are reserved for the turn's dialogue — allocation skips them even
-	// while they are still empty, which is what puts these two events at 3 and 4 even
-	// though the dialogue was written after them. Each event comes back as it went in:
-	// its own type, its own payload, and the timestamp the host stamped it with.
+	// Slots 1 and 2 are reserved for the turn's dialogue.
 	if len(events) != 2 || events[0].Seq != 3 || events[1].Seq != 4 {
 		t.Fatalf("want 2 events with seq 3,4: %+v", events)
 	}
@@ -65,10 +58,8 @@ func TestInterfaceTurnEvents(t *testing.T) {
 	}
 }
 
-// One turn, one key: what the turn said and what it did are the same topic's
-// content, and no read confuses them — the scene context shows only the dialogue,
-// the kind-filtered read only the event, the plan view only the step the event
-// named, and the one distillation sees exactly the dialogue.
+// One turn, one key: what the turn said and what it did are the same topic's content, and no read
+// confuses them.
 func TestInterfaceTurnContentSharesOneKey(t *testing.T) {
 	db, llm := openTestDB(t)
 	sceneID := openSession(t, db)
@@ -141,11 +132,8 @@ func TestInterfaceTurnContentSharesOneKey(t *testing.T) {
 	}
 }
 
-// A turn's two sides are each optional and a close that carries neither is refused: the
-// keyword track distills out of dialogue, so an empty one is not settled into a topic with
-// nothing in it. A close that states only how the round ended (the outcome event) is the
-// same case — the events a round recorded while it ran are real, but they are not a
-// transcript, and the turn stays open for the host to close it with one.
+// A turn's two sides are each optional and a close that carries neither is refused: the keyword track
+// distills out of dialogue, so an empty one is not settled into a topic with nothing in it.
 func TestInterfaceUpdateNeedsAtLeastOneSideOfTheDialogue(t *testing.T) {
 	db, mock := openTestDB(t)
 	sceneID := openSession(t, db)

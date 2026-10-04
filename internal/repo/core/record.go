@@ -1,10 +1,8 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// Package core provides typed Read/Write helpers for storage record types;
-// typed slot access should go through this package. Every accessor is
-// scoped by agentID: records of different agents never collide even when
-// they share the same idHash.
+// Package core provides typed Read/Write helpers for storage record types; typed slot access should go
+// through this package.
 package core
 
 import (
@@ -18,18 +16,14 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/common"
 )
 
-// typeLabel names T without Go's package qualifier or pointer star, so an error
-// reads "unmarshal TopicSlot" rather than "unmarshal core.TopicSlot".
+// typeLabel names T without Go's package qualifier or pointer star, so an error reads "unmarshal
+// TopicSlot" rather than "unmarshal core.TopicSlot".
 func typeLabel(v any) string {
 	t := strings.TrimPrefix(fmt.Sprintf("%T", v), "*")
 	return t[strings.LastIndex(t, ".")+1:]
 }
 
-// readJSON decodes the record at id as T. rt is part of the read: an id names
-// exactly one record type, and a typed reader that ignored the frame's type
-// would decode a foreign slot into T — the caller's next write would then
-// convert that record. A mismatch reports ErrNotFound, the same answer an
-// absent id gives.
+// readJSON decodes the record at id as T.
 func readJSON[T any](engine *StorageEngine, agentID, id uint64, rt uint8) (*T, error) {
 	stored, data, err := engine.ReadRecord(agentID, id)
 	if err != nil {
@@ -54,8 +48,8 @@ func writeJSON[T any](engine *StorageEngine, agentID uint64, rt uint8, id uint64
 	return err
 }
 
-// TopicEntry builds a RecordEntry for one topic inside an agent domain;
-// the single serialization point for batched L2 topic writes.
+// TopicEntry builds a RecordEntry for one topic inside an agent domain; the single serialization point
+// for batched L2 topic writes.
 func TopicEntry(agentID uint64, topic *TopicSlot) (RecordEntry, error) {
 	data, err := json.Marshal(topic)
 	if err != nil {
@@ -64,12 +58,8 @@ func TopicEntry(agentID uint64, topic *TopicSlot) (RecordEntry, error) {
 	return RecordEntry{AgentID: agentID, RecordType: RecL2Topic, IDHash: topic.ID, Data: data}, nil
 }
 
-// IterAll iterates over all records of type rt inside one agent domain, dropping
-// the ones that will not read back. A rebuild may answer from what survives; a set
-// that decides a deletion or an overwrite may not, and uses CollectAllStrict.
-// Each drop is logged with its id: a mirror built on this scan hands the dropped
-// record's slot again. An id already tombstone but still named by the index is
-// not damage and stays quiet.
+// IterAll iterates over all records of type rt inside one agent domain, dropping the ones that will
+// not read back.
 func IterAll[T any](engine *StorageEngine, agentID uint64, rt uint8) iter.Seq[T] {
 	return func(yield func(T) bool) {
 		for idHash := range engine.IndexByType(agentID, rt) {
@@ -89,10 +79,8 @@ func IterAll[T any](engine *StorageEngine, agentID uint64, rt uint8) iter.Seq[T]
 	}
 }
 
-// CollectAllStrict reads one agent domain's whole rt set, reporting the first
-// member that will not read back rather than skipping it: where the set decides
-// a deletion or an overwrite, a member that merely would not read is not
-// evidence that the domain does not hold it.
+// CollectAllStrict reads one agent domain's whole rt set, reporting the first member that will not
+// read back rather than skipping it.
 func CollectAllStrict[T any](engine *StorageEngine, agentID uint64, rt uint8) ([]T, error) {
 	var out []T
 	for idHash := range engine.IndexByType(agentID, rt) {
@@ -103,9 +91,8 @@ func CollectAllStrict[T any](engine *StorageEngine, agentID uint64, rt uint8) ([
 			if common.CodeOf(err) == common.ErrNotFound {
 				continue
 			}
-			// Named by id: this refusal stops a write, and the engine has no read
-			// face that shows a damaged record, so an unnamed one would leave the
-			// host with no way to find what to repair or compact away.
+			// Named by id: this refusal stops a write, and the engine has no read face that shows a damaged
+			// record, so an unnamed one would leave the host with no way to find what to repair or compact away.
 			return nil, common.NewError(common.CodeOf(err),
 				fmt.Sprintf("record %s will not read", common.FormatHash(idHash)), err)
 		}
@@ -114,9 +101,7 @@ func CollectAllStrict[T any](engine *StorageEngine, agentID uint64, rt uint8) ([
 	return out, nil
 }
 
-// ReadProfileSlot re-derives the MBTI type word from the stored dimensions:
-// the axes are the only fact on disk, so the word every reader sees is a
-// function of them rather than a second copy that could drift.
+// ReadProfileSlot re-derives the MBTI type word from the stored dimensions.
 func ReadProfileSlot(engine *StorageEngine, agentID, id uint64) (*ProfileSlot, error) {
 	slot, err := readJSON[ProfileSlot](engine, agentID, id, RecL0Profile)
 	if err != nil {
@@ -166,14 +151,13 @@ func WriteTopicSlot(engine *StorageEngine, agentID, id uint64, slot *TopicSlot) 
 	return writeJSON(engine, agentID, RecL2Topic, id, slot)
 }
 
-// CollectAllTopicsStrict is the strict topic scan, for a caller whose next move
-// deletes or rewrites records keyed on this enumeration.
+// CollectAllTopicsStrict is the strict topic scan, for a caller whose next move deletes or rewrites
+// records keyed on this enumeration.
 func CollectAllTopicsStrict(engine *StorageEngine, agentID uint64) ([]TopicSlot, error) {
 	return CollectAllStrict[TopicSlot](engine, agentID, RecL2Topic)
 }
 
-// ReadTopicLenient returns (nil, nil) for non-RecL2Topic records instead of
-// unmarshalling garbage.
+// ReadTopicLenient returns (nil, nil) for non-RecL2Topic records instead of unmarshalling garbage.
 func ReadTopicLenient(engine *StorageEngine, agentID, idHash uint64) (*TopicSlot, error) {
 	rt, data, err := engine.ReadRecord(agentID, idHash)
 	if err != nil {
@@ -209,10 +193,7 @@ func WriteGraphSlot(engine *StorageEngine, agentID, id uint64, slot *HypergraphS
 	return writeJSON(engine, agentID, RecL3GraphSlot, id, slot)
 }
 
-// CollectAllGraphSlots reads the pool's graph slots with the strict scan: every
-// caller decides something from the list (label resolution, anchoring, listing),
-// so a slot that will not read back must stop the read rather than look like a
-// label the pool does not hold.
+// CollectAllGraphSlots reads the pool's graph slots with the strict scan.
 func CollectAllGraphSlots(engine *StorageEngine, agentID uint64) ([]HypergraphSlot, error) {
 	return CollectAllStrict[HypergraphSlot](engine, agentID, RecL3GraphSlot)
 }
@@ -241,8 +222,8 @@ func CollectAllPlanNodes(engine *StorageEngine, agentID uint64) []PlanNode {
 	return slices.Collect(IterAll[PlanNode](engine, agentID, RecL5PlanNode))
 }
 
-// CollectAllPlanNodesStrict is CollectAllPlanNodes for a caller that decides
-// which nodes to tombstone from the set it reads.
+// CollectAllPlanNodesStrict is CollectAllPlanNodes for a caller that decides which nodes to tombstone
+// from the set it reads.
 func CollectAllPlanNodesStrict(engine *StorageEngine, agentID uint64) ([]PlanNode, error) {
 	return CollectAllStrict[PlanNode](engine, agentID, RecL5PlanNode)
 }

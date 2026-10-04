@@ -14,8 +14,8 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/test/testsupport"
 )
 
-// gatherSessionSurface renders the host session's read surface: each depth-1
-// topic with its turn timestamps and its single keyword track.
+// gatherSessionSurface renders the host session's read surface: each depth-1 topic with its turn
+// timestamps and its single keyword track.
 func gatherSessionSurface(res *memhop.SearchResult) string {
 	var sb strings.Builder
 	for i := range res.Topics {
@@ -35,11 +35,8 @@ func gatherSessionSurface(res *memhop.SearchResult) string {
 	return sb.String()
 }
 
-// TestCoreCycleUpdateDream exercises the full memory loop against real
-// services: N turns settled into one host session, then Dream consolidation.
-// It pins what the re-designed loop promises: originals stay verbatim in L4,
-// the read surface is the distilled keyword track, and consolidation shrinks
-// that surface without dropping the facts.
+// TestCoreCycleUpdateDream exercises the full memory loop against real services: N turns settled into
+// one host session, then Dream consolidation.
 func TestCoreCycleUpdateDream(t *testing.T) {
 	const turns = 24
 	facts := []string{
@@ -152,13 +149,10 @@ func TestCoreCycleUpdateDream(t *testing.T) {
 	}
 	t.Logf("post-Dream surface = %d topics (was %d)", len(after.Topics), surfaceBefore)
 
-	// Phase 3: consolidation must not cost the host its facts. The originals
-	// are the source of truth in L4; the read surface must still carry the
-	// distilled keywords.
+	// Phase 3: consolidation must not cost the host its facts.
 	for _, want := range facts {
-		// A rune-safe prefix: slicing bytes lands in the middle of a 3-byte CJK
-		// rune, and an invalid UTF-8 query can never match Content — which looks
-		// exactly like a lost archive.
+		// A rune-safe prefix: slicing bytes lands in the middle of a 3-byte CJK rune, and an invalid UTF-8
+		// query can never match Content — which looks exactly like a lost archive.
 		probe := string([]rune(want)[:12])
 		hit, err := db.SearchL4(internal.L4Query{Keyword: probe})
 		if err != nil {

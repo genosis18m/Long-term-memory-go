@@ -1,9 +1,8 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// Offline interface tests: exercise the public API surface through
-// memhop.Open with a mock OpenAI-compatible LLM server. No external
-// services required; run with `go test ./test/...`.
+// Offline interface tests: exercise the public API surface through memhop.Open with a mock
+// OpenAI-compatible LLM server.
 
 package test
 
@@ -30,9 +29,7 @@ func TestInterfaceL3(t *testing.T) {
 		len(res.Errors) != 0 || len(res.GraphIDs) != 1 {
 		t.Fatalf("ImportL3 = %+v, want the one node created into the one graph it named", res)
 	}
-	// The result is a public alias of the internal record, so its tags are the wire
-	// contract: a clean batch answers with every list present, and "no failures"
-	// reads as [] rather than as a key a client cannot tell from "not reported".
+	// The result is a public alias of the internal record, so its tags are the wire contract.
 	raw, err := json.Marshal(res)
 	if err != nil {
 		t.Fatalf("encode the import result: %v", err)
@@ -77,10 +74,8 @@ func TestInterfaceL3(t *testing.T) {
 	}
 	assertImportedNode(t, subgraph.Nodes[0], graphID, res.CreatedIDs[0])
 
-	// L2↔L3 lives on the scene: opening a new session with an L3 id anchors it,
-	// and the domain listing finds that session back. NewScene is what asks for a
-	// session here — an unnamed read continues the one the domain is on, and naming
-	// an anchor onto a scene that already exists is refused.
+	// L2↔L3 lives on the scene: opening a new session with an L3 id anchors it, and the domain listing
+	// finds that session back.
 	anchored, err := db.Search(memhop.SearchQuery{NewScene: true, L3ID: graphs[0].ID})
 	if err != nil {
 		t.Fatalf("Search with l3 id: %v", err)
@@ -109,9 +104,7 @@ func TestInterfaceL3(t *testing.T) {
 	}
 }
 
-// assertImportedNode pins the one node this test imported, field by field. Three
-// read paths hand it back, and a count alone would let any of them return a node
-// whose title, body or keyword track was rewritten on the way out.
+// assertImportedNode pins the one node this test imported, field by field.
 func assertImportedNode(t *testing.T, n memhop.HypergraphNode, graphID, idHash string) {
 	t.Helper()
 	if n.ID != idHash || n.GraphID != graphID {
@@ -126,11 +119,8 @@ func assertImportedNode(t *testing.T, n memhop.HypergraphNode, graphID, idHash s
 	}
 }
 
-// Renaming a graph is a label change and nothing else: the id a scene anchored on and the
-// host's own node ids stay put, and after the change **both** labels reach the same graph —
-// the one it was created under, because the id derives from that first label, and the new
-// one, because the slots are also matched by name. That is the difference between a rename
-// and a split, and the tool schema a host publishes for ImportL3 carries a label, not an id.
+// Renaming a graph is a label change and nothing else: the id a scene anchored on and the host's own
+// node ids stay put, and after the change **both** labels reach the same graph.
 func TestInterfaceGraphRenameKeepsItsIdAndBothLabelsRoute(t *testing.T) {
 	db, _ := openTestDB(t)
 	first, err := db.ImportL3([]memhop.L3ImportItem{
@@ -186,9 +176,8 @@ func TestInterfaceGraphRenameKeepsItsIdAndBothLabelsRoute(t *testing.T) {
 	}
 }
 
-// A model inventing the far side of a relation is the ordinary failure on the tool path,
-// and so is a title that lives in another graph: the batch must say which item it could not
-// link instead of returning a success whose graph simply has no edge.
+// A model inventing the far side of a relation is the ordinary failure on the tool path, and so is a
+// title that lives in another graph.
 func TestInterfaceImportReportsAnUnlinkableRelation(t *testing.T) {
 	db, _ := openTestDB(t)
 	res, err := db.ImportL3([]memhop.L3ImportItem{

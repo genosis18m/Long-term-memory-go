@@ -10,10 +10,7 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/repo/core"
 )
 
-// The bounds a settled turn leaves on its topic row are the span of its utterances. A tool
-// event recorded mid-round carries a timestamp of its own and must not widen them: a host
-// dating a memory by its row reads when that round was spoken, not when a call inside it
-// happened to finish.
+// The bounds a settled turn leaves on its topic row are the span of its utterances.
 func TestTurnTopicBoundsIgnoreMidRoundEvents(t *testing.T) {
 	srv := mockLLMServer(t, turnKeywords)
 	db := newSearchTestDB(t, srv.URL)
@@ -41,11 +38,8 @@ func TestTurnTopicBoundsIgnoreMidRoundEvents(t *testing.T) {
 	}
 }
 
-// A round abandoned to a second `Search` is not unwritten: it gets no topic row, so the scene
-// read never shows it, while the record it appended stays on the log under an id no read
-// names any more. Both halves of that sentence are what the guide's pitfall 5 claims, so
-// both are asserted here — a host told "abandoning costs nothing" would size its retention
-// window on a lie.
+// A round abandoned to a second `Search` is not unwritten: it gets no topic row, so the scene read
+// never shows it, while the record it appended stays on the log under an id no read names any more.
 func TestAbandonedRoundKeepsItsRecords(t *testing.T) {
 	srv := mockLLMServer(t, turnKeywords)
 	db := newSearchTestDB(t, srv.URL)

@@ -1,9 +1,8 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// Profile distillation policy: the emotion/MBTI distilled from L1 samples into
-// the typed L0 signals, and the ranking that picks those samples. The identity
-// fields of a profile are not this file's to write.
+// Profile distillation policy: the emotion/MBTI distilled from L1 samples into the typed L0 signals,
+// and the ranking that picks those samples.
 
 package profile
 
@@ -18,19 +17,19 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/repo/core"
 )
 
-// maxDistillSamples bounds both prompt cost and LLM input size for L0
-// distillation: 200 top-ranked nodes is far more signal than emotion/MBTI needs.
+// maxDistillSamples bounds both prompt cost and LLM input size for L0 distillation: 200 top-ranked
+// nodes is far more signal than emotion/MBTI needs.
 const maxDistillSamples = 200
 
 // maxDistillKeywordsPerSample bounds the keyword list sent for each node.
 const maxDistillKeywordsPerSample = 20
 
-// distillSampleLambda: sample-rank age decay per hour (ranking only,
-// decoupled from the LambdaNode decay config).
+// distillSampleLambda: sample-rank age decay per hour (ranking only, decoupled from the LambdaNode
+// decay config).
 const distillSampleLambda = 0.01
 
-// defaultProfile builds the first profile of a domain: a neutral assistant
-// identity with nothing distilled onto it yet.
+// defaultProfile builds the first profile of a domain: a neutral assistant identity with nothing
+// distilled onto it yet.
 func defaultProfile() *core.ProfileSlot {
 	return &core.ProfileSlot{
 		Name:        "Agent",
@@ -39,15 +38,8 @@ func defaultProfile() *core.ProfileSlot {
 	}
 }
 
-// Samples ranks L1 nodes by Importance×exp(-lambda×age) and returns the top
-// maxDistillSamples for distillation. Ranking runs on the node fields alone: the
-// keywords a sample carries cost one record read each, so collecting them before the
-// cut would price the whole L1 set for the rows that survive it.
-//
-// ponytail: the node enumeration stays tolerant where the L1 passes over the same
-// set are strict. Every one of them runs earlier in the same pipeline and stops on
-// a record it cannot read, so a damaged node never reaches this function. If a
-// caller ever samples outside that pipeline, this is where to read strictly.
+// Samples ranks L1 nodes by Importance×exp(-lambda×age) and returns the top maxDistillSamples for
+// distillation.
 func Samples(engine *core.StorageEngine, agentID uint64) []core.DistillSample {
 	nowMs := time.Now().UnixMilli()
 	nodes := core.CollectAllSceneNodes(engine, agentID)
@@ -79,9 +71,8 @@ func sampleRank(node *core.SceneNode, nowMs int64) float64 {
 	return float64(node.Importance) * math.Exp(-distillSampleLambda*common.ElapsedHours(nowMs, node.UpdatedAt))
 }
 
-// MergeDistill writes the distilled emotion, MBTI and personality summary into
-// the profile, leaving Name/Role/Preferences as stored. An empty personality
-// keeps the value already on the slot.
+// MergeDistill writes the distilled emotion, MBTI and personality summary into the profile, leaving
+// Name/Role/Preferences as stored.
 func MergeDistill(engine *core.StorageEngine, agentID uint64, emo core.EmotionScore, mbti core.MBTIScore, personality string) error {
 	slot, err := repo.GetProfileL0(engine, agentID)
 	if err != nil {

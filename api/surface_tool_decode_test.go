@@ -1,15 +1,7 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// The tool path is where "integrate and use" is decided: a model returns one JSON object
-// per call, and if the host has to translate that object before handing it over, every
-// schema it publishes is a translation table it must keep in sync. So this decodes the
-// argument document straight into each input shape and requires **every field of the shape
-// to arrive** by the key the guides document — including the enums in the spelling each of
-// them is published in (lowercase strings for `plan_status`/`mode`, numbers for
-// `kind`/`content_type`/edge kinds). A field that only fills from a Go literal, or a word
-// enum that only decodes as an integer, is exactly the hidden conversion a host would
-// discover in production.
+// The tool path is where "integrate and use" is decided.
 
 package api
 
@@ -102,8 +94,8 @@ func TestToolArgumentsDecodeIntoEveryInputShape(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		// The shape must accept every key the document sends and send no key the
-		// shape does not carry: that pair is the whole "no translation layer" claim.
+		// The shape must accept every key the document sends and send no key the shape does not carry: that
+		// pair is the whole "no translation layer" claim.
 		var fromDoc map[string]any
 		if err := json.Unmarshal([]byte(c.doc), &fromDoc); err != nil {
 			t.Fatalf("%s: %v", c.name, err)
@@ -133,8 +125,8 @@ func TestToolArgumentsDecodeIntoEveryInputShape(t *testing.T) {
 		}
 	}
 
-	// A few values have to land as the constants, not merely as "something non-zero": the
-	// enum spellings are the contract the guides' §7.6 table publishes.
+	// A few values have to land as the constants, not merely as "something non-zero": the enum spellings
+	// are the contract the guides' §7.6 table publishes.
 	var step PlanStep
 	if err := json.Unmarshal([]byte(`{"seq":1,"status":"in_progress"}`), &step); err != nil || step.Status != PlanStatusInProgress {
 		t.Fatalf("plan status did not decode from its word: %v err=%v", step.Status, err)
@@ -179,8 +171,8 @@ func untouchedFields(v reflect.Value) []string {
 	return out
 }
 
-// onlyZeroValued excuses the fields whose documented value simply is 0: `kind: 0` is
-// utterance and `seq: 0` is "next free slot", so a zero there means the key arrived.
+// onlyZeroValued excuses the fields whose documented value simply is 0: `kind: 0` is utterance and
+// `seq: 0` is "next free slot", so a zero there means the key arrived.
 func onlyZeroValued(name string, empty []string) bool {
 	allowed := map[string]map[string]bool{
 		"memory_record": {"kind": true, "seq": true, "node_seq": true},

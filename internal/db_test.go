@@ -12,10 +12,8 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/repo/core"
 )
 
-// newTestDB wires an engine into the minimal multi-agent DB state the
-// domain-context machinery needs (registry, base context, defaults),
-// mirroring the Open assembly. The default-domain context is created
-// lazily by contextFor on first use.
+// newTestDB wires an engine into the minimal multi-agent DB state the domain-context machinery needs
+// (registry, base context, defaults), mirroring the Open assembly.
 func newTestDB(t *testing.T, engine *core.StorageEngine) *DB {
 	t.Helper()
 	baseCtx, cancel := context.WithCancel(context.Background())
@@ -29,9 +27,7 @@ func newTestDB(t *testing.T, engine *core.StorageEngine) *DB {
 	}
 }
 
-// testDefaultContext returns the default-domain context of db, creating it
-// with caches rebuilt from the records when absent (same shape as the lazy
-// contextFor path); tests that poke ac.L2Meta directly use this handle.
+// testDefaultContext returns the default-domain context of db, creating it with caches rebuilt from.
 func testDefaultContext(db *DB) *domain.Context {
 	if ac := db.agents[core.DefaultAgentID]; ac != nil {
 		return ac
@@ -41,9 +37,8 @@ func testDefaultContext(db *DB) *domain.Context {
 	return ac
 }
 
-// TestLoadTenantRegistryDuplicateNameDeterministic pins the restart mapping
-// rule: two active registry records carrying the same name resolve to the
-// highest agentID regardless of Go map iteration order.
+// TestLoadTenantRegistryDuplicateNameDeterministic pins the restart mapping rule: two active registry
+// records carrying the same name resolve to the highest agentID regardless of Go map iteration order.
 func TestLoadTenantRegistryDuplicateNameDeterministic(t *testing.T) {
 	engine := newTestEngine(t)
 	const name = "dup"

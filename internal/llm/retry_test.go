@@ -2,12 +2,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 // The token budgets are the library's only lever over how much an endpoint may answer, and every
-// existing case exercises them through a fake transport — so they prove what the callers decide,
-// not what the endpoint receives. If `Chat` dropped the number on the way out, the escalation
-// ladder would be a no-op and every fake would still pass. This reads the request bodies off the
-// wire: the ceiling a call names is the ceiling the request carries, the escalated retry carries
-// the larger one, and no second request goes out when the first failure was not a truncation (or
-// when the caller named no headroom to escalate into).
+// existing case exercises them through a fake transport.
 
 package llm
 
@@ -41,9 +36,8 @@ func (r *recordedRequest) serve(w http.ResponseWriter, req *http.Request) {
 	}
 	_ = json.NewDecoder(req.Body).Decode(&body)
 	r.budgets = append(r.budgets, body.MaxTokens)
-	// A ladder asked more times than this case canned answers for is itself the failure being
-	// looked for, so answer it rather than panicking inside the handler: the assertions below
-	// then report the extra attempt, and a mutant stays a red test instead of a stack trace.
+	// A ladder asked more times than this case canned answers for is itself the failure being looked for,
+	// so answer it rather than panicking inside the handler.
 	next := wholeReply
 	if len(r.budgets) <= len(r.responses) {
 		next = r.responses[len(r.budgets)-1]
@@ -55,7 +49,7 @@ func (r *recordedRequest) serve(w http.ResponseWriter, req *http.Request) {
 }
 
 // truncatedReply and wholeReply are the two answers the ladder distinguishes: the first says the
-// ceiling cut it off, the second does not. Both are otherwise usable.
+// ceiling cut it off, the second does not.
 const (
 	truncatedReply = `{"choices":[{"finish_reason":"length","message":{"role":"assistant","content":"{\"keywords\":[\"a\""}}]}`
 	wholeReply     = `{"choices":[{"finish_reason":"stop","message":{"role":"assistant","content":"{\"keywords\":[\"a\",\"b\"]}"}}]}`
@@ -107,9 +101,7 @@ func TestOutputCeilingReachesTheRequestItWasNamedFor(t *testing.T) {
 	}
 }
 
-// A failure that is not a truncation must not be re-asked with a bigger ceiling: the endpoint
-// refused the request, and a larger budget changes nothing about that while spending a second
-// window on the domain's lock.
+// A failure that is not a truncation must not be re-asked with a bigger ceiling.
 func TestRefusedRequestIsNotEscalated(t *testing.T) {
 	rec := &recordedRequest{responses: []string{`{"error":{"message":"nope"}}`}}
 	rec.srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

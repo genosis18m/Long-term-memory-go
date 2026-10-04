@@ -12,10 +12,7 @@ import (
 	"testing"
 )
 
-// locomoItem mirrors benches/fixtures/locomo10.json. The fixture is used only
-// as realistic conversation material for the Search/Update ingestion loop —
-// no QA evaluation, no LLM judge (the engine's own L0/L1/L4 correctness is
-// asserted directly, see core_cycle_test.go).
+// locomoItem mirrors benches/fixtures/locomo10.json.
 type locomoItem struct {
 	SampleID string          `json:"sample_id"`
 	SpeakerA string          `json:"speaker_a"`

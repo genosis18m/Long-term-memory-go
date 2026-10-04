@@ -30,9 +30,8 @@ func TestWritePlanNode_KeepsHashPlanNodeID(t *testing.T) {
 	}
 }
 
-// A node's id is derived from its ordinal, so writing one whose id was built from
-// a different topic or ordinal is refused rather than silently landing on another
-// step.
+// A node's id is derived from its ordinal, so writing one whose id was built from a different topic or
+// ordinal is refused rather than silently landing on another step.
 func TestWritePlanNodeRejectsAForeignID(t *testing.T) {
 	engine := tempEngine(t)
 	node := &core.PlanNode{
@@ -43,8 +42,8 @@ func TestWritePlanNodeRejectsAForeignID(t *testing.T) {
 	}
 }
 
-// Zero is not a step: an ordinal of 0 is what an unset node carries, and a record
-// written under it could never be addressed again by the plan surface.
+// Zero is not a step: an ordinal of 0 is what an unset node carries, and a record written under it
+// could never be addressed again by the plan surface.
 func TestWritePlanNodeRejectsZeroSeq(t *testing.T) {
 	engine := tempEngine(t)
 	node := &core.PlanNode{
@@ -55,9 +54,8 @@ func TestWritePlanNodeRejectsZeroSeq(t *testing.T) {
 	}
 }
 
-// A plan node and a content slot are addressed by the same topic id and nothing
-// else, so the two derivations must stay apart — and the typed readers must keep
-// a node from being overwritten by an event of the same number.
+// A plan node and a content slot are addressed by the same topic id and nothing else, so the two
+// derivations must stay apart.
 func TestPlanNodeAndContentCoexistUnderOneTopic(t *testing.T) {
 	engine := tempEngine(t)
 	agentID := core.DefaultAgentID
@@ -91,9 +89,8 @@ func TestPlanNodeAndContentCoexistUnderOneTopic(t *testing.T) {
 	}
 }
 
-// An aggregate exists exactly while a topic owns at least one node: content
-// never joined the grouping, and neither ordering nor the recency the retention
-// exemption reads depends on it.
+// An aggregate exists exactly while a topic owns at least one node: content never joined the grouping,
+// and neither ordering nor the recency the retention exemption reads depends on it.
 func TestCollectPlanNodesGroupsTrees(t *testing.T) {
 	engine := tempEngine(t)
 	agentID := core.DefaultAgentID
@@ -174,10 +171,7 @@ func TestPlanNodeIDsByTopicIDsTakesWholeTrees(t *testing.T) {
 	}
 }
 
-// Both passes over the node bucket decide something — what to tombstone, what to
-// exempt from the retention window — so an unreadable node has to stop them: a tree
-// missing one of its steps looks finished and expired, and a delete that names what
-// it could not see reports a cascade that did not happen.
+// Both passes over the node bucket decide something.
 func TestPlanNodeScansReportAnUnreadableNode(t *testing.T) {
 	engine := tempEngine(t)
 	agentID := core.DefaultAgentID

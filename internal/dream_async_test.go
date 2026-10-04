@@ -16,8 +16,8 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/repo/core"
 )
 
-// slowLLMServer answers chat completions after delay ms, so the caller can
-// observe that triggerSceneDream returns before the Dream pipeline ends.
+// slowLLMServer answers chat completions after delay ms, so the caller can observe that
+// triggerSceneDream returns before the Dream pipeline ends.
 func slowLLMServer(t *testing.T, delay time.Duration, content string) *httptest.Server {
 	t.Helper()
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -37,10 +37,7 @@ func slowLLMServer(t *testing.T, delay time.Duration, content string) *httptest.
 	return srv
 }
 
-// TestTriggerSceneDreamSchedulesBackground the trigger returns immediately
-// (in-flight marker visible before the slow Dream finishes), repeated
-// triggers for the same scene do not stack, and the marker is cleared once
-// the background Dream exits.
+// TestTriggerSceneDreamSchedulesBackground the trigger returns immediately (in-flight marker visible.
 func TestTriggerSceneDreamSchedulesBackground(t *testing.T) {
 	srv := slowLLMServer(t, 200*time.Millisecond, `{"keywords":["x"]}`)
 	db := newSearchTestDB(t, srv.URL)
@@ -82,8 +79,8 @@ func TestTriggerSceneDreamSchedulesBackground(t *testing.T) {
 	t.Fatal("in-flight marker never cleared: the background Dream goroutine did not exit")
 }
 
-// TestOpenInitializesDreamState locks the open contract that background Dream
-// state is ready before the first Settle-time consolidation trigger fires.
+// TestOpenInitializesDreamState locks the open contract that background Dream state is ready before
+// the first Settle-time consolidation trigger fires.
 func TestOpenInitializesDreamState(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "open.meh")
 	db, err := OpenDB(path, testLLMConfig(), DefaultMemHopDefaults, primaryProfile("primary"))

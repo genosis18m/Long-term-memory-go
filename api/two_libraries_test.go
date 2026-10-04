@@ -10,12 +10,8 @@ import (
 	"testing"
 )
 
-// The shape a host actually deploys: one library per agent, so a recruited worker opens its
-// own `.meh` beside the parent's while both are being driven at the same time. Two things
-// have to hold and neither is visible from a single-file test: the two files must not be able
-// to reach each other's records even through an id that happens to look alike, and the engine
-// must not serialize one family behind the other's lock. Run under -race this is the
-// concurrency check; run without it, the counts still catch a lost or crossed write.
+// The shape a host actually deploys: one library per agent, so a recruited worker opens its own `.meh`
+// beside the parent's while both are being driven at the same time.
 func TestTwoLibrariesConcurrentlyInOneProcess(t *testing.T) {
 	dir := t.TempDir()
 	llm := stubLLM()
@@ -116,9 +112,8 @@ func TestTwoLibrariesConcurrentlyInOneProcess(t *testing.T) {
 	if err != nil {
 		t.Fatalf("worker Stats: %v", err)
 	}
-	// The worker file carries two domains through the same loop the parent file carried one,
-	// so it holds strictly more — and the parent's own total answers as if the worker had
-	// never existed: no record of one family was written into the other's file.
+	// The worker file carries two domains through the same loop the parent file carried one, so it holds
+	// strictly more.
 	if st.RecordCount == 0 || ws.RecordCount <= st.RecordCount {
 		t.Fatalf("the two files reached %d and %d records, want both non-empty and the two-domain file larger",
 			st.RecordCount, ws.RecordCount)
@@ -137,12 +132,8 @@ func keys(m map[string]bool) []string {
 	return out
 }
 
-// How far a domain id reaches is the question a host multiplies: one `.meh` per agent means
-// many files, and each file has its own primary — the implicit zero domain, so its id is the
-// same 16 zeros everywhere. Inside one file an id addresses exactly one domain, which is
-// what `DB.Agent` needs to be unambiguous; across files it is not a key, and the pair
-// (file, id) is. Pinning this is cheaper than watching a host build a global map on the id
-// alone and quietly merge two agents' memories.
+// How far a domain id reaches is the question a host multiplies: one `.meh` per agent means many
+// files, and each file has its own primary.
 func TestAnAgentIDAddressesADomainInsideOneFile(t *testing.T) {
 	dir := t.TempDir()
 	llm := stubLLM()

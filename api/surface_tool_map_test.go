@@ -9,10 +9,8 @@ import (
 	"testing"
 )
 
-// A host wiring these calls to a model writes a tool schema per method: a name, the keys to
-// ask for, and what the answer is good for. The admin-face methods are deliberately absent
-// from that table: a model holding a delete or a merge needs the host's approval path, not
-// a schema.
+// A host wiring these calls to a model writes a tool schema per method: a name, the keys to ask for,
+// and what the answer is good for.
 type toolRow struct {
 	method   string
 	tool     string
@@ -51,8 +49,8 @@ var adminFace = []string{
 	"UpdateL3", "DeleteL3", "AgentID",
 }
 
-// TestEveryTaskFaceMethodHasAToolRow closes the other direction: a method added to the
-// session surface is only absent from the tool table on purpose.
+// TestEveryTaskFaceMethodHasAToolRow closes the other direction: a method added to the session surface
+// is only absent from the tool table on purpose.
 func TestEveryTaskFaceMethodHasAToolRow(t *testing.T) {
 	listed := map[string]bool{}
 	for _, row := range toolRows {
@@ -74,8 +72,8 @@ func TestEveryTaskFaceMethodHasAToolRow(t *testing.T) {
 	}
 }
 
-// TestToolRowsFollowTheMethodSet checks the tool table against the code: every listed method
-// exists and takes what the row says it takes.
+// TestToolRowsFollowTheMethodSet checks the tool table against the code: every listed method exists
+// and takes what the row says it takes.
 func TestToolRowsFollowTheMethodSet(t *testing.T) {
 	handle := reflect.TypeOf(&Session{})
 	for _, row := range toolRows {

@@ -1,14 +1,7 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// Acceptance item 10 is "open the agent's memory by id". The name door has had that proof
-// for a while — a restart finds the same domain and its scene — but the id door was only
-// ever checked down to the profile: a host that hands a worker's id to a new process is not
-// asking whose name it is, it is asking for the conversation. So this walks the whole path:
-// two rounds in the worker's own scene, close the file, open it again, hand back the id, and
-// demand the same memory — same scene, same transcript, and the next turn continuing that
-// conversation rather than starting a fresh one. The primary domain of the same file is
-// measured alongside it, so the case cannot pass by both handles answering the same listing.
+// Acceptance item 10 is "open the agent's memory by id".
 
 package test
 
@@ -119,8 +112,8 @@ func encode(tb testing.TB, v any) string {
 	return string(raw)
 }
 
-// mustVal unwraps a call whose failure means the fixture is broken; a panic reads better in
-// the failure log than a chained Fatalf here, and the offline suite uses this shape already.
+// mustVal unwraps a call whose failure means the fixture is broken; a panic reads better in the
+// failure log than a chained Fatalf here, and the offline suite uses this shape already.
 func mustVal[T any](v T, err error) T {
 	if err != nil {
 		panic(err)

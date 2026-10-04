@@ -10,9 +10,7 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/repo/core"
 )
 
-// MergeFields is the append-side import policy: a blank import never erases
-// what is stored, content only grows when it adds information, keywords are
-// unioned and a blank source reference keeps the positional link.
+// MergeFields is the append-side import policy.
 func TestMergeFieldsKeepsAndGrows(t *testing.T) {
 	ref := "page:7"
 	node := &core.HypergraphNode{
@@ -49,8 +47,8 @@ func TestMergeFieldsKeepsAndGrows(t *testing.T) {
 	}
 }
 
-// OverwriteFields is the replace-side policy: every mutable field follows the
-// import, an empty source reference clears it, and identity stays untouched.
+// OverwriteFields is the replace-side policy: every mutable field follows the import, an empty source
+// reference clears it, and identity stays untouched.
 func TestOverwriteFieldsReplacesMutableFields(t *testing.T) {
 	ref := "page:7"
 	node := &core.HypergraphNode{

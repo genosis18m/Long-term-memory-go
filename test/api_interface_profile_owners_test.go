@@ -1,18 +1,7 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// The profile record is the second place where two owners share one row: the host writes
-// Name / Role / Preferences through `UpdateL0`, and the consolidation's distillation stage writes
-// the emotion, the MBTI axes and the personality summary back into the same record. The host's
-// side of that bargain is documented — `UpdateL0` inherits the distilled fields so a profile
-// edit never wipes what a pass learned — and the library's side of the same bargain was the mirror
-// image of it, asserted nowhere: `MergeDistill` had no test reaching it at all.
-//
-// So this drives the only order a host can actually produce (settle rounds, edit the profile, let
-// a consolidation run) and requires that the fields the pass does not own are still there —
-// including the preferences map, which is the one field a rewrite that assembled a record from
-// what it computed would drop without any call failing. The distilled half is asserted in the same
-// read, because a pass that never wrote anything would leave this test satisfied by the fixture.
+// The profile record is the second place where two owners share one row.
 
 package test
 
@@ -65,11 +54,8 @@ func TestInterfaceDistillLeavesTheHostsProfileFieldsAlone(t *testing.T) {
 			slot.Preferences["style"] != "先复现再动手" {
 			t.Fatalf("%s: the host's preferences read %+v after the consolidation, want both entries", who, slot.Preferences)
 		}
-		// The half the pass owns, in the same read: proof this is the result of a write and not
-		// the fixture left standing.
-		// ESTP, not the word the endpoint claimed: the type is read off the four axes the record
-		// holds, so this doubles as proof the distilled axes landed and that no implementation
-		// copies the model's own label through.
+		// The half the pass owns, in the same read: proof this is the result of a write and not the fixture
+		// left standing.
 		if !strings.Contains(slot.Personality, "务实直接") || slot.MBTI.Type != "ESTP" {
 			t.Fatalf("%s: the distilled half reads personality=%q type=%q, want the answer this fixture's "+
 				"endpoint gave — without it the host-fields assertions above prove nothing",

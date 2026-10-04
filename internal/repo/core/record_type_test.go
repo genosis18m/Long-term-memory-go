@@ -9,10 +9,7 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/common"
 )
 
-// One id names exactly one record type. A typed reader that ignored the frame's
-// record type would decode a node's JSON into a graph slot (both carry
-// id_hash), and the caller would then write a slot over the node — turning a
-// wrong-id call into silent data loss instead of "not found".
+// One id names exactly one record type.
 func TestTypedReadersRejectForeignRecordType(t *testing.T) {
 	engine, err := Create(tempPath(t, "typed_read"))
 	if err != nil {
@@ -55,9 +52,8 @@ func TestTypedReadersRejectForeignRecordType(t *testing.T) {
 	}
 }
 
-// The MBTI type word is a function of the four axes, so the record stores the
-// axes only: a payload whose "type" key contradicts them — the shape drift
-// would take — decodes to the word the axes derive, not the word on disk.
+// The MBTI type word is a function of the four axes, so the record stores the axes only: a payload
+// whose "type" key contradicts them.
 func TestReadProfileSlotDerivesMBTITypeFromAxes(t *testing.T) {
 	engine, err := Create(tempPath(t, "profile_mbti_derive"))
 	if err != nil {
@@ -79,10 +75,7 @@ func TestReadProfileSlotDerivesMBTITypeFromAxes(t *testing.T) {
 	}
 }
 
-// A topic's L4 content and its L5 plan tree are addressed by the same topic id
-// and nothing else, so the two newest record types have the most to lose from a
-// reader that ignored the frame type: decoding a node into an archive slot and
-// writing it back would convert a live tree node into a content record.
+// A topic's L4 content and its L5 plan tree are addressed by the same topic id and nothing else, so.
 func TestContentAndPlanNodeDoNotReadAsEachOther(t *testing.T) {
 	engine, err := Create(tempPath(t, "content_vs_node"))
 	if err != nil {

@@ -1,9 +1,7 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// Engine lifecycle: create/open (with crash-consistent index restore) and
-// checkpoint/close. Index restore helpers live next to their callers;
-// frame scanning and tail recovery are in engine_recovery.go.
+// Engine lifecycle: create/open (with crash-consistent index restore) and checkpoint/close.
 
 package core
 
@@ -16,9 +14,8 @@ import (
 )
 
 func Create(path string) (*StorageEngine, error) {
-	// No O_TRUNC here: a create refused by the exclusive lock must not already
-	// have emptied a live database. The truncation below is the only kind of
-	// create that may, and it runs once the lock is held.
+	// No O_TRUNC here: a create refused by the exclusive lock must not already have emptied a live
+	// database.
 	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
 		return nil, common.NewError(common.ErrIO, "create file", err)
@@ -91,10 +88,8 @@ func Open(path string) (*StorageEngine, error) {
 			// last valid record so future appends start from a clean tail.
 			err = e.truncateTail(int64(end))
 		} else if snapshotLoaded && end == scanStart {
-			// trimTailSnapshot must truncate at the record-area end (the start
-			// of the first tail snapshot), not at the latest snapshot offset or
-			// at the end of the snapshot chain. New headers store RecordEnd
-			// directly; legacy files get a one-time reconstruction scan.
+			// trimTailSnapshot must truncate at the record-area end (the start of the first tail snapshot), not at
+			// the latest snapshot offset or at the end of the snapshot chain.
 			e.nextOffset = e.recoverRecordAreaEnd()
 		}
 	}
@@ -111,8 +106,8 @@ func Open(path string) (*StorageEngine, error) {
 	return e, nil
 }
 
-// openEngineFile opens and exclusively locks the file, maps it and loads
-// the A/B headers; every failure path releases what it already acquired.
+// openEngineFile opens and exclusively locks the file, maps it and loads the A/B headers; every
+// failure path releases what it already acquired.
 func openEngineFile(path string) (*os.File, []byte, *FileHeader, *FileHeader, uint8, error) {
 	f, err := os.OpenFile(path, os.O_RDWR, 0644)
 	if err != nil {
@@ -145,17 +140,15 @@ func openEngineFile(path string) (*os.File, []byte, *FileHeader, *FileHeader, ui
 	return f, mm, hA, hB, activeIdx, nil
 }
 
-// restoreFromSnapshot loads the snapshot referenced by the active header
-// and reports where the incremental record scan must start plus whether a
-// snapshot was consumed or found corrupt.
+// restoreFromSnapshot loads the snapshot referenced by the active header and reports where the
+// incremental record scan must start plus whether a snapshot was consumed or found corrupt.
 func (e *StorageEngine) restoreFromSnapshot(active *FileHeader) (scanStart uint64, loaded, corrupt bool) {
 	if active.SnapshotOffset == 0 || active.SnapshotLength == 0 {
 		return DataStart, false, false
 	}
 	if err := e.loadSnapshot(); err != nil {
-		// Snapshot unreadable (old version, corrupt blob, out-of-bounds pointer,
-		// truncation window): fall back to a full scan instead of refusing to
-		// open. Loud, so corruption never stays invisible behind a healthy Open.
+		// Snapshot unreadable (old version, corrupt blob, out-of-bounds pointer, truncation window): fall back
+		// to a full scan instead of refusing to open.
 		slog.Warn("engine: snapshot unreadable, rebuilding index by full scan",
 			"err", err)
 		e.index = make(map[uint64]map[uint64]uint64)
@@ -165,8 +158,8 @@ func (e *StorageEngine) restoreFromSnapshot(active *FileHeader) (scanStart uint6
 	return active.SnapshotOffset + uint64(active.SnapshotLength), true, false
 }
 
-// clearActiveSnapshot zeroes the active header's snapshot pointers so a
-// corrupt snapshot is not rescanned out of bounds on every Open.
+// clearActiveSnapshot zeroes the active header's snapshot pointers so a corrupt snapshot is not
+// rescanned out of bounds on every Open.
 func (e *StorageEngine) clearActiveSnapshot() error {
 	hdr := copyHeader(e.activeHeaderRef())
 	hdr.SnapshotOffset = 0
@@ -183,8 +176,8 @@ func (e *StorageEngine) clearActiveSnapshot() error {
 	return nil
 }
 
-// abortOpen releases all OS resources after a failed Open; the engine is
-// never published to callers in that path.
+// abortOpen releases all OS resources after a failed Open; the engine is never published to callers in
+// that path.
 func (e *StorageEngine) abortOpen() {
 	UnmapFile(e.mmap)
 	e.file.Close()
@@ -200,9 +193,7 @@ func (e *StorageEngine) Checkpoint() error {
 	return e.appendSnapshot(BuildSnapshot(e.index))
 }
 
-// Close checkpoints, unmaps, and closes the file. All steps run even on
-// failure; the first error wins (checkpoint > unmap > sync > close) so
-// no mmap region or descriptor leaks.
+// Close checkpoints, unmaps, and closes the file.
 func (e *StorageEngine) Close() error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -218,8 +209,8 @@ func (e *StorageEngine) Close() error {
 	return shutErr
 }
 
-// shutdownHandles unmaps, syncs, unlocks and closes the file, running every
-// step even on failure; the first error wins so nothing leaks.
+// shutdownHandles unmaps, syncs, unlocks and closes the file, running every step even on failure; the
+// first error wins so nothing leaks.
 func (e *StorageEngine) shutdownHandles() error {
 	unmapErr := UnmapFile(e.mmap)
 	e.mmap = nil
@@ -238,8 +229,8 @@ func (e *StorageEngine) shutdownHandles() error {
 	}
 }
 
-// closeNoCheckpoint unmaps and closes without a snapshot or A/B flip; the
-// recovery tests use it to go away mid-log where a real Close tidies up.
+// closeNoCheckpoint unmaps and closes without a snapshot or A/B flip; the recovery tests use it to go
+// away mid-log where a real Close tidies up.
 func (e *StorageEngine) closeNoCheckpoint() error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -257,9 +248,8 @@ func (e *StorageEngine) closeNoCheckpoint() error {
 	return e.file.Close()
 }
 
-// appendSnapshot writes blob as the single tail snapshot behind the record
-// area, syncs, remaps and flips to a header pointing at it. Caller must
-// hold e.mu.
+// appendSnapshot writes blob as the single tail snapshot behind the record area, syncs, remaps and
+// flips to a header pointing at it.
 func (e *StorageEngine) appendSnapshot(blob []byte) error {
 	snapOffset, err := e.file.Seek(0, io.SeekEnd)
 	if err != nil {
@@ -318,7 +308,6 @@ func (e *StorageEngine) loadSnapshot() error {
 }
 
 // writeInactiveHeader writes hdr to the inactive A/B slot and syncs it.
-// Caller must hold e.mu.
 func (e *StorageEngine) writeInactiveHeader(hdr *FileHeader) error {
 	writeOffset := int64(HeaderAOffset)
 	if e.activeHeader != 1 {
@@ -333,7 +322,7 @@ func (e *StorageEngine) writeInactiveHeader(hdr *FileHeader) error {
 	return nil
 }
 
-// switchHeader makes hdr the active header. Caller must hold e.mu.
+// switchHeader makes hdr the active header.
 func (e *StorageEngine) switchHeader(hdr *FileHeader) {
 	if e.activeHeader == 1 {
 		e.headerA = hdr

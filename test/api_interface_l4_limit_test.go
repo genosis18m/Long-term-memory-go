@@ -11,15 +11,8 @@ import (
 	memhop "github.com/genosis18m/Long-term-memory-go/api"
 )
 
-// `Limit` is documented as keeping the tail of whichever order the query spans — Seq within one
-// topic, creation time across topics. That is only a promise about `Limit` alone; the interesting
-// half is what it promises **beside a filter**: truncation must happen after the conditions are
-// applied, or a host that asks for "the newest two events" gets "whatever the newest two records
-// happened to be, of which maybe none are events" — a short answer that reads like an empty one.
-//
-// So every arm below is the same property asked twice: the limited read must equal the tail of
-// the same query without a limit. A future shortcut that truncates first reddens whichever arm
-// it breaks, which is the point — the composition is the contract, not any single read.
+// `Limit` is documented as keeping the tail of whichever order the query spans — Seq within one topic,
+// creation time across topics.
 func TestInterfaceL4LimitTruncatesAfterTheFilters(t *testing.T) {
 	llm := newMockLLM(t)
 	path := filepath.Join(t.TempDir(), "limit.meh")

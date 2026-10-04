@@ -11,21 +11,8 @@ import (
 	memhop "github.com/genosis18m/Long-term-memory-go/api"
 )
 
-// `Start`/`End` filter the same creation time the cross-topic order sorts by, and the facade
-// promises they are milliseconds — the unit a stored record's `CreatedAt` carries. Two ways to
-// break that quietly: compare against a different clock than the one the read reports, or apply
-// the window to a narrowed set in the wrong order. Neither shows up as an error.
-//
-// So the assertions here are structural rather than literal, which keeps them honest about a
-// boundary the facade does not spell out (whether the ends are inclusive):
-//
-//   - a record is returned by a windowed read **exactly when** the timestamp that same read
-//     reports for it falls inside the window — checked both ways, so a window wired to some
-//     other clock fails on the first pass and a dropped predicate fails on the second;
-//   - a window whose two ends are a record's own stamp must still return it, which is the
-//     inclusive reading of the sentence, pinned by behaviour instead of by wording;
-//   - and the window composes with `Kind` and `Limit` the way the filters do: window first as a
-//     condition, the tail of what survives.
+// `Start`/`End` filter the same creation time the cross-topic order sorts by, and the facade promises
+// they are milliseconds — the unit a stored record's `CreatedAt` carries.
 func TestInterfaceL4WindowIsTheClockTheReadReports(t *testing.T) {
 	llm := newMockLLM(t)
 	path := filepath.Join(t.TempDir(), "window.meh")

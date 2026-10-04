@@ -14,13 +14,8 @@ import (
 	"testing"
 )
 
-// The other half of the promise: what a host stores, forwards, or shows a model is usually
-// the encoded form, not the Go value — so "a host-visible list is always [] and a map always
-// {}" has to hold after json.Marshal too, where an unset collection would otherwise arrive as
-// `null`: a third answer nobody asked for, which a host re-decoding into its own type has to
-// branch on. Field names come from this package's own structs, and a name counts only where
-// every type declaring it declares it as a slice or map — so an intentionally absent scalar
-// (parent_id, the anchor) is not swept in.
+// The other half of the promise: what a host stores, forwards, or shows a model is usually the encoded
+// form, not the Go value.
 func TestEncodedCollectionsAreNeverNull(t *testing.T) {
 	lists := listFieldNames(t)
 	sess := openSurfaceDB(t)
@@ -78,8 +73,8 @@ func TestEncodedCollectionsAreNeverNull(t *testing.T) {
 	check("Search", sr, err)
 }
 
-// The detector, pointed at a value that does carry nulls: a gate that cannot name the
-// offender is decoration.
+// The detector, pointed at a value that does carry nulls: a gate that cannot name the offender is
+// decoration.
 func TestNullListsDetectsTheLeak(t *testing.T) {
 	type leaky struct {
 		Topics   []string          `json:"topics"`
@@ -103,8 +98,8 @@ func TestNullListsDetectsTheLeak(t *testing.T) {
 	}
 }
 
-// listFieldNames parses this package's structs and returns the json names that every
-// declaring type uses for a slice or a map.
+// listFieldNames parses this package's structs and returns the json names that every declaring type
+// uses for a slice or a map.
 func listFieldNames(tb testing.TB) map[string]bool {
 	tb.Helper()
 	listSeen := map[string]bool{}
@@ -154,8 +149,8 @@ func listFieldNames(tb testing.TB) map[string]bool {
 	return out
 }
 
-// jsonFieldName resolves the encoded key: the json tag when present, otherwise the lowercased
-// Go name, which is what encoding/json itself does for an untagged exported field.
+// jsonFieldName resolves the encoded key: the json tag when present, otherwise the lowercased Go name,
+// which is what encoding/json itself does for an untagged exported field.
 func jsonFieldName(fld *ast.Field) (string, bool) {
 	if fld.Names == nil {
 		return "", false
@@ -187,8 +182,8 @@ func isListType(e ast.Expr) bool {
 	return false
 }
 
-// nullLists walks a decoded JSON tree and reports every path whose key names a collection
-// field and whose value came out null.
+// nullLists walks a decoded JSON tree and reports every path whose key names a collection field and
+// whose value came out null.
 func nullLists(v any, lists map[string]bool, path string) []string {
 	var bad []string
 	switch node := v.(type) {

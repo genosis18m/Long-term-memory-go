@@ -8,9 +8,8 @@ import (
 	"testing"
 )
 
-// TestTrimTailSnapshotOnWrite verifies the write-path invariant: the first
-// write after a checkpoint drops the tail snapshot, so snapshots never
-// accumulate across checkpoint+write cycles.
+// TestTrimTailSnapshotOnWrite verifies the write-path invariant: the first write after a checkpoint
+// drops the tail snapshot, so snapshots never accumulate across checkpoint+write cycles.
 func TestTrimTailSnapshotOnWrite(t *testing.T) {
 	p := tempPath(t, "trim_tail")
 	eng, err := Create(p)
@@ -52,10 +51,7 @@ func TestTrimTailSnapshotOnWrite(t *testing.T) {
 	}
 }
 
-// TestOpenAfterTrimTruncateWindow simulates a crash inside trimTailSnapshot:
-// the tail is truncated but the null header is not written yet, so the active
-// header points at a snapshot that is no longer there and Open must fall back
-// to a full scan.
+// TestOpenAfterTrimTruncateWindow simulates a crash inside trimTailSnapshot.
 func TestOpenAfterTrimTruncateWindow(t *testing.T) {
 	p := tempPath(t, "trim_window")
 	eng, err := Create(p)
@@ -89,9 +85,8 @@ func TestOpenAfterTrimTruncateWindow(t *testing.T) {
 	}
 }
 
-// TestOpenFallsBackToFullScanOnCorruptSnapshot verifies that a corrupted
-// snapshot blob does not make the file unopenable: Open falls back to a
-// full scan and truncates the residue.
+// TestOpenFallsBackToFullScanOnCorruptSnapshot verifies that a corrupted snapshot blob does not make
+// the file unopenable: Open falls back to a full scan and truncates the residue.
 func TestOpenFallsBackToFullScanOnCorruptSnapshot(t *testing.T) {
 	p := tempPath(t, "corrupt_snap")
 	eng, err := Create(p)

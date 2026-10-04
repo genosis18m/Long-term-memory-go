@@ -13,17 +13,8 @@ import (
 	memhop "github.com/genosis18m/Long-term-memory-go/api"
 )
 
-// A trajectory event's whole meaning is the step it names: the read side takes a step's
-// `Seq` and asks what happened under it (item 6 of the host's loop — 追加轨迹绑定 plan 节点).
-// So an event bound to a step that is not on the tree is worse than a stray row: the ordinal a
-// turn hands out is derived from the highest number either side has seen, so accepting one
-// would reserve numbers for a step nobody ever created and leave a hole the host cannot
-// explain. What the surface answers instead (measured, then pinned here) is a refusal naming
-// the step, and the refused append consumes no ordinal.
-//
-// The second file checks the same rule from the other end: a step the retention sweep took
-// away is no longer on the tree either, and the event may not reach back to it. The rule is
-// tree membership, not "was ever created".
+// A trajectory event's whole meaning is the step it names: the read side takes a step's `Seq` and asks
+// what happened under it (item 6 of the host's loop — 追加轨迹绑定 plan 节点).
 func TestInterfaceAnEventMayOnlyNameAStepOnTheTree(t *testing.T) {
 	llm := newMockLLM(t)
 	path := filepath.Join(t.TempDir(), "attribution.meh")

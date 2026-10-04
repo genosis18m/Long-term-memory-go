@@ -12,10 +12,8 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/repo/index"
 )
 
-// An edge the decay pass cannot read is not an edge that went away: reporting it as
-// pruned lets the pass carry on and leave nodes holding a reference to an edge nobody
-// trimmed. The sibling that prunes the other half of the same link draws this line
-// too.
+// An edge the decay pass cannot read is not an edge that went away: reporting it as pruned lets the
+// pass carry on and leave nodes holding a reference to an edge nobody trimmed.
 func TestRemoveNodeFromEdgeReportsUnreadableEdge(t *testing.T) {
 	engine, err := core.Create(filepath.Join(t.TempDir(), "decay.meh"))
 	if err != nil {
@@ -52,9 +50,7 @@ func TestRemoveNodeFromEdgeReportsUnreadableEdge(t *testing.T) {
 	}
 }
 
-// A depth-3 node survives the pass only if its topic can be read and its parent
-// is shallow enough. Answering「don't keep」for a read that merely failed would delete
-// an L1 record over one unreadable payload, so the failure stops the pass.
+// A depth-3 node survives the pass only if its topic can be read and its parent is shallow enough.
 func TestRebuildFromL2StopsOnUnreadableDeepTopic(t *testing.T) {
 	engine, err := core.Create(filepath.Join(t.TempDir(), "decay.meh"))
 	if err != nil {
@@ -106,9 +102,8 @@ func TestRebuildFromL2StopsOnUnreadableDeepTopic(t *testing.T) {
 	}
 }
 
-// An edge that is genuinely gone has no member list left to prune, and that is a
-// clean answer rather than a failure — the node's stale reference is trimmed by
-// whoever reads it next.
+// An edge that is genuinely gone has no member list left to prune, and that is a clean answer rather
+// than a failure — the node's stale reference is trimmed by whoever reads it next.
 func TestRemoveNodeFromEdgeToleratesGoneEdge(t *testing.T) {
 	engine, err := core.Create(filepath.Join(t.TempDir(), "decay.meh"))
 	if err != nil {
@@ -125,10 +120,7 @@ func TestRemoveNodeFromEdgeToleratesGoneEdge(t *testing.T) {
 	}
 }
 
-// A node a scene delete took away between two Dreams leaves the co-occurrence edge
-// naming it: the rebuild walks the nodes that exist, so nothing else ever trims
-// that member, and the edge goes on reporting a pairing with a record the domain
-// does not hold.
+// A node a scene delete took away between two Dreams leaves the co-occurrence edge naming it.
 func TestDecayOneEdgeDropsAMemberThatIsGone(t *testing.T) {
 	engine, err := core.Create(filepath.Join(t.TempDir(), "decay.meh"))
 	if err != nil {
@@ -170,11 +162,8 @@ func TestDecayOneEdgeDropsAMemberThatIsGone(t *testing.T) {
 	}
 }
 
-// Valence arrives on [0,1] with 0 = very negative and 1 = very positive, so the
-// emotion a memory carries is how far it sits from neutral. Measuring it from zero
-// instead says how positive it is — which would freeze a mildly positive memory's
-// decay (a lambda of 0 makes a node uncollectable for good, since deletion only
-// happens through decay) while letting the most painful ones fade at full speed.
+// Valence arrives on [0,1] with 0 = very negative and 1 = very positive, so the emotion a memory
+// carries is how far it sits from neutral.
 func TestEmotionalBoostMeasuresDistanceFromNeutral(t *testing.T) {
 	const base = 0.01
 	neutral := applyEmotionalBoost(base, neutralValence, 1.0)
@@ -208,11 +197,8 @@ func TestEmotionalBoostMeasuresDistanceFromNeutral(t *testing.T) {
 	}
 }
 
-// All three L1 passes act on the whole scene-node set, and each of them is the
-// only path that does what it does: decay is the only thing that ever removes a
-// node, the rebuild is the only thing that drops a stale one, and an edge nobody
-// builds never reports itself missing. So a node the enumeration steps over is not
-// one less row — it is a node no pass ever acts on again.
+// All three L1 passes act on the whole scene-node set, and each of them is the only path that does
+// what it does.
 func TestL1PassesRefuseANodeTheyCannotRead(t *testing.T) {
 	engine, err := core.Create(filepath.Join(t.TempDir(), "l1strict.meh"))
 	if err != nil {
@@ -262,9 +248,8 @@ func TestL1PassesRefuseANodeTheyCannotRead(t *testing.T) {
 	}
 }
 
-// Dropping a stale node takes its two-member co-occurrence edge below MinEdgeNodes, so
-// the edge goes with it: a rebuild that removed nodes removed edges too, and the pass
-// reports both.
+// Dropping a stale node takes its two-member co-occurrence edge below MinEdgeNodes, so the edge goes
+// with it: a rebuild that removed nodes removed edges too, and the pass reports both.
 func TestRebuildFromL2CountsTheEdgeItTakesWithIt(t *testing.T) {
 	engine, err := core.Create(filepath.Join(t.TempDir(), "rebuild.meh"))
 	if err != nil {

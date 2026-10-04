@@ -27,8 +27,7 @@ type judgeVerdict struct {
 	Reason   string `json:"reason"`
 }
 
-// newJudge builds an LLM client for fidelity judgement, reusing the test LLM
-// config. Returns nil (and skips) when no key is configured.
+// newJudge builds an LLM client for fidelity judgement, reusing the test LLM config.
 func newJudge(t *testing.T) *openai.Client {
 	t.Helper()
 	cfg := &internal.MemHopConfig{}
@@ -41,9 +40,8 @@ func newJudge(t *testing.T) *openai.Client {
 	return openai.NewClientWithConfig(ocfg)
 }
 
-// judgeFaithful asks the LLM whether the given keywords faithfully capture the
-// meaning of the source text — i.e. whether someone seeing only the keywords
-// could infer the core fact of the source.
+// judgeFaithful asks the LLM whether the given keywords faithfully capture the meaning of the source
+// text — i.e.
 func judgeFaithful(t *testing.T, cli *openai.Client, model, sourceText string, keywords []string) judgeVerdict {
 	t.Helper()
 	kw := strings.Join(keywords, ", ")
@@ -74,7 +72,7 @@ Question: Do these keywords capture the core meaning/facts of the source utteran
 	return v
 }
 
-// stripJSONFence removes ```json ... ``` fences the LLM may wrap output in.
+// stripJSONFence removes ```json ...
 func stripJSONFence(s string) string {
 	s = strings.TrimSpace(s)
 	s = strings.TrimPrefix(s, "```json")
@@ -83,8 +81,8 @@ func stripJSONFence(s string) string {
 	return strings.TrimSpace(s)
 }
 
-// surfaceKeywords flattens a session surface into one deduplicated keyword set:
-// every depth-1 topic's single keyword track, in turn order.
+// surfaceKeywords flattens a session surface into one deduplicated keyword set: every depth-1 topic's
+// single keyword track, in turn order.
 func surfaceKeywords(res *memhop.SearchResult) []string {
 	seen := map[string]struct{}{}
 	var out []string
@@ -104,9 +102,8 @@ func surfaceKeywords(res *memhop.SearchResult) []string {
 	return out
 }
 
-// TestKeywordFidelity verifies point 1: the keywords Update distills from a
-// finished turn faithfully carry that turn's meaning — the keywords ARE the
-// host's context, so this is the quality bar of the whole design.
+// TestKeywordFidelity verifies point 1: the keywords Update distills from a finished turn faithfully
+// carry that turn's meaning.
 func TestKeywordFidelity(t *testing.T) {
 	db := testsupport.OpenMemHop(t)
 	defer db.Close()
@@ -160,9 +157,7 @@ func TestKeywordFidelity(t *testing.T) {
 	}
 }
 
-// TestKeywordPersistence verifies point 2: within one host session, an anchor
-// fact's keywords are still on the surface after unrelated turns pile on top
-// of it (the surface is per-turn, so nothing overwrites the anchor).
+// TestKeywordPersistence verifies point 2.
 func TestKeywordPersistence(t *testing.T) {
 	db := testsupport.OpenMemHop(t)
 	defer db.Close()
@@ -207,8 +202,8 @@ func TestKeywordPersistence(t *testing.T) {
 	t.Logf("persistence OK: anchor keyword survived 4 noise turns: %v", kws)
 }
 
-// ingestSession feeds a group of related turns into one fresh host session, each
-// closed with an agent reply. Returns the session id.
+// ingestSession feeds a group of related turns into one fresh host session, each closed with an agent
+// reply.
 func ingestSession(t *testing.T, db *testsupport.Handle, texts []string, base int64) string {
 	t.Helper()
 	res, err := db.Search(memhop.SearchQuery{NewScene: true})
@@ -228,9 +223,7 @@ func ingestSession(t *testing.T, db *testsupport.Handle, texts []string, base in
 	return sceneID
 }
 
-// TestDreamCompressionFidelity verifies real consolidation: >20 related turns
-// in one session are merged by Dream, the surface shrinks, and the fused
-// topic's keywords still faithfully summarize the merged details.
+// TestDreamCompressionFidelity verifies real consolidation.
 func TestDreamCompressionFidelity(t *testing.T) {
 	db := testsupport.OpenMemHop(t)
 	defer db.Close()
@@ -310,9 +303,6 @@ func TestDreamCompressionFidelity(t *testing.T) {
 	}
 
 	// Judge whether the surface keywords still carry the running theme.
-	// The judge has to be shown every utterance that was ingested. Handing it a 4-line window while
-	// the session holds 25 manufactures a verdict of 「hallucinated」 for keywords that came from the
-	// other 21 lines — the failure lands on the review's evidence set, not on the engine.
 	source := strings.Join(related, "；")
 	v := judgeFaithful(t, judge, model, source, kws)
 	t.Logf("post-dream fidelity=%v surface=%d topics kws=%v reason=%s", v.Faithful, len(after.Topics), kws, v.Reason)

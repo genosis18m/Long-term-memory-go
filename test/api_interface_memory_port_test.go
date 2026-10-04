@@ -1,17 +1,7 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// An agent framework does not hand MemHop its memory: it defines a port — open a round per
-// invocation, recall before every model call, hand the invocation's facts back once at the end —
-// and expects somebody to write the adapter. That adapter is the whole integration cost, and so
-// far it existed only in a private branch of the tooling that drives all three repositories.
-// MemHop must not import the framework, so what belongs here is not the port but the mapping:
-// this file is the ~40 lines an integrator writes, executable and asserted in this repository.
-//
-// What the assertions pin is the part a host cannot check without running it: that the adapter
-// holds no ids at all (so a restart with a fresh one still remembers everything), that the
-// framework's own outcome word is what comes back out of the store, and that a write the store
-// refuses is reported to the framework rather than quietly shortened.
+// An agent framework does not hand MemHop its memory: it defines a port.
 
 package test
 
@@ -25,9 +15,7 @@ import (
 	memhop "github.com/genosis18m/Long-term-memory-go/api"
 )
 
-// memoryPort is the adapter. Its entire state is one session handle: no scene id, no turn key,
-// no topic id — those are the library's to remember, which is what makes a reopened file resume
-// the same conversation with a brand-new adapter.
+// memoryPort is the adapter.
 type memoryPort struct {
 	sess *memhop.Session
 	// The profile digest travels from the round-opening read to every recall of that round:
@@ -45,10 +33,8 @@ func (p *memoryPort) begin() error {
 	return nil
 }
 
-// recall is the pure read before a model call: the profile digest the per-turn read handed back,
-// this round's plan forest with its folded conclusions, and one row per settled round.
-// recall never opens a round: everything in it comes from reads that consume nothing, which is
-// what lets a framework think several times per invocation without burning turns.
+// recall is the pure read before a model call: the profile digest the per-turn read handed back, this
+// round's plan forest with its folded conclusions, and one row per settled round.
 func (p *memoryPort) recall() ([]string, error) {
 	var out []string
 	if p.brief != "" {
@@ -61,10 +47,8 @@ func (p *memoryPort) recall() ([]string, error) {
 			out = append(out, "plan:\n"+renderSteps(root))
 		}
 	case memhop.CodeOf(err) == memhop.ErrInvalidQuery:
-		// No round is open — the fresh adapter right after a restart, or a framework that reads
-		// before its begin hook. That is one answer ("nothing in progress"), not a storage
-		// failure, and the port has no second channel to tell the two apart: treating it as a
-		// failure would abort the invocation over an empty plan block.
+		// No round is open — the fresh adapter right after a restart, or a framework that reads before its
+		// begin hook.
 	default:
 		return nil, err
 	}

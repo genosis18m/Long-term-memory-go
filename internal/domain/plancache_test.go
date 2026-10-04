@@ -11,9 +11,7 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/repo/core"
 )
 
-// tnode builds a plan node for the cache tests. Identity is the hash derived from
-// the owning topic and the step ordinal, so one (topic, seq) pair always means the
-// same node being committed again.
+// tnode builds a plan node for the cache tests.
 func tnode(topicID uint64, seq, parentSeq uint32, status uint8, ts int64) *core.PlanNode {
 	return &core.PlanNode{
 		IDHash: core.HashPlanNode(topicID, seq), TopicID: topicID,
@@ -62,9 +60,8 @@ func TestPlanCacheUpsertKeepsOrderAndStats(t *testing.T) {
 	}
 }
 
-// A plan is a live plan only while a node of it exists: dropping the last one
-// detaches the aggregate, so a tree whose whole branch was swept stops being
-// addressed at all.
+// A plan is a live plan only while a node of it exists: dropping the last one detaches the aggregate,
+// so a tree whose whole branch was swept stops being addressed at all.
 func TestPlanCacheRemoveNodesAndDetachWhenEmpty(t *testing.T) {
 	pc := &PlanCache{plans: make(map[uint64]*repo.PlanAggregate)}
 	pc.UpsertNode(9, tnode(9, 1, 0, core.StatusDone, 100))
@@ -103,9 +100,8 @@ func TestPlanCacheRemoveTopicDropsTheWholeTree(t *testing.T) {
 	}
 }
 
-// A step is only bindable when this turn's tree holds it, and the check is scoped
-// to the turn: two turns both having a step 1 does not make one visible to the
-// other.
+// A step is only bindable when this turn's tree holds it, and the check is scoped to the turn: two
+// turns both having a step 1 does not make one visible to the other.
 func TestPlanCacheHasSeqIsTurnScoped(t *testing.T) {
 	pc := &PlanCache{plans: make(map[uint64]*repo.PlanAggregate)}
 	pc.UpsertNode(9, tnode(9, 1, 0, core.StatusInProgress, 100))
@@ -123,9 +119,8 @@ func TestPlanCacheHasSeqIsTurnScoped(t *testing.T) {
 	}
 }
 
-// The subtree a step read covers is walked over the parent links, so a step's
-// branch reaches arbitrarily deep — and a branch that was never made does not
-// drag in its neighbour two digits away.
+// The subtree a step read covers is walked over the parent links, so a step's branch reaches
+// arbitrarily deep — and a branch that was never made does not drag in its neighbour two digits away.
 func TestPlanCacheSubtreeWalksParentLinks(t *testing.T) {
 	pc := &PlanCache{plans: make(map[uint64]*repo.PlanAggregate)}
 	for _, n := range []*core.PlanNode{
@@ -156,8 +151,8 @@ func TestPlanCacheSubtreeWalksParentLinks(t *testing.T) {
 	}
 }
 
-// Ordinals are handed out above everything the tree holds now, so two creates in a
-// row never collide — and a turn with no plan starts at 1.
+// Ordinals are handed out above everything the tree holds now, so two creates in a row never collide —
+// and a turn with no plan starts at 1.
 func TestPlanCacheNextSeq(t *testing.T) {
 	pc := &PlanCache{plans: make(map[uint64]*repo.PlanAggregate)}
 	if got := pc.NextSeq(9, 0); got != 1 {

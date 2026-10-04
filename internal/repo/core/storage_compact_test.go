@@ -70,17 +70,8 @@ func TestCompact(t *testing.T) {
 	}
 }
 
-// A compaction refuses to rewrite a file it cannot read whole, and the refusal is
-// the only place a host learns which record is damaged: the engine has no read face
-// that shows one. A checksum failure and a frame that does not fit the file are
-// different repairs, so the read's own code is what comes back.
-//
-// The damage arrives between one instance closing and the next opening, because that is
-// where rot actually happens to a stored file — and because an open engine locks the whole
-// file, so no second handle could put it there. The snapshot is what brings the damaged
-// record to Compact's attention: the index it restores names the offset, and the payload
-// goes unread until someone asks for it. A record found by scanning the log would have been
-// dropped for its checksum on the way in, and the compaction would have had nothing to refuse.
+// A compaction refuses to rewrite a file it cannot read whole, and the refusal is the only place a
+// host learns which record is damaged: the engine has no read face that shows one.
 func TestCompactRefusalNamesTheRecordItCannotRead(t *testing.T) {
 	p := tempPath(t, "compact_rot")
 	eng, err := Create(p)

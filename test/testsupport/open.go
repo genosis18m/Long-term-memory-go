@@ -1,9 +1,8 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// Package testsupport provides shared helpers for integration tests that run
-// against a real LLM service (DeepSeek by default). Embeddings are no longer a
-// dependency of the engine.
+// Package testsupport provides shared helpers for integration tests that run against a real LLM
+// service (DeepSeek by default).
 package testsupport
 
 import (
@@ -19,7 +18,7 @@ import (
 	internal "github.com/genosis18m/Long-term-memory-go/internal"
 )
 
-// LLM config environment variables. Priority: env vars > key_config.json file.
+// LLM config environment variables.
 const (
 	EnvLLMKey   = "MEMHOP_TEST_LLM_KEY"
 	EnvLLMURL   = "MEMHOP_TEST_LLM_URL"
@@ -32,8 +31,7 @@ const (
 	defaultLLMModel = "deepseek-chat"
 )
 
-// errNoLLMConfig is returned when neither env vars nor key_config.json
-// provide an LLM API key.
+// errNoLLMConfig is returned when neither env vars nor key_config.json provide an LLM API key.
 var errNoLLMConfig = errors.New("testsupport: no LLM config: set " + EnvLLMKey +
 	" or create test/testsupport/key_config.json")
 
@@ -43,7 +41,6 @@ func keyConfigPath() string {
 }
 
 // LoadLLMConfig fills cfg.LLM from env vars first, then key_config.json.
-// Exported for tests that build their own LLM client (e.g. the quality judge).
 func LoadLLMConfig(cfg *internal.MemHopConfig) error { return loadLLMConfig(cfg) }
 
 // loadLLMConfig fills cfg.LLM from env vars first, then key_config.json.
@@ -82,9 +79,8 @@ func loadLLMConfig(cfg *internal.MemHopConfig) error {
 	return nil
 }
 
-// Handle is the test handle of the public API: an agent-domain session plus the
-// file-level lifecycle methods of the underlying DB (Close / Checkpoint /
-// IsClosed).
+// Handle is the test handle of the public API: an agent-domain session plus the file-level lifecycle
+// methods of the underlying DB (Close / Checkpoint / IsClosed).
 type Handle struct {
 	*memhop.Session
 	m *memhop.DB
@@ -94,8 +90,8 @@ func (h *Handle) Checkpoint() error { return h.m.Checkpoint() }
 func (h *Handle) Close() error      { return h.m.Close() }
 func (h *Handle) IsClosed() bool    { return h.m.IsClosed() }
 
-// OpenMemHop opens a DB backed by a real LLM service in t.TempDir(); skips
-// when the LLM config is missing, fatals otherwise. The caller must Close() it.
+// OpenMemHop opens a DB backed by a real LLM service in t.TempDir(); skips when the LLM config is
+// missing, fatals otherwise.
 func OpenMemHop(t *testing.T) *Handle {
 	t.Helper()
 	return open(t)
@@ -107,11 +103,8 @@ func OpenMemHopB(b *testing.B) *Handle {
 	return open(b)
 }
 
-// OpenTurn enters the memory loop the way a host does: an empty sceneID asks
-// for a fresh session (scene), a non-empty one continues it. It returns the
-// scene id and the topic id the engine just opened for the next turn — the id
-// that turn's content and its distillation are both keyed by — so a test calls
-// it once per turn.
+// OpenTurn enters the memory loop the way a host does: an empty sceneID asks for a fresh session
+// (scene), a non-empty one continues it.
 func (h *Handle) OpenTurn(sceneID string) (string, string, error) {
 	res, err := h.Search(memhop.SearchQuery{SceneID: sceneID})
 	if err != nil {
@@ -120,18 +113,14 @@ func (h *Handle) OpenTurn(sceneID string) (string, string, error) {
 	return res.Scene.SceneID, res.NewTopicID, nil
 }
 
-// CloseTurn closes one finished turn the way the task face does: Update lands the
-// two originals on the slots the turn's dialogue owns and distills them into that
-// topic's keyword track. OpenTurn has to come first — the turn this closes is the one
-// Search opened, and neither id travels into the call.
+// CloseTurn closes one finished turn the way the task face does: Update lands the two originals on the
+// slots the turn's dialogue owns and distills them into that topic's keyword track.
 func (h *Handle) CloseTurn(user, agent string, ts int64) error {
 	_, err := h.Update(memhop.TurnEnd{Input: user, Output: agent, CreatedAt: ts})
 	return err
 }
 
-// open is the shared implementation for testing.T and testing.B. The handle it
-// returns is bound to the file's primary domain: every scenario gets a fresh
-// temporary directory, so there is nothing else in the file to be primary over.
+// open is the shared implementation for testing.T and testing.B.
 func open(tb testing.TB) *Handle {
 	cfg := &internal.MemHopConfig{
 		DBPath:   filepath.Join(tb.TempDir(), "test.meh"),

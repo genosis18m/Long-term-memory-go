@@ -2,15 +2,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 // Acceptance item 6's "return the plan as context, compressed automatically", measured at a depth
-// nothing has driven: the fold is pinned two levels down, where a parent reads what its children
-// hold. Two claims exist only at depth — a fold has to reach the **top** of what the host renders
-// into its prompt, or the root it pastes is a step with no conclusion; and a change underneath has
-// to re-derive **every** level above it in the same pass, not just the step that was touched.
-//
-// What happens while a branch is unsettled is the decision
-// TestInterfaceParentFoldFollowsTheBranchItSummarizes already made at two levels — hold the last
-// complete fold rather than grow a partial one or take a conclusion back. This asserts that answer
-// one level deeper, so it cannot be quietly re-litigated through the depth-3 path.
+// nothing has driven: the fold is pinned two levels down, where a parent reads what its children hold.
 
 package test
 
@@ -52,9 +44,7 @@ func TestInterfacePlanFoldReachesTheRootThroughThreeLevels(t *testing.T) {
 		t.Fatalf("the root folded while still open: %+v", got)
 	}
 
-	// The case the two-level fold never reached: the root finishing has to fold from the middle
-	// step's *folded* text in the same pass, so the deepest conclusion arrives at the top of what
-	// the host renders, verbatim and without a second call.
+	// The case the two-level fold never reached.
 	mustUpdate(t, db, root, done, "")
 	tree = mustPlanState(t, db)
 	if got := findPlanNode(t, tree, root); got.Summary != "第 7 步引入的" {
@@ -69,9 +59,6 @@ func TestInterfacePlanFoldReachesTheRootThroughThreeLevels(t *testing.T) {
 	}
 
 	// An unsettled branch holds the fold at every level above it: no partial fold, no withdrawal.
-	// The cost of that choice is the window — the summary stays readable while the step that
-	// produced it says it is working again — and what carries the difference is the step's own
-	// `Status`, which is why the read below checks both.
 	mustUpdate(t, db, leaf, reopen, "")
 	tree = mustPlanState(t, db)
 	if got := findPlanNode(t, tree, mid); got.Summary != "第 7 步引入的" {

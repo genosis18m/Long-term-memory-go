@@ -19,21 +19,21 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/repo/core"
 )
 
-// ev builds the event a host hands to an append: an event declares its kind, names
-// itself, and carries content and a timestamp.
+// ev builds the event a host hands to an append: an event declares its kind, names itself, and carries
+// content and a timestamp.
 func ev(eventType string, ts int64) core.ArchiveSlot {
 	return core.ArchiveSlot{Kind: core.KindEvent, EventType: eventType, Content: eventType, CreatedAt: ts}
 }
 
-// onStep names the plan step an event belongs to: the ordinal goes on the record,
-// and it never creates the step.
+// onStep names the plan step an event belongs to: the ordinal goes on the record, and it never creates
+// the step.
 func onStep(slot core.ArchiveSlot, seq uint32) core.ArchiveSlot {
 	slot.NodeSeq = seq
 	return slot
 }
 
-// add creates one step of the open turn's tree and fails the test if the call was
-// refused, so a tree-shaped test reads as the sequence of steps it builds.
+// add creates one step of the open turn's tree and fails the test if the call was refused, so a
+// tree-shaped test reads as the sequence of steps it builds.
 func add(t *testing.T, db *DB, parentSeq uint32, title string) uint32 {
 	t.Helper()
 	seq, err := db.PlanNodeAdd(core.DefaultAgentID, parentSeq, title)
@@ -53,26 +53,22 @@ func restate(t *testing.T, db *DB, seq uint32, status PlanStatus, summary string
 	}
 }
 
-// useTurn puts the default domain on the turn a fixture needs, and hands back the hex
-// an L4 read addresses that turn by. A host cannot name a turn — Search mints it and
-// the domain holds it — so a fixture that builds several trees inside one domain, or
-// a tree under an id it addresses record-by-record, places the domain itself.
+// useTurn puts the default domain on the turn a fixture needs, and hands back the hex an L4 read
+// addresses that turn by.
 func useTurn(t *testing.T, db *DB, topicID uint64) string {
 	t.Helper()
 	testDefaultContext(db).Turn = topicID
 	return common.FormatHash(topicID)
 }
 
-// eventsOf reads one topic's event track the way a host does: the same key with the
-// kind condition, in Seq order.
+// eventsOf reads one topic's event track the way a host does: the same key with the kind condition, in
+// Seq order.
 func (db *DB) eventsOf(agentID uint64, topicHex string) ([]core.ArchiveSlot, error) {
 	kind := core.KindEvent
 	return db.SearchL4(agentID, L4Query{TopicID: &topicHex, Kind: &kind})
 }
 
-// stepEvents reads the events bound to one step from the topic's content track,
-// Seq ascending. A node holds no list of its events: the ordinal is stamped on the
-// event, and that is all the attribution a reader needs.
+// stepEvents reads the events bound to one step from the topic's content track, Seq ascending.
 func stepEvents(t *testing.T, db *DB, topicID uint64, seq uint32) []core.ArchiveSlot {
 	t.Helper()
 	var out []core.ArchiveSlot
@@ -85,11 +81,8 @@ func stepEvents(t *testing.T, db *DB, topicID uint64, seq uint32) []core.Archive
 	return out
 }
 
-// A step's ordinal is handed out from the plan mirror, and that mirror is built from
-// the records which still decode — so a plan node whose payload does not is invisible
-// to it while its ordinal lives on in the address it was stored at. Creating there
-// would replace a step this engine cannot read, and the events bound to that ordinal
-// would then read as the new step's work, so the create path asks the disk first.
+// A step's ordinal is handed out from the plan mirror, and that mirror is built from the records which
+// still decode.
 func TestPlanNodeAddRefusesAnAddressItCannotRead(t *testing.T) {
 	db := newTestDB(t, newTestEngine(t))
 	const topic = uint64(99)
@@ -104,9 +97,8 @@ func TestPlanNodeAddRefusesAnAddressItCannotRead(t *testing.T) {
 	if _, err := db.PlanNodeAdd(core.DefaultAgentID, 0, "重铸的一步"); common.CodeOf(err) != common.ErrDeserialization {
 		t.Fatalf("creating at an address that does not decode must report its own code, got %v", err)
 	}
-	// The refusal is durable rather than one-shot: nothing remembers having seen the
-	// address, so a host that retries hears the same answer instead of a neighbouring
-	// number — the library will not step around a record it cannot read.
+	// The refusal is durable rather than one-shot: nothing remembers having seen the address, so a host
+	// that retries hears the same answer instead of a neighbouring number.
 	if _, err := db.PlanNodeAdd(core.DefaultAgentID, 0, "重铸的一步"); common.CodeOf(err) != common.ErrDeserialization {
 		t.Fatalf("the second create answered %v, want the same read's code again", err)
 	}
@@ -130,9 +122,8 @@ func TestAppendArchiveAllocatesAboveDialogueSlots(t *testing.T) {
 	if len(events) != 3 {
 		t.Fatalf("want 3 events, got %d", len(events))
 	}
-	// Slots 1 and 2 belong to dialogue, so an event appended before a single
-	// original is spoken still lands above them: the two tracks cannot collide by
-	// accident, whichever order the host appends in.
+	// Slots 1 and 2 belong to dialogue, so an event appended before a single original is spoken still
+	// lands above them: the two tracks cannot collide by accident, whichever order the host appends in.
 	for i, e := range events {
 		if want := uint64(i) + core.LastUtteranceSeq + 1; e.Seq != want {
 			t.Fatalf("seq[%d] = %d, want %d", i, e.Seq, want)
@@ -165,11 +156,8 @@ func TestAppendArchiveValidation(t *testing.T) {
 	}
 }
 
-// A turn's content can only be addressed by the turn the library opened: the host
-// names no key on the way in, so a mistyped or invented id is not a thing it can do
-// any more. What remains checkable is where the record lands — under the topic the
-// read minted, and nowhere else — and that nothing lands at all while the domain
-// holds no turn.
+// A turn's content can only be addressed by the turn the library opened: the host names no key on the
+// way in, so a mistyped or invented id is not a thing it can do any more.
 func TestAppendArchiveCannotAddressATurnTheLibraryDidNotOpen(t *testing.T) {
 	db := newTestDB(t, newTestEngine(t))
 
@@ -213,17 +201,14 @@ func TestAppendEventPayloadRefused(t *testing.T) {
 	if len(events) != 0 {
 		t.Fatalf("a refused append must store nothing, got %d events", len(events))
 	}
-	// exactly at the budget still writes — the budget is the whole record, so a
-	// one-byte name leaves the rest to the body
+	// exactly at the budget still writes.
 	if _, err := db.AppendArchive(core.DefaultAgentID, core.ArchiveSlot{
 		Kind: core.KindEvent, EventType: "t",
 		Content: strings.Repeat("x", content.MaxEventPayload-1), CreatedAt: 1,
 	}); err != nil {
 		t.Fatalf("payload at the budget limit should append: %v", err)
 	}
-	// The name is part of the record. A caller that puts the bulk there instead of
-	// in Content is carrying the same oversized text, so it is refused the same way
-	// and stores nothing.
+	// The name is part of the record.
 	if _, err := db.AppendArchive(core.DefaultAgentID, core.ArchiveSlot{
 		Kind: core.KindEvent, EventType: strings.Repeat("n", content.MaxEventPayload),
 		Content: "x", CreatedAt: 1,
@@ -239,10 +224,8 @@ func TestAppendEventPayloadRefused(t *testing.T) {
 	}
 }
 
-// Dream drops content past the retention window even with nothing to
-// consolidate: a turn's expired event goes while its fresh one stays, and a turn
-// whose every event expired reads back empty. Two turns of one session, each
-// closed before the next opens — the domain holds one turn at a time.
+// Dream drops content past the retention window even with nothing to consolidate: a turn's expired
+// event goes while its fresh one stays, and a turn whose every event expired reads back empty.
 func TestDreamPrunesExpiredEvents(t *testing.T) {
 	db := newTestDB(t, newTestEngine(t))
 	fresh := time.Now().Add(-time.Hour).UnixMilli()
@@ -263,9 +246,8 @@ func TestDreamPrunesExpiredEvents(t *testing.T) {
 		t.Fatalf("both of a's events are inside the window: %+v err=%v", events, err)
 	}
 
-	// The scenes exist but hold no settled topics, so consolidation has nothing
-	// to chew — the two pruning stages run unconditionally and are what this
-	// exercises.
+	// The scenes exist but hold no settled topics, so consolidation has nothing to chew — the two pruning
+	// stages run unconditionally and are what this exercises.
 	if _, err := db.RunDream(context.Background(), core.DefaultAgentID, 0); err != nil {
 		t.Fatalf("dream: %v", err)
 	}
@@ -279,9 +261,8 @@ func TestDreamPrunesExpiredEvents(t *testing.T) {
 	}
 }
 
-// A turn that only ever spoke owns its two originals and holds no events: the
-// content index carries both kinds, so the event read has to be the one that
-// filters.
+// A turn that only ever spoke owns its two originals and holds no events: the content index carries
+// both kinds, so the event read has to be the one that filters.
 func TestDialogueOnlyTurnHoldsNoEvents(t *testing.T) {
 	srv := mockLLMServer(t, turnKeywords)
 	db := newSearchTestDB(t, srv.URL)
@@ -302,10 +283,8 @@ func TestDialogueOnlyTurnHoldsNoEvents(t *testing.T) {
 	}
 }
 
-// Allocating a slot comes from the content mirror, so a mirror rebuilt from the
-// records has to hand out the next slot and not one already held. Simulating the
-// idle sweep: the context goes, and with it the turn the domain held — a rebuilt
-// context has no turn to write into until the host reads again.
+// Allocating a slot comes from the content mirror, so a mirror rebuilt from the records has to hand
+// out the next slot and not one already held.
 func TestTrajectorySeqContinuesAfterContextRebuild(t *testing.T) {
 	db := newTestDB(t, newTestEngine(t))
 	_, session, topic := newTurnKey(t, db)
@@ -335,9 +314,7 @@ func TestTrajectorySeqContinuesAfterContextRebuild(t *testing.T) {
 	}
 }
 
-// A tree starts empty and a step's ordinal is the library's to hand out: the first
-// create of a turn is step 1 and each step after it is one higher, so a host can
-// address what it created without reading the tree back.
+// A tree starts empty and a step's ordinal is the library's to hand out.
 func TestPlanNodeAddHandsOutOrdinals(t *testing.T) {
 	db := newTestDB(t, newTestEngine(t))
 	defer db.Close()
@@ -375,8 +352,8 @@ func TestPlanNodeAddHandsOutOrdinals(t *testing.T) {
 	}
 }
 
-// A step is created in progress with no status to state, and it keeps its own
-// creation time while a later update moves only the update time.
+// A step is created in progress with no status to state, and it keeps its own creation time while a
+// later update moves only the update time.
 func TestPlanNodeCreateStampsTimes(t *testing.T) {
 	db := newTestDB(t, newTestEngine(t))
 	_, _, topicID := newTurnKey(t, db)
@@ -407,8 +384,8 @@ func TestPlanNodeCreateStampsTimes(t *testing.T) {
 	}
 }
 
-// Updating one step reaches no other: there is no whole-tree restatement whose
-// omissions a host must reason about, so the only step that moves is the one named.
+// Updating one step reaches no other: there is no whole-tree restatement whose omissions a host must
+// reason about, so the only step that moves is the one named.
 func TestPlanNodeUpdateLeavesOtherStepsAlone(t *testing.T) {
 	db := newTestDB(t, newTestEngine(t))
 	defer db.Close()
@@ -427,8 +404,8 @@ func TestPlanNodeUpdateLeavesOtherStepsAlone(t *testing.T) {
 	}
 }
 
-// Every refusal the plan write face makes is a whole refusal: nothing lands, so a
-// host never has to diff its own writes against the store to find what applied.
+// Every refusal the plan write face makes is a whole refusal: nothing lands, so a host never has to
+// diff its own writes against the store to find what applied.
 func TestPlanWritesRefuseWithoutLeavingTrace(t *testing.T) {
 	db := newTestDB(t, newTestEngine(t))
 	defer db.Close()
@@ -461,9 +438,7 @@ func TestPlanWritesRefuseWithoutLeavingTrace(t *testing.T) {
 	}
 }
 
-// An event binds to a step the host created; it never grows the tree. Naming a
-// step the plan does not hold is the plan and the record disagreeing, so the
-// append reports that instead of quietly inventing a step.
+// An event binds to a step the host created; it never grows the tree.
 func TestEventBindsOnlyToACreatedStep(t *testing.T) {
 	db := newTestDB(t, newTestEngine(t))
 	defer db.Close()
@@ -488,9 +463,7 @@ func TestEventBindsOnlyToACreatedStep(t *testing.T) {
 	}
 }
 
-// A step's read covers its branch: once a step is split, the work it did is
-// attributed to the children, so "what did this step do" that answers only for the
-// parent's own records is a partial answer.
+// A step's read covers its branch.
 func TestStepReadCoversItsSubtree(t *testing.T) {
 	db := newTestDB(t, newTestEngine(t))
 	defer db.Close()
@@ -535,8 +508,8 @@ func TestStepReadCoversItsSubtree(t *testing.T) {
 	}
 }
 
-// Forest contract: two top-level steps yield two roots, the nesting a host created
-// comes back as Children, and Done/Total covers both subtrees.
+// Forest contract: two top-level steps yield two roots, the nesting a host created comes back as
+// Children, and Done/Total covers both subtrees.
 func TestPlanStateForestMultipleRoots(t *testing.T) {
 	db := newTestDB(t, newTestEngine(t))
 	defer db.Close()
@@ -584,8 +557,8 @@ func mustTree(t *testing.T, db *DB) *PlanTree {
 	return tree
 }
 
-// A child whose parent record expired still reads back as a root with its own
-// subtree: an unresolved parent link must not hide the work the tree still holds.
+// A child whose parent record expired still reads back as a root with its own subtree: an unresolved
+// parent link must not hide the work the tree still holds.
 func TestPlanStateOrphansSurfaceAsRoots(t *testing.T) {
 	db := newTestDB(t, newTestEngine(t))
 	useTurn(t, db, 9)
@@ -604,9 +577,8 @@ func TestPlanStateOrphansSurfaceAsRoots(t *testing.T) {
 	}
 }
 
-// Model A: a parent becomes Done only where the host says so, and the bottom-up
-// rollup of settled children's summaries fills an empty parent Summary without
-// ever overwriting one the host wrote.
+// Model A: a parent becomes Done only where the host says so, and the bottom-up rollup of settled
+// children's summaries fills an empty parent Summary without ever overwriting one the host wrote.
 func TestPlanRollupModelA(t *testing.T) {
 	db := newTestDB(t, newTestEngine(t))
 
@@ -646,9 +618,8 @@ func TestPlanRollupModelA(t *testing.T) {
 	}
 }
 
-// A fold taken while a child is still open is a partial answer wearing a
-// finished one's clothes, so the parent waits for every branch to settle — and a
-// failed child settles its branch just as a done one does.
+// A fold taken while a child is still open is a partial answer wearing a finished one's clothes, so
+// the parent waits for every branch to settle.
 func TestPlanRollupWaitsForEveryChild(t *testing.T) {
 	db := newTestDB(t, newTestEngine(t))
 	useTurn(t, db, 4)
@@ -667,10 +638,7 @@ func TestPlanRollupWaitsForEveryChild(t *testing.T) {
 	}
 }
 
-// Retention semantics: a plan node ages on its own clock and takes nothing with
-// it. An expired tree is swept while the turn's events stay readable; an in-flight
-// plan keeps even its stale nodes, and events arriving on a dead tree no longer
-// hold that tree alive.
+// Retention semantics: a plan node ages on its own clock and takes nothing with it.
 func TestDreamPrunePlanNodesAndContent(t *testing.T) {
 	db := newTestDB(t, newTestEngine(t))
 	old := time.Now().Add(-dream.ContentRetention - time.Hour).UnixMilli()
@@ -696,9 +664,7 @@ func TestDreamPrunePlanNodesAndContent(t *testing.T) {
 	}
 	age(doneTopic, doneStep)
 
-	// In-flight plan: an aged Done root plus a child created just now. The tree is
-	// exempt as a whole, so the stale root survives with it. The domain moves to
-	// another turn to get a tree of its own.
+	// In-flight plan: an aged Done root plus a child created just now.
 	useTurn(t, db, 8)
 	liveRoot := add(t, db, 0, "root")
 	restate(t, db, liveRoot, PlanDone, "root")
@@ -736,10 +702,8 @@ func TestDreamPrunePlanNodesAndContent(t *testing.T) {
 	}
 }
 
-// The swept tree and the event that names one of its steps age on separate clocks, and
-// both address the turn by the same ordinal. So the next step of that turn must be issued
-// above the ordinal the surviving event still names — otherwise the new step reads as
-// having done the dead step's work, and no host could tell the two apart.
+// The swept tree and the event that names one of its steps age on separate clocks, and both address
+// the turn by the same ordinal.
 func TestPlanOrdinalSkipsAnEventThatOutlivedItsStep(t *testing.T) {
 	db := newTestDB(t, newTestEngine(t))
 	old := time.Now().Add(-dream.ContentRetention - time.Hour).UnixMilli()
@@ -787,10 +751,8 @@ func TestPlanOrdinalSkipsAnEventThatOutlivedItsStep(t *testing.T) {
 	}
 }
 
-// An event append is forced to content-of-kind-event semantics: the topic it belongs
-// to and the slot it lands in are the library's, and so are the speaker and the
-// medium an event has no use for — an append cannot smuggle a record into the
-// transcript. The kinds also cannot wear each other's axes.
+// An event append is forced to content-of-kind-event semantics: the topic it belongs to and the slot
+// it lands in are the library's, and so are the speaker and the medium an event has no use for.
 func TestAppendEventCannotForgeContentFields(t *testing.T) {
 	db := newTestDB(t, newTestEngine(t))
 	_, _, topic := newTurnKey(t, db)
@@ -802,9 +764,7 @@ func TestAppendEventCannotForgeContentFields(t *testing.T) {
 	}, seq)); err != nil {
 		t.Fatal(err)
 	}
-	// The content write left the tree exactly where the create put it: one step,
-	// still in progress. An append that could advance or add a step would make the
-	// plan a second record of what happened instead of the host's intent.
+	// The content write left the tree exactly where the create put it: one step, still in progress.
 	if n := countRecords(db.engine, core.DefaultAgentID, core.RecL5PlanNode); n != 1 {
 		t.Fatalf("plan nodes = %d, want only the created one", n)
 	}
@@ -839,9 +799,8 @@ func TestAppendEventCannotForgeContentFields(t *testing.T) {
 		t.Fatalf("event must carry the step it actually bound to, got %d", landed.NodeSeq)
 	}
 
-	// The axes stay apart: an utterance that names an event, hangs on a step, or
-	// claims the consolidation role is refused outright, and so is a record whose
-	// kind nobody can name.
+	// The axes stay apart: an utterance that names an event, hangs on a step, or claims the consolidation
+	// role is refused outright, and so is a record whose kind nobody can name.
 	for name, slot := range map[string]core.ArchiveSlot{
 		"utterance with an event name": {Kind: core.KindUtterance, Role: core.RoleUser, EventType: "tool_call", Content: "x", CreatedAt: 1},
 		"utterance on a plan step":     {Kind: core.KindUtterance, Role: core.RoleUser, NodeSeq: 1, Content: "x", CreatedAt: 1},
@@ -855,9 +814,8 @@ func TestAppendEventCannotForgeContentFields(t *testing.T) {
 	}
 }
 
-// Seq is one space a topic shares between its originals and its events, so events
-// appended while a turn runs are still there after its dialogue lands: the originals
-// take Seq 1 and 2 and never reach down into the event range.
+// Seq is one space a topic shares between its originals and its events, so events appended while a
+// turn runs are still there after its dialogue lands.
 func TestSettledTurnKeepsEventsAppendedBeforeIt(t *testing.T) {
 	srv := mockLLMServer(t, turnKeywords)
 	db := newSearchTestDB(t, srv.URL)
@@ -884,11 +842,8 @@ func TestSettledTurnKeepsEventsAppendedBeforeIt(t *testing.T) {
 	if len(owned) != 4 {
 		t.Fatalf("topic owns %d records, want 2 originals + 2 events", len(owned))
 	}
-	// archivesOfTopic is a deliberate index-free record scan, so it yields map
-	// order: what this pins is **which slots exist**, not the order they come back
-	// in. Read-path ordering is the index's contract and is pinned where it is
-	// actually owed — TestQueryArchivesL4OrdersBySeqNotTimestamp (repo) and
-	// TestSceneContextTopicOrdersBySeqNotWriteOrder (scene).
+	// archivesOfTopic is a deliberate index-free record scan, so it yields map order: what this pins is
+	// **which slots exist**, not the order they come back in.
 	var utterances, eventSeqs []uint64
 	for _, arc := range owned {
 		if arc.Kind == core.KindEvent {
@@ -907,9 +862,8 @@ func TestSettledTurnKeepsEventsAppendedBeforeIt(t *testing.T) {
 	}
 }
 
-// A step event names itself: any EventType a bare turn event takes is accepted
-// here too and stored verbatim, and the content contract is still checked before
-// anything lands on the tree.
+// A step event names itself: any EventType a bare turn event takes is accepted here too and stored
+// verbatim, and the content contract is still checked before anything lands on the tree.
 func TestPlanEventNamesAreHostOwned(t *testing.T) {
 	db := newTestDB(t, newTestEngine(t))
 	defer db.Close()
@@ -989,10 +943,7 @@ func TestPlanNodeUpdateFinishedAt(t *testing.T) {
 	if first == 0 {
 		t.Fatal("a step driven to a terminal status must carry a completion time")
 	}
-	// Re-opening the step clears it. FinishedAt answers "when did this step
-	// finish", and a step the host re-opened has not finished — keeping the earlier
-	// stamp would hand back a completed-looking node that the same tree says is
-	// still running.
+	// Re-opening the step clears it.
 	restate(t, db, seq, PlanInProgress, "")
 	if got := mustTree(t, db).Roots[0].FinishedAt; got != 0 {
 		t.Fatalf("re-opening a step must clear FinishedAt: %d -> %d", first, got)
@@ -1005,10 +956,8 @@ func TestPlanNodeUpdateFinishedAt(t *testing.T) {
 	}
 }
 
-// One turn runs on one id: the topic the read opened is where the host's events and
-// dialogue land, what the close distills, and what an L4 read under a Kind condition
-// returns — no host-minted turn key and no timestamp derivation anywhere in
-// between.
+// One turn runs on one id: the topic the read opened is where the host's events and dialogue land,
+// what the close distills, and what an L4 read under a Kind condition returns.
 func TestTurnRunsOnOneTopicID(t *testing.T) {
 	srv := mockLLMServer(t, turnKeywords)
 	db := newSearchTestDB(t, srv.URL)
@@ -1046,9 +995,7 @@ func TestTurnRunsOnOneTopicID(t *testing.T) {
 	}
 }
 
-// The retention window is the host's to set: a domain configured with a short
-// window sweeps content the default window would keep, and a zero value falls
-// back to the engine's seven days rather than disabling the sweep.
+// The retention window is the host's to set.
 func TestDreamRetentionWindowIsConfigurable(t *testing.T) {
 	custom := DefaultMemHopDefaults
 	custom.ContentRetentionMs = (30 * time.Minute).Milliseconds()

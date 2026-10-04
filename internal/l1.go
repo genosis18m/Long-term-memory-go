@@ -1,11 +1,7 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// L1 big methods of the composition root: the read face of the scene
-// hypergraph. Nothing here writes — the nodes and the edges between them are
-// built, decayed and pruned by Dream alone, so a host can read what
-// consolidation decided but cannot set it. The building and decay steps live in
-// internal/cap/engram.
+// L1 big methods of the composition root: the read face of the scene hypergraph.
 
 package internal
 
@@ -16,14 +12,8 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/repo/core"
 )
 
-// ListL1 returns every scene node of the domain, sorted by id because the
-// index underneath is a hash map. The values are Dream's: Importance and the
-// two emotion signals are what consolidation computed, and EdgeIDs name the
-// co-occurrence edges incident on the node — two nodes sharing one id are a
-// pair Dream judged related, and an edge itself has no public read. A node
-// the index names but the engine cannot return is reported, not left out: a
-// listing quietly missing one node is indistinguishable from a node Dream
-// never built.
+// ListL1 returns every scene node of the domain, sorted by id because the index underneath is a hash
+// map.
 func (db *DB) ListL1(agentID uint64) ([]core.SceneNode, error) {
 	ac, err := db.lockAgent(agentID)
 	if err != nil {

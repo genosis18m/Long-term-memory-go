@@ -14,10 +14,8 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/common"
 )
 
-// An append performed after reopening a checkpointed file must survive a
-// subsequent crash even without a new checkpoint. Regression test for the
-// trimTailSnapshot/nextOffset bug: the old snapshot was not actually
-// truncated, so new records landed behind it and were lost on full scan.
+// An append performed after reopening a checkpointed file must survive a subsequent crash even without
+// a new checkpoint.
 func TestAppendAfterReopenWithTailSnapshotSurvivesCrash(t *testing.T) {
 	p := tempPath(t, "tailsnap")
 	eng, err := Create(p)
@@ -59,9 +57,7 @@ func TestAppendAfterReopenWithTailSnapshotSurvivesCrash(t *testing.T) {
 	}
 }
 
-// Multiple chained tail snapshots must all be dropped before the first
-// append after reopen. Trimming only at the latest snapshot offset leaves
-// older snapshots behind and recreates the same data-loss window.
+// Multiple chained tail snapshots must all be dropped before the first append after reopen.
 func TestAppendAfterReopenWithMultipleTailSnapshotsSurvivesCrash(t *testing.T) {
 	p := tempPath(t, "multisnap")
 	eng, err := Create(p)
@@ -104,8 +100,7 @@ func TestAppendAfterReopenWithMultipleTailSnapshotsSurvivesCrash(t *testing.T) {
 	}
 }
 
-// Files written before RecordEnd existed store 0 in that header field. Open
-// must reconstruct the record-area end across chained snapshots.
+// Files written before RecordEnd existed store 0 in that header field.
 func TestAppendAfterReopenWithLegacyHeaderRecordEnd(t *testing.T) {
 	p := tempPath(t, "legacyend")
 	eng, err := Create(p)
@@ -159,8 +154,8 @@ func TestAppendAfterReopenWithLegacyHeaderRecordEnd(t *testing.T) {
 	}
 }
 
-// Open must recover when exactly one A/B header is torn or corrupted; the
-// dual-header design is only useful if a single bad slot does not block Open.
+// Open must recover when exactly one A/B header is torn or corrupted; the dual-header design is only
+// useful if a single bad slot does not block Open.
 func TestOpenRecoversWhenOneHeaderCorrupt(t *testing.T) {
 	for _, corruptOffset := range []int64{HeaderAOffset, HeaderBOffset} {
 		t.Run(fmt.Sprintf("corrupt-header-at-%d", corruptOffset), func(t *testing.T) {
@@ -206,15 +201,8 @@ func TestOpenRecoversWhenOneHeaderCorrupt(t *testing.T) {
 	}
 }
 
-// Files with an unsupported format version must be rejected explicitly at
-// Open: 0x0012 (a domain's identity on its L0 profile, a topic name its host
-// writes) is the only accepted version — older layouts and future ones have no
-// migration path.
-// The rejection names both versions it saw and wanted, so this asserts the pair
-// per case: "an error mentioning a version" would also pass on an unrelated
-// failure, and a stale FormatVersion would otherwise go unnoticed. The list runs
-// one past the current version so a bump that forgets to move the boundary fails
-// here rather than silently accepting whatever comes next.
+// Files with an unsupported format version must be rejected explicitly at Open: 0x0012 (a domain's
+// identity on its L0 profile, a topic name its host writes) is the only accepted version.
 func TestHeaderVersionRejected(t *testing.T) {
 	for _, v := range []uint16{0x0004, 0x0005, 0x0006, 0x0007, 0x0008, 0x0009, 0x000A, 0x000B, 0x000C, 0x000D, 0x000E, 0x000F, 0x0010, 0x0011, 0x0013} {
 		t.Run(fmt.Sprintf("0x%04x", v), func(t *testing.T) {
@@ -252,8 +240,8 @@ func TestHeaderVersionRejected(t *testing.T) {
 	}
 }
 
-// A snapshot blob with an unsupported version must be rejected explicitly,
-// while the version this build writes parses.
+// A snapshot blob with an unsupported version must be rejected explicitly, while the version this
+// build writes parses.
 func TestSnapshotVersionRejected(t *testing.T) {
 	blob := BuildSnapshot(map[uint64]map[uint64]uint64{DefaultAgentID: {1: DataStart}})
 	if blob[4] != SnapshotVersion {

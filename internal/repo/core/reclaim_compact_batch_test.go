@@ -10,11 +10,7 @@ import (
 	"time"
 )
 
-// Compact rewrites the whole file, and its cost is the flush plus the remap each
-// write does. Written one record at a time, 2000 records measured 5.5s here —
-// minutes for a file of real size, on the one path an operator runs to get a
-// file back under control. The bound is loose against machine variance and tight
-// against that regression.
+// Compact rewrites the whole file, and its cost is the flush plus the remap each write does.
 func TestCompactCopiesInBatches(t *testing.T) {
 	const records = 2000
 	dir := t.TempDir()

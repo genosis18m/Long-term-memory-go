@@ -1,13 +1,8 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// A host that shuts down while a worker is still driving a turn is the one race every
-// method has to survive, and it can be lost silently: a use-after-close reads as a corrupt
-// record, or a nil dereference takes the process down. So the whole published surface is
-// walked here, once per method, and the promise is the boring one — every call answers
-// `ErrClosed`, the two accessors that read no engine state answer normally, and nothing
-// panics. The table is compared against the reflected method sets, so a method cannot be
-// added to the surface without being added to this gate.
+// A host that shuts down while a worker is still driving a turn is the one race every method has to
+// survive, and it can be lost silently.
 
 package api
 
@@ -18,8 +13,8 @@ import (
 	"testing"
 )
 
-// readsNoState names the calls that answer a handle alone: a closed database still knows
-// which domain its session holds and whether it was closed.
+// readsNoState names the calls that answer a handle alone: a closed database still knows which domain
+// its session holds and whether it was closed.
 var readsNoState = map[string]bool{"Session.AgentID": true, "DB.IsClosed": true}
 
 // exemptFromClosedWalk is the one published call this walk must not make, with the reason.
@@ -71,9 +66,7 @@ func TestEveryCallAnswersErrClosedAfterClose(t *testing.T) {
 				}
 				return
 			}
-			// DB.Close is in this set on purpose: closing an already-closed database answers
-			// the same code every other call does, so a host that defers Close and also calls
-			// it at shutdown reads one vocabulary, not two.
+			// DB.Close is in this set on purpose.
 			if CodeOf(err) != ErrClosed {
 				t.Errorf("%s: want ErrClosed (%d), got code=%d err=%v", name, ErrClosed, CodeOf(err), err)
 			}
@@ -118,8 +111,8 @@ func publishedMethodNames() map[string]bool {
 	return out
 }
 
-// closedSurface is the published surface as thunks, each called with an argument set that
-// would succeed on an open database — so the close is the only thing left to make it fail.
+// closedSurface is the published surface as thunks, each called with an argument set that would
+// succeed on an open database — so the close is the only thing left to make it fail.
 func closedSurface(sess *Session, lib *DB, gid, nodeID, sceneID, topicID string) map[string]func() error {
 	llm := LlmConfig{APIURL: "http://127.0.0.1:1/v1", APIKey: "k", Model: "m"}
 	return map[string]func() error{

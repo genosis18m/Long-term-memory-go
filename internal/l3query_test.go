@@ -23,10 +23,7 @@ func testNode(id, graphID uint64, title, nodeType, content string, kws []string)
 	}
 }
 
-// writeNode writes an L3 node record, materialising its graph slot first: a
-// node belonging to no graph is a state the engine never produces (ImportL3
-// creates the slot), and QueryL3Nodes refuses it like GetL3 does. Fixtures
-// land in the shared L3 domain — the one the query methods read.
+// writeNode writes an L3 node record, materialising its graph slot first.
 func writeNode(t *testing.T, engine *core.StorageEngine, n *core.HypergraphNode) {
 	t.Helper()
 	if _, err := core.ReadGraphSlot(engine, core.SharedPoolAgentID, n.GraphID); err != nil {
@@ -103,9 +100,8 @@ func TestQueryL3NodesModes(t *testing.T) {
 	}
 }
 
-// Every condition the query names applies, ANDing with the others: a caller
-// that asks for a keyword inside one node type must not get the whole keyword
-// hit list back.
+// Every condition the query names applies, ANDing with the others: a caller that asks for a keyword
+// inside one node type must not get the whole keyword hit list back.
 func TestQueryL3NodesFiltersAndTogether(t *testing.T) {
 	engine := newTestEngine(t)
 	db := newTestDB(t, engine)
@@ -208,10 +204,7 @@ func TestQueryL3SubgraphDepth(t *testing.T) {
 		t.Fatalf("depth 3: want 4 nodes / 3 edges, got %d / %d", len(sub.Nodes), len(sub.Edges))
 	}
 
-	// A non-positive depth sets no bound — the same reading `limit` carries on the other L3
-	// and L4 reads, so a host or a tool schema never has to know that this one zero means
-	// "one hop" while that one means "everything". Answer is the whole reachable component,
-	// identical to a depth that already covers it.
+	// A non-positive depth sets no bound.
 	unbounded, err := db.QueryL3Subgraph(core.DefaultAgentID, graphHex, common.FormatHash(idA), 0, nil)
 	if err != nil {
 		t.Fatalf("QueryL3Subgraph depth 0: %v", err)
@@ -236,11 +229,8 @@ func TestQueryL3SubgraphDepth(t *testing.T) {
 	}
 }
 
-// TestQueryL3SubgraphEdgeKindFilter keeps the edge-kind filter honest in both
-// directions: naming kinds restricts the walk to edges of those kinds, naming none
-// walks every edge — and naming a kind the vocabulary does not define is refused,
-// because the import boundary refuses to store one. Answering that filter with an
-// empty subgraph is the report a host reads back as "this graph holds no such edges".
+// TestQueryL3SubgraphEdgeKindFilter keeps the edge-kind filter honest in both directions: naming kinds
+// restricts the walk to edges of those kinds, naming none walks every edge.
 func TestQueryL3SubgraphEdgeKindFilter(t *testing.T) {
 	engine := newTestEngine(t)
 	db := newTestDB(t, engine)
@@ -346,8 +336,8 @@ func TestQueryL3SubgraphStartMissing(t *testing.T) {
 	}
 }
 
-// TestQueryL3SubgraphStartWrongGraph rejects a start node that belongs to
-// another graph instead of silently returning a disconnected singleton.
+// TestQueryL3SubgraphStartWrongGraph rejects a start node that belongs to another graph instead of
+// silently returning a disconnected singleton.
 func TestQueryL3SubgraphStartWrongGraph(t *testing.T) {
 	engine := newTestEngine(t)
 	db := newTestDB(t, engine)

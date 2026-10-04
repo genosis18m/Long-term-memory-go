@@ -17,11 +17,6 @@ import (
 )
 
 // The plan stage's exemption has two conditions, and the guides advertise only one of them.
-// Both matter because they fail in opposite directions: dropping "in flight" would delete the
-// tree a running task is still walking, while dropping "active inside the window" would let any
-// abandoned task hold its tree forever and make L5 unbounded - the reason the stage exists.
-// Inside a tree that is not exempt, each node is then measured on its own clock, so a finished
-// plan that one late update touched loses only the stale steps.
 func TestPrunePlanStageNeedsBothConditionsToSpareATree(t *testing.T) {
 	engine, err := core.Create(filepath.Join(t.TempDir(), "prune.meh"))
 	if err != nil {

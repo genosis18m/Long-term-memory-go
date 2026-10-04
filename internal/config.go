@@ -1,10 +1,8 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// The composition root's assembly point: resolving the database path's three
-// states, opening or creating the engine, settling the primary domain and
-// reloading the tenant registry. The configuration types themselves live in
-// internal/config.
+// The composition root's assembly point: resolving the database path's three states, opening or
+// creating the engine, settling the primary domain and reloading the tenant registry.
 
 package internal
 
@@ -25,13 +23,7 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/repo/core"
 )
 
-// openEngine resolves the three states a database path can be in. Every
-// branch has to be told apart, because creating truncates: only a path
-// confirmed absent may be created, so any other stat failure surfaces instead
-// of falling through to it. A directory is refused here rather than handed to
-// core.Open, which would report it as a file too small for the dual headers.
-// allowCreate is the caller's decision — an open that has nothing to seed a
-// new file with must not leave one behind.
+// openEngine resolves the three states a database path can be in.
 func openEngine(path string, allowCreate bool) (*core.StorageEngine, error) {
 	info, err := os.Stat(path)
 	switch {
@@ -51,9 +43,8 @@ func openEngine(path string, allowCreate bool) (*core.StorageEngine, error) {
 	}
 }
 
-// assemble builds the DB around an already-opened engine: the cancellable root
-// context, the library-wide transport and the tenant maps reloaded from the
-// file's registry records.
+// assemble builds the DB around an already-opened engine: the cancellable root context, the
+// library-wide transport and the tenant maps reloaded from the file's registry records.
 func assemble(engine *core.StorageEngine, cfg *MemHopConfig) *DB {
 	ctx, cancel := context.WithCancel(context.Background())
 	idToName, nameToID, registryErr := loadTenantRegistry(engine)
@@ -74,9 +65,8 @@ func assemble(engine *core.StorageEngine, cfg *MemHopConfig) *DB {
 	}
 }
 
-// abandon closes a DB that was assembled but cannot be handed out, and reports
-// the original failure: the close is cleanup, not the answer, but a close that
-// itself fails is joined rather than dropped.
+// abandon closes a DB that was assembled but cannot be handed out, and reports the original failure:
+// the close is cleanup, not the answer, but a close that itself fails is joined rather than dropped.
 func abandon(db *DB, cause error) error {
 	if err := db.Close(); err != nil {
 		return errors.Join(cause, err)
@@ -84,17 +74,7 @@ func abandon(db *DB, cause error) error {
 	return cause
 }
 
-// OpenDB opens the database at path and settles its primary domain. The
-// primary is the implicit zero domain, so a file holds exactly one. What
-// happens depends on the file and on that domain's profile:
-//
-//	file there, profile there    → the file's own profile wins, the argument is ignored
-//	file there, no profile       → seed it from the argument; without one, refuse
-//	no file                      → create and seed; without a profile, refuse
-//
-// A refused open creates no file — creating one is what a profile is for.
-// AgentType is stamped here rather than taken from the caller: the primary
-// domain is the one a file is opened on, and a profile cannot claim otherwise.
+// OpenDB opens the database at path and settles its primary domain.
 func OpenDB(path string, llmCfg LlmConfig, defaults MemHopDefaults, primary *core.ProfileSlot) (*DB, error) {
 	if path == "" {
 		return nil, common.NewError(common.ErrConfig, "path is required")
@@ -136,12 +116,8 @@ func OpenDB(path string, llmCfg LlmConfig, defaults MemHopDefaults, primary *cor
 	return db, nil
 }
 
-// loadTenantRegistry rebuilds the tenant name maps from the on-file
-// registry records so ensureRegistered reuses stable IDs across restarts. The
-// error it brings back reports a domain whose key will not resolve to a name: the
-// file stays open and every name that did resolve keeps working, so this is
-// recorded and warned once rather than failed — what it costs is creating a
-// tenant.
+// loadTenantRegistry rebuilds the tenant name maps from the on-file registry records so
+// ensureRegistered reuses stable IDs across restarts.
 func loadTenantRegistry(engine *core.StorageEngine) (idToName map[uint64]string, nameToID map[string]uint64, unresolved error) {
 	listed, err := repo.ListAgentRegistry(engine)
 	idToName = make(map[uint64]string, len(listed))
@@ -150,9 +126,8 @@ func loadTenantRegistry(engine *core.StorageEngine) (idToName map[uint64]string,
 	for _, id := range ids {
 		name := listed[id]
 		idToName[id] = name
-		// Should two active registry records ever carry the same name, the
-		// higher agentID wins deterministically: Go map iteration order must
-		// never decide which domain a tenant lands in.
+		// Should two active registry records ever carry the same name, the higher agentID wins
+		// deterministically: Go map iteration order must never decide which domain a tenant lands in.
 		if prev, ok := nameToID[name]; !ok || id > prev {
 			nameToID[name] = id
 		}

@@ -1,10 +1,7 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// Sub-agent domains: addressed by name, each with its own LLM endpoint. The
-// endpoint tests are the ones that matter — a domain whose override silently fell
-// back to the library-wide transport would still work, and would only be wrong in
-// which model answered.
+// Sub-agent domains: addressed by name, each with its own LLM endpoint.
 
 package internal
 
@@ -18,9 +15,7 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/repo/core"
 )
 
-// runTurn drives one full turn on a domain-bound handle: open it, then close it with
-// both originals. The close is the one call that reaches the LLM, so a counting stub
-// sees exactly one hit per turn.
+// runTurn drives one full turn on a domain-bound handle: open it, then close it with both originals.
 func runTurn(t *testing.T, sess *Session) {
 	t.Helper()
 	if _, err := sess.Search(SearchQuery{}); err != nil {
@@ -43,8 +38,8 @@ func openPrimaryOn(t *testing.T, dir, endpoint string) *DB {
 	return db
 }
 
-// The name is the domain's address, so asking twice is one domain and the profile
-// written first is the one that stays; a different name is a different domain.
+// The name is the domain's address, so asking twice is one domain and the profile written first is the
+// one that stays; a different name is a different domain.
 func TestSubAgentIsIdempotentByName(t *testing.T) {
 	primarySrv, _ := countingLLMServer(t, turnKeywords)
 	db := openPrimaryOn(t, t.TempDir(), primarySrv.URL)
@@ -87,9 +82,7 @@ func TestSubAgentIsIdempotentByName(t *testing.T) {
 	}
 }
 
-// A domain's own endpoint has to be the one its turns use. Both stubs count, so
-// this fails if the hottest LLM path reaches for the library-wide transport
-// instead of the one injected into the domain.
+// A domain's own endpoint has to be the one its turns use.
 func TestSubAgentRunsOnItsOwnEndpoint(t *testing.T) {
 	primarySrv, primaryCalls := countingLLMServer(t, turnKeywords)
 	subSrv, subCalls := countingLLMServer(t, turnKeywords)
@@ -116,23 +109,13 @@ func TestSubAgentRunsOnItsOwnEndpoint(t *testing.T) {
 	}
 }
 
-// The override has to outlive the domain context. The idle sweep drops a context
-// and the next access rebuilds it, so an override stored on the context would
-// quietly fall back to the library-wide endpoint once a domain went idle long
-// enough — an hour into a session, with nothing to indicate it.
+// The override has to outlive the domain context.
 func TestSubAgentEndpointSurvivesIdleReclaim(t *testing.T) {
 	primarySrv, primaryCalls := countingLLMServer(t, turnKeywords)
 	subSrv, subCalls := countingLLMServer(t, turnKeywords)
 
 	defaults := DefaultMemHopDefaults
-	// A turn is two accesses now — the read that opens it and the close that spends
-	// it — and the read holds the turn, so a TTL shorter than one turn takes would
-	// reclaim the context out from under the turn itself. What this test needs is a
-	// reclaim between two turns: a TTL the pause overshoots and a single turn does not.
-	// A turn's budget is not just its LLM round trip: a loaded runner can stall this
-	// goroutine past a 100ms TTL between the two calls of one turn (the CI failure
-	// that sized this margin), and the close's own sweep would then drop the turn
-	// the read just opened. 2s is past any such stall; the pause below is past the TTL.
+	// A turn is two accesses now.
 	defaults.AgentIdleTTLMs = 2000
 	db, err := OpenDB(filepath.Join(t.TempDir(), "idle.meh"),
 		LlmConfig{APIURL: primarySrv.URL, APIKey: "test", Model: "mock"},
@@ -163,13 +146,8 @@ func TestSubAgentEndpointSurvivesIdleReclaim(t *testing.T) {
 	}
 }
 
-// The sweep's decision has to survive the window it cannot prevent: a caller
-// stamps its activity, is descheduled past the TTL, and takes a lock on a context
-// the table has already dropped — where its writes would land on caches nothing
-// reads back. So the removal marks the context inside the same lock hold, and
-// lockAgent re-fetches when it finds the mark. This pins the mark and the drop
-// landing together; the re-fetch would need a stall staged between two statements
-// of one function, which nothing but a seam in the production path can arrange.
+// The sweep's decision has to survive the window it cannot prevent: a caller stamps its activity, is
+// descheduled past the TTL, and takes a lock on a context the table has already dropped.
 func TestIdleReclaimMarksTheDomainItDrops(t *testing.T) {
 	srv := mockLLMServer(t, turnKeywords)
 	defaults := DefaultMemHopDefaults
@@ -217,10 +195,8 @@ func TestIdleReclaimMarksTheDomainItDrops(t *testing.T) {
 	}
 }
 
-// A host that reconnects names its new endpoint on a domain it is still holding,
-// so the replacement has to reach the live context: with the idle sweep disabled
-// there is no rebuild left to credit, and a domain still running on the endpoint
-// it was created with is the bug this pins.
+// A host that reconnects names its new endpoint on a domain it is still holding, so the replacement
+// has to reach the live context.
 func TestSubAgentMovesALiveDomainToItsNewEndpoint(t *testing.T) {
 	primarySrv, _ := countingLLMServer(t, turnKeywords)
 	firstSrv, firstCalls := countingLLMServer(t, turnKeywords)
@@ -261,9 +237,8 @@ func TestSubAgentMovesALiveDomainToItsNewEndpoint(t *testing.T) {
 	}
 }
 
-// Registration and the profile are two writes, so a crash between them leaves a
-// domain that is registered but has no identity. Asking for the same name again
-// finishes the job rather than leaving it that way.
+// Registration and the profile are two writes, so a crash between them leaves a domain that is
+// registered but has no identity.
 func TestSubAgentHealsADomainLeftWithoutAProfile(t *testing.T) {
 	primarySrv, _ := countingLLMServer(t, turnKeywords)
 	db := openPrimaryOn(t, t.TempDir(), primarySrv.URL)
@@ -292,8 +267,8 @@ func TestSubAgentHealsADomainLeftWithoutAProfile(t *testing.T) {
 	}
 }
 
-// A name is a tenant key stored in the file, so it is capped; the cap is about
-// record size, not about which characters a host may use.
+// A name is a tenant key stored in the file, so it is capped; the cap is about record size, not about
+// which characters a host may use.
 func TestSubAgentRefusesAnUnusableName(t *testing.T) {
 	primarySrv, _ := countingLLMServer(t, turnKeywords)
 	db := openPrimaryOn(t, t.TempDir(), primarySrv.URL)
@@ -321,11 +296,8 @@ func TestSubAgentRefusesAnUnusableName(t *testing.T) {
 	}
 }
 
-// A tenant key that will not read back is still a domain, and the name it carried is
-// exactly what cannot be recovered. So while one is pending no name can be proven
-// free: creating a tenant would hand the host an empty domain under a name a real
-// domain already holds, and the memory behind the unreadable key becomes
-// unreachable — not listable, not deletable, not reopenable by name.
+// A tenant key that will not read back is still a domain, and the name it carried is exactly what
+// cannot be recovered.
 func TestSubAgentRefusedWhileATenantKeyWillNotResolve(t *testing.T) {
 	primarySrv, _ := countingLLMServer(t, turnKeywords)
 	db := openPrimaryOn(t, t.TempDir(), primarySrv.URL)
@@ -366,15 +338,7 @@ func TestSubAgentRefusedWhileATenantKeyWillNotResolve(t *testing.T) {
 	}
 }
 
-// What AgentIdleTTLMs costs a host that pauses mid-round, and what it does not. An open
-// turn lives only in memory — the read that opened it wrote the scene's counter, not a
-// topic record — so a reclaim between that read and the close drops the turn. What this
-// pins is the shape of the failure: every later write on that round is refused with "no
-// turn is open" rather than silently landing on a fresh turn, so the host re-opens and
-// nothing is mis- attributed. The price is bounded and one-way: what the round had
-// already appended stays stored under a topic no read surface names, because that turn
-// never settled. A TTL a round can outlive (a tool waiting on a person) therefore drops
-// trajectories: keep it longer than the longest round, or disable the sweep with 0.
+// What AgentIdleTTLMs costs a host that pauses mid-round, and what it does not.
 func TestIdleReclaimRefusesTheDroppedRound(t *testing.T) {
 	srv := mockLLMServer(t, turnKeywords)
 	defaults := DefaultMemHopDefaults
@@ -431,8 +395,8 @@ func TestIdleReclaimRefusesTheDroppedRound(t *testing.T) {
 		t.Fatalf("the reclaimed domain resumed the turn it dropped (%d)", next.NewTopicID)
 	}
 
-	// What it left behind is stored and unreachable: on disk under the abandoned topic,
-	// absent from every read, since that topic was never settled.
+	// What it left behind is stored and unreachable: on disk under the abandoned topic, absent from every
+	// read, since that topic was never settled.
 	var kept []core.ArchiveSlot
 	for _, arc := range core.CollectAllArchives(db.engine, sub.agentID) {
 		if arc.TopicID == abandoned.NewTopicID {
@@ -452,9 +416,8 @@ func TestIdleReclaimRefusesTheDroppedRound(t *testing.T) {
 	}
 }
 
-// The id door has to do the whole job, not just hand back a handle: a host that re-points a
-// domain it is already working with — a sub-agent whose model got changed — by its id
-// expects the live domain to move, the way naming it again does.
+// The id door has to do the whole job, not just hand back a handle: a host that re-points a domain it
+// is already working with.
 func TestAgentByIDMovesTheLiveDomainToTheNewEndpoint(t *testing.T) {
 	primarySrv, _ := countingLLMServer(t, turnKeywords)
 	firstSrv, firstCalls := countingLLMServer(t, turnKeywords)

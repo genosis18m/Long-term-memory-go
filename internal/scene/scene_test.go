@@ -11,9 +11,8 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/repo/core"
 )
 
-// Each utterance keeps the Seq it came from — the only thing that tells a reclaimed
-// line from one never spoken — and the keyword track is a copy, not a window into the
-// record.
+// Each utterance keeps the Seq it came from — the only thing that tells a reclaimed line from one
+// never spoken — and the keyword track is a copy, not a window into the record.
 func TestContextTopicRendersTheTopicAndTheUtterancesGiven(t *testing.T) {
 	const (
 		topicID uint64 = 0xfeed

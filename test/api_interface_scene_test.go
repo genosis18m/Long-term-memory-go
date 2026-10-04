@@ -1,13 +1,7 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// Host journey for the L2 scene surface: the calls a host makes to manage the
-// sessions it already has — rename, anchor to a project domain, read the whole
-// transcript, fold two sessions into one, and correct memory by deleting.
-//
-// Every id here is one the library minted and the host got back from a call.
-// That is the point of this file: a test that forged an id would pass while
-// proving nothing a host can actually do.
+// Host journey for the L2 scene surface: the calls a host makes to manage the sessions it already has.
 
 package test
 
@@ -22,9 +16,8 @@ import (
 	internal "github.com/genosis18m/Long-term-memory-go/internal"
 )
 
-// findScene looks a scene up in a listing — the way a host confirms a patch
-// through the read it would otherwise use, rather than through the value the
-// patch call itself returned.
+// findScene looks a scene up in a listing — the way a host confirms a patch through the read it would
+// otherwise use, rather than through the value the patch call itself returned.
 func findScene(t *testing.T, db *testDB, sceneID string) memhop.SceneSlot {
 	t.Helper()
 	scenes, err := db.ListScenes("")
@@ -40,10 +33,8 @@ func findScene(t *testing.T, db *testDB, sceneID string) memhop.SceneSlot {
 	return memhop.SceneSlot{}
 }
 
-// settleTurn runs one full turn the way a host does: read the session (which opens
-// the turn), then close it with what the turn said. It returns the topic id that now
-// carries it — and pins that it is the one Search minted, since a closing call names
-// no id of either kind.
+// settleTurn runs one full turn the way a host does: read the session (which opens the turn), then
+// close it with what the turn said.
 func settleTurn(t *testing.T, db *testDB, sceneID, user, agent string) string {
 	t.Helper()
 	id := openTurn(t, db, sceneID)
@@ -57,8 +48,8 @@ func settleTurn(t *testing.T, db *testDB, sceneID, user, agent string) string {
 	return id
 }
 
-// UpdateScene is the host's only handle on a scene's own metadata, so the two
-// things it can change have to show up in the reads a host actually uses.
+// UpdateScene is the host's only handle on a scene's own metadata, so the two things it can change
+// have to show up in the reads a host actually uses.
 func TestInterfaceSceneNameAndAnchor(t *testing.T) {
 	db, _ := openTestDB(t)
 	sceneID := openSession(t, db)
@@ -145,10 +136,8 @@ func TestInterfaceSceneNameAndAnchor(t *testing.T) {
 		t.Fatalf("after Force L3ID = %q", got.L3ID)
 	}
 
-	// A stale domain id — one the host still holds but that has since been
-	// deleted — is refused before the scene is touched. This is also the
-	// DeleteL3 close: the graph leaves the listing and the anchor cannot land
-	// on it any more.
+	// A stale domain id — one the host still holds but that has since been deleted — is refused before the
+	// scene is touched.
 	if err := db.DeleteL3(other.GraphIDs[0]); err != nil {
 		t.Fatalf("DeleteL3: %v", err)
 	}
@@ -177,9 +166,8 @@ func TestInterfaceSceneNameAndAnchor(t *testing.T) {
 	}
 }
 
-// SceneContext is the read a host uses to show or export a conversation, and it
-// is the only one that writes nothing and the only one that sees through a
-// Dream-fused group. Both halves have to hold together.
+// SceneContext is the read a host uses to show or export a conversation, and it is the only one that
+// writes nothing and the only one that sees through a Dream-fused group.
 func TestInterfaceSceneContextReadsThroughFusion(t *testing.T) {
 	llm := newMockLLM(t)
 	m := openMockDB(t, filepath.Join(t.TempDir(), "ctx.meh"), llm.srv.URL,
@@ -229,9 +217,7 @@ func TestInterfaceSceneContextReadsThroughFusion(t *testing.T) {
 		}
 	}
 
-	// SceneContext opens no turn. The turn counter is not on the host-visible
-	// scene record, so that contract is pinned where it is readable:
-	// TestSceneContextOpensNoTurn in internal.
+	// SceneContext opens no turn.
 
 	// After consolidation the ordinary read shows one fused group, while
 	// SceneContext still hands back the originals on the children it sunk.
@@ -253,9 +239,8 @@ func TestInterfaceSceneContextReadsThroughFusion(t *testing.T) {
 		t.Fatalf("SceneContext returned %d entries, want the fused parent over the %d turns it swallowed",
 			len(ctx2.Topics), len(fused.Topics))
 	}
-	// The parent comes first: it shares its earliest child's timestamp, so the
-	// listing's depth key is what puts a group's summary above the originals it
-	// introduces instead of in the middle of them.
+	// The parent comes first: it shares its earliest child's timestamp, so the listing's depth key is what
+	// puts a group's summary above the originals it introduces instead of in the middle of them.
 	parent := ctx2.Topics[0]
 	if parent.Depth != 1 || parent.ChildCount != 2 {
 		t.Fatalf("first entry after fusion = %+v, want the fused parent owning both turns", parent)
@@ -269,9 +254,7 @@ func TestInterfaceSceneContextReadsThroughFusion(t *testing.T) {
 	if len(parent.Messages) != 1 || parent.Messages[0].Content != "合并摘要保留全部细节" || parent.Messages[0].Role != 3 {
 		t.Fatalf("the fused parent carries %+v, want the group's summary alone under role 3", parent.Messages)
 	}
-	// The sunk turns keep their own originals, which is the whole reason this read
-	// exists. Claimed by id rather than by position: two turns settled inside one
-	// millisecond tie on the timestamp and fall back to the id.
+	// The sunk turns keep their own originals, which is the whole reason this read exists.
 	byID := make(map[string]memhop.SceneContextTopic, len(ctx2.Topics))
 	for _, e := range ctx2.Topics {
 		byID[e.TopicID] = e
@@ -293,8 +276,8 @@ func TestInterfaceSceneContextReadsThroughFusion(t *testing.T) {
 	}
 }
 
-// A host that resumed one conversation under a new session id folds the two
-// back together; the primary's metadata wins and the history has to be whole.
+// A host that resumed one conversation under a new session id folds the two back together; the
+// primary's metadata wins and the history has to be whole.
 func TestInterfaceMergeScenes(t *testing.T) {
 	db, _ := openTestDB(t)
 	primary := openSession(t, db)
@@ -308,9 +291,7 @@ func TestInterfaceMergeScenes(t *testing.T) {
 	if err := db.MergeScenes(primary, []string{secondary}); err != nil {
 		t.Fatalf("MergeScenes: %v", err)
 	}
-	// The merge empties the domain's memory of the turn it held on the scene that
-	// went under — a turn id derives from its scene, so that close is refused rather
-	// than written onto the merged one, and the host has to read before writing again.
+	// The merge empties the domain's memory of the turn it held on the scene that went under.
 	if _, err := db.Update(memhop.TurnEnd{Input: "被吞掉的那一轮", Output: "不该落笔",
 		CreatedAt: time.Now().UnixMilli()}); err == nil ||
 		!strings.Contains(err.Error(), "no turn is open") {
@@ -377,18 +358,15 @@ func TestInterfaceMergeScenes(t *testing.T) {
 	if after := len(mustScenes(t, db)); after != before {
 		t.Fatalf("a refused merge changed the scene count %d -> %d", before, after)
 	}
-	// The rejected call must not have touched the primary either: the batch
-	// delete keys on the named ids, so a stale secondary cannot take the
-	// surviving scene's own record with it.
+	// The rejected call must not have touched the primary either: the batch delete keys on the named ids,
+	// so a stale secondary cannot take the surviving scene's own record with it.
 	if survived, err := db.Search(memhop.SearchQuery{SceneID: primary}); err != nil || len(survived.Topics) != 2 {
 		t.Fatalf("primary damaged by the refused merge: %d topics, err %v", len(survived.Topics), err)
 	}
 }
 
-// The memory-correction pair: DeleteTopic takes one turn (and its subtree) out
-// of a session, DeleteScene takes the session. Both must take the L4 originals
-// with them — a deleted memory that still answers a keyword search is not
-// deleted.
+// The memory-correction pair: DeleteTopic takes one turn (and its subtree) out of a session,
+// DeleteScene takes the session.
 func TestInterfaceDeleteSceneAndTopic(t *testing.T) {
 	db, _ := openTestDB(t)
 	keep := openSession(t, db)
@@ -482,13 +460,11 @@ func mustScenes(t *testing.T, db *testDB) []memhop.SceneSlot {
 	return scenes
 }
 
-// ptr is the fixture for a patch field where "" and "unset" are different
-// things — which is exactly what ScenePatch encodes with a *string.
+// ptr is the fixture for a patch field where "" and "unset" are different things — which is exactly
+// what ScenePatch encodes with a *string.
 func ptr[T any](v T) *T { return &v }
 
-// A merge retargets rows; it does not rewrite what they hold. Each swallowed turn keeps its
-// own distilled track, so the merged transcript reads as the turns it now owns — not as rows
-// whose keywords quietly emptied out and get re-distilled as something else later.
+// A merge retargets rows; it does not rewrite what they hold.
 func TestInterfaceMergeKeepsEachTurnsKeywordTrack(t *testing.T) {
 	llm := newMockLLM(t)
 	llmURL := llm.srv.URL
@@ -532,16 +508,13 @@ func TestInterfaceMergeKeepsEachTurnsKeywordTrack(t *testing.T) {
 	if got.UserTimestamp != moved.UserTimestamp || got.AgentTimestamp != moved.AgentTimestamp {
 		t.Fatalf("the merge moved the turn's own two bounds: %+v vs %+v", *got, moved)
 	}
-	// The scene that was swallowed is gone as a conversation: naming it on the pure read is
-	// a refusal, not an empty transcript — the difference matters to a host that lists scenes
-	// to decide whether a session still exists.
+	// The scene that was swallowed is gone as a conversation: naming it on the pure read is a refusal, not
+	// an empty transcript.
 	if _, err := db.SceneContext(secondary); memhop.CodeOf(err) != memhop.ErrNotFound {
 		t.Fatalf("reading the swallowed scene: want ErrNotFound, got %v", err)
 	}
 
-	// …and the check has to be repeated on a reopened file. Every read above is served from
-	// the domain's caches, which a merge re-points rather than rewrites: a claim about what
-	// the merge *wrote* is only testable once the records are the only source left.
+	// …and the check has to be repeated on a reopened file.
 	path := dbPath
 	if err := db.Close(); err != nil {
 		t.Fatalf("Close: %v", err)
@@ -576,11 +549,8 @@ func TestInterfaceMergeKeepsEachTurnsKeywordTrack(t *testing.T) {
 	}
 }
 
-// An anchor says which project a conversation belongs to, so a merge that folds anchored
-// scenes into an unanchored one has to keep the membership rather than the survivor's blank:
-// dropping it would take the merged history out of the project listing without saying so.
-// A survivor that already names a domain keeps that claim, and a merge that cannot tell
-// which of two domains won is refused before anything is destroyed.
+// An anchor says which project a conversation belongs to, so a merge that folds anchored scenes into
+// an unanchored one has to keep the membership rather than the survivor's blank.
 func TestInterfaceMergeCarriesTheProjectAnchor(t *testing.T) {
 	db, _ := openTestDB(t)
 	graphs := make([]string, 3)
@@ -651,13 +621,8 @@ func TestInterfaceMergeCarriesTheProjectAnchor(t *testing.T) {
 	}
 }
 
-// A merge moves the domain's own memory of which scene it is working, and that has two
-// different consequences for a round that is open at the time — worth pinning because a host
-// looping over rounds can hit either one. A round opened on the survivor keeps running: the
-// merge leaves its key alone and it closes normally. A round left open on a scene being
-// swallowed cannot be closed at all: that round's key names a scene that no longer exists,
-// so the next read starts a fresh round on the survivor and the recorded content stays where
-// it was written until the retention window takes it.
+// A merge moves the domain's own memory of which scene it is working, and that has two different
+// consequences for a round that is open at the time.
 func TestInterfaceMergeMovesTheOpenRoundWithTheScene(t *testing.T) {
 	t.Run("a round open on the survivor keeps working", func(t *testing.T) {
 		db, _ := openTestDB(t)

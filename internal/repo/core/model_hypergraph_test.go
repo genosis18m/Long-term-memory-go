@@ -36,7 +36,7 @@ func TestHypergraphNodeNumericJSON(t *testing.T) {
 	if err != nil {
 		t.Fatalf("marshal: %v", err)
 	}
-	// Verify native numeric hash format in JSON
+	// Verify native numeric hash format in JSON.
 	var raw map[string]json.RawMessage
 	if err := json.Unmarshal(data, &raw); err != nil {
 		t.Fatalf("unmarshal raw: %v", err)

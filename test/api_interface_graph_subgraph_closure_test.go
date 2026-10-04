@@ -1,12 +1,7 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// A subgraph is the answer a tool gives the model: "here is what this node relates to". For
-// that to be one call, the returned edges have to be describable by the returned nodes — an
-// edge naming a member that is not in the same result leaves the host with an id it cannot
-// name, and the only way to finish the sentence is a second call (or a silent half-answer).
-// Hyperedges are where this can actually happen: an edge spanning three nodes touches a node
-// the traversal reached while the other two sit beyond the depth the caller asked for.
+// A subgraph is the answer a tool gives the model: "here is what this node relates to".
 
 package test
 
@@ -26,9 +21,8 @@ func TestInterfaceSubgraphEdgesNameOnlyNodesItReturns(t *testing.T) {
 	imp, err := db.ImportL3([]memhop.L3ImportItem{
 		{Title: "core", Domain: "proj", NodeType: "package", Content: "the entry",
 			Related: []memhop.L3Relation{{Titles: []string{"util"}, Kind: memhop.EdgeDependency}}},
-		// The hyperedge hangs off `util`, one step from the start, and spans two nodes the
-		// walk reaches only by crossing it. This is the shape where an edge can name a
-		// member the result never describes.
+		// The hyperedge hangs off `util`, one step from the start, and spans two nodes the walk reaches only
+		// by crossing it.
 		{Title: "util", Domain: "proj", NodeType: "module", Content: "a helper",
 			Related: []memhop.L3Relation{
 				{Titles: []string{"deep", "side"}, Kind: memhop.EdgePartOf},
@@ -67,10 +61,8 @@ func TestInterfaceSubgraphEdgesNameOnlyNodesItReturns(t *testing.T) {
 				}
 			}
 		}
-		// The guard that keeps the check above from passing on an empty result: the shape it
-		// is meant to cover has to be the one produced. At depth 1 the crossing hyperedge is
-		// excluded — which is exactly why the closure check would otherwise have nothing to
-		// say — and from depth 2 up it is present with all three members alongside it.
+		// The guard that keeps the check above from passing on an empty result: the shape it is meant to cover
+		// has to be the one produced.
 		sizes := edgeSizes(sub)
 		slices.Sort(sizes)
 		switch depth {
@@ -88,8 +80,8 @@ func TestInterfaceSubgraphEdgesNameOnlyNodesItReturns(t *testing.T) {
 	}
 }
 
-// titleOf reads a member id back to the label the fixture wrote, so a failure names the node
-// a host would have to look up, not a hash.
+// titleOf reads a member id back to the label the fixture wrote, so a failure names the node a host
+// would have to look up, not a hash.
 func titleOf(idBy map[string]string, id string) string {
 	for title, got := range idBy {
 		if got == id {

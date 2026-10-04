@@ -1,8 +1,8 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// Transport classification tests: what the provider answers when the endpoint
-// gave an answer that cannot be used, and when the caller gave up mid-backoff.
+// Transport classification tests: what the provider answers when the endpoint gave an answer that
+// cannot be used, and when the caller gave up mid-backoff.
 
 package llm
 
@@ -20,9 +20,7 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/config"
 )
 
-// answerWith serves one fixed reply to every chat completion; the optional hook
-// runs after the bytes are on the wire, which is how a test lands a cancellation
-// behind a response instead of in front of it.
+// answerWith serves one fixed reply to every chat completion; the optional hook runs after the bytes.
 func answerWith(t *testing.T, status int, body string, after func()) *httptest.Server {
 	t.Helper()
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -45,9 +43,8 @@ func testProvider(url string) *Provider {
 	return New(config.LlmConfig{APIURL: url, APIKey: "test", Model: "mock"})
 }
 
-// An answer cut off at the ceiling is normally caught by the escalation retry, so
-// the one that survives it is the caller's last word — and a caller reading the
-// error code has to be told something failed rather than handed code 0.
+// An answer cut off at the ceiling is normally caught by the escalation retry, so the one that
+// survives it is the caller's last word.
 func TestTruncatedAnswerCarriesTheLLMCode(t *testing.T) {
 	srv := answerWith(t, http.StatusOK,
 		`{"choices":[{"finish_reason":"length","message":{"role":"assistant","content":"{\"keywords\":[\"a\""}}]}`, nil)
@@ -61,10 +58,8 @@ func TestTruncatedAnswerCarriesTheLLMCode(t *testing.T) {
 	}
 }
 
-// A caller that goes away is not an endpoint that refused: reported as a model
-// failure, the host goes to check a service that answered. The cancellation can
-// land in either of two waits — the request in flight, or the backoff before the
-// retry — and both have to say the same thing.
+// A caller that goes away is not an endpoint that refused: reported as a model failure, the host goes
+// to check a service that answered.
 func TestCallAbandonedDuringTheRequestCarriesTheCancellationCode(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -84,10 +79,8 @@ func TestCallAbandonedDuringTheRequestCarriesTheCancellationCode(t *testing.T) {
 func TestCallAbandonedDuringTheBackoffCarriesTheCancellationCode(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	// The first attempt is a retryable status, so the transport sits in its 500 ms
-	// wait; 20 ms is soon enough to land inside that window and slow enough that
-	// the request itself has been answered. Which of the two waits the cancel
-	// interrupts is not what this claims — that both report ErrCancelled is.
+	// The first attempt is a retryable status, so the transport sits in its 500 ms wait; 20 ms is soon
+	// enough to land inside that window and slow enough that the request itself has been answered.
 	timer := time.AfterFunc(20*time.Millisecond, cancel)
 	defer timer.Stop()
 	srv := answerWith(t, http.StatusInternalServerError,
@@ -100,10 +93,8 @@ func TestCallAbandonedDuringTheBackoffCarriesTheCancellationCode(t *testing.T) {
 	}
 }
 
-// A gateway that refuses with a whole HTML page is not a reason to paste that page
-// into an error the caller sees and the log line carries. The head is what has
-// the diagnosis in it, and a cut that lands inside a multi-byte character would
-// otherwise turn a Chinese gateway message into replacement noise.
+// A gateway that refuses with a whole HTML page is not a reason to paste that page into an error the
+// caller sees and the log line carries.
 func TestUpstreamErrorBodyIsEchoedBounded(t *testing.T) {
 	page := strings.Repeat("<html><body>请求被网关拒绝：", 600)
 	srv := answerWith(t, http.StatusBadRequest, page, nil)
@@ -123,9 +114,7 @@ func TestUpstreamErrorBodyIsEchoedBounded(t *testing.T) {
 		t.Fatalf("clamping must not cut a multi-byte message into invalid UTF-8: %q", err.Error())
 	}
 
-	// Inside the budget the message is the endpoint's own words, untouched. A JSON
-	// body would be parsed rather than echoed, so this checks the pass-through with
-	// the same shape the oversized one above had.
+	// Inside the budget the message is the endpoint's own words, untouched.
 	short := "<html><body>额度不足</body></html>"
 	smallSrv := answerWith(t, http.StatusBadRequest, short, nil)
 	_, err = testProvider(smallSrv.URL).Chat(context.Background(), "sys", "user", 512)
@@ -134,11 +123,8 @@ func TestUpstreamErrorBodyIsEchoedBounded(t *testing.T) {
 	}
 }
 
-// The two budgets follow the vocabulary the tuning knobs use: an unfilled value takes the
-// library default. Both directions of failure are silent, which is why this is asserted -
-// a zero output ceiling would truncate every answer to nothing, and a zero HTTP timeout is
-// not "instant" but "forever", holding a domain's lock open on an endpoint that never
-// answers. A host that fills in only the endpoint therefore gets a working client.
+// The two budgets follow the vocabulary the tuning knobs use: an unfilled value takes the library
+// default.
 func TestBudgetsTakeUnfilledValuesAsDefaults(t *testing.T) {
 	for _, tc := range []struct {
 		name                       string

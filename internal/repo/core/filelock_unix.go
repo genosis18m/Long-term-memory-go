@@ -12,8 +12,8 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-// lockFile acquires an exclusive, non-blocking advisory lock: a second
-// instance opening the same file must fail fast, not corrupt shared state.
+// lockFile acquires an exclusive, non-blocking advisory lock: a second instance opening the same file
+// must fail fast, not corrupt shared state.
 func lockFile(f *os.File) error {
 	if err := unix.Flock(int(f.Fd()), unix.LOCK_EX|unix.LOCK_NB); err != nil {
 		return common.NewError(common.ErrIO,

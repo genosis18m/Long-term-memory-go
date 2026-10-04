@@ -1,18 +1,16 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// Numeric error code system: 0=success | 1001-1999 parameter |
-// 2001-2999 auth | 3001-3999 resource | 4001-4999 business | 5001-5999
-// system | 9001-9999 third-party.
+// Numeric error code system: 0=success | 1001-1999 parameter | 2001-2999 auth | 3001-3999 resource |
+// 4001-4999 business | 5001-5999 system | 9001-9999 third-party.
 package common
 
 import "errors"
 
 type Code uint16
 
-// ErrTruncated marks an LLM response cut off by the output token ceiling
-// (finish_reason=length); callers use errors.Is to escalate their budget and retry.
-// It is a transport-level sentinel, shared by the provider and the LLM capabilities.
+// ErrTruncated marks an LLM response cut off by the output token ceiling (finish_reason=length);
+// callers use errors.Is to escalate their budget and retry.
 var ErrTruncated = errors.New("llm response truncated")
 
 const (
@@ -32,10 +30,8 @@ const (
 	ErrCancelled       Code = 5008 // operation cancelled: the caller's context ended before the work finished (dream checkpoints, llm retry wait)
 
 	ErrLLM Code = 9002 // llm error: external model call/response parse failure (llm/ files)
-	// 9001 (encoder error) was retired with the embedding-service dependency
-	// and 1002 (vector-dimension mismatch) with the retrieval subsystem that
-	// compared the configured dimension to the file header. Both numbers stay
-	// reserved and are never reused.
+	// 9001 (encoder error) was retired with the embedding-service dependency and 1002 (vector-dimension
+	// mismatch) with the retrieval subsystem that compared the configured dimension to the file header.
 )
 
 type Error struct {

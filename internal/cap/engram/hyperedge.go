@@ -1,9 +1,8 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// L1 hypergraph edge building: BuildHyperedges creates co-occurrence edges between
-// scenes whose keyword sets overlap, and strengthens an existing edge only over
-// evidence that has moved. This file never forgets — that is decay.go.
+// L1 hypergraph edge building: BuildHyperedges creates co-occurrence edges between scenes whose
+// keyword sets overlap, and strengthens an existing edge only over evidence that has moved.
 
 package engram
 
@@ -17,12 +16,8 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/repo/core"
 )
 
-// BuildHyperedges creates or refreshes co-occurrence hyperedges between
-// scene nodes whose topic keyword sets overlap (Jaccard >= minSimilarity).
-// It must run after SyncL1NodesFromL2 and before DecayNetwork, so freshly created
-// edges are decayed by the same pass, and takes that pass's changed node ids as
-// touched. Stale edges are left to DecayNetwork, never deleted here. Returns the
-// number of edges created or strengthened.
+// BuildHyperedges creates or refreshes co-occurrence hyperedges between scene nodes whose topic
+// keyword sets overlap (Jaccard >= minSimilarity).
 func BuildHyperedges(engine *core.StorageEngine, agentID uint64, minSimilarity float64, touched map[uint64]struct{}) (int, error) {
 	// A node this enumeration steps over pairs with nothing, and the missing edge
 	// never reports itself later.
@@ -67,9 +62,8 @@ func BuildHyperedges(engine *core.StorageEngine, agentID uint64, minSimilarity f
 	return changed, nil
 }
 
-// collectNodeKeywordSets aggregates the lowercased deduplicated keyword
-// set per node and the keyword → nodeID inverted index used to skip pairs
-// sharing no terms.
+// collectNodeKeywordSets aggregates the lowercased deduplicated keyword set per node and the keyword →
+// nodeID inverted index used to skip pairs sharing no terms.
 func collectNodeKeywordSets(engine *core.StorageEngine, agentID uint64, nodes []core.SceneNode) (map[uint64]map[string]struct{}, map[string][]uint64, error) {
 	kwByNode := make(map[uint64]map[string]struct{}, len(nodes))
 	inverted := make(map[string][]uint64)
@@ -80,9 +74,7 @@ func collectNodeKeywordSets(engine *core.StorageEngine, agentID uint64, nodes []
 			topic, err := core.ReadTopicLenient(engine, agentID, topicID)
 			switch {
 			case err != nil && common.CodeOf(err) != common.ErrNotFound:
-				// A topic that will not read back is not a topic that is gone: taking it
-				// for one shrinks the set this node is measured by, and an edge that
-				// drops under the similarity floor because of it is never rebuilt.
+				// A topic that will not read back is not a topic that is gone.
 				return nil, nil, err
 			case err != nil, topic == nil:
 				continue // gone, or the id names a record of another kind
@@ -102,8 +94,7 @@ func collectNodeKeywordSets(engine *core.StorageEngine, agentID uint64, nodes []
 	return kwByNode, inverted, nil
 }
 
-// jaccard returns the keyword-set similarity; ok is false for an empty
-// union (nothing to compare).
+// jaccard returns the keyword-set similarity; ok is false for an empty union (nothing to compare).
 func jaccard(setA, setB map[string]struct{}) (float64, bool) {
 	inter, union := 0, len(setA)
 	for kw := range setB {
@@ -119,20 +110,15 @@ func jaccard(setA, setB map[string]struct{}) (float64, bool) {
 	return float64(inter) / float64(union), true
 }
 
-// upsertSceneEdge writes the co-occurrence edge between two scene nodes
-// (ID = hash("l1edge:"+min+":"+max), deterministic and idempotent) and
-// attaches it to both nodes' EdgeIDs. A new edge is weighted by the similarity;
-// an existing one only rises when evidenceChanged says one endpoint's turn list
-// came out different. Returns whether the edge was actually written.
+// upsertSceneEdge writes the co-occurrence edge between two scene nodes (ID =
+// hash("l1edge:"+min+":"+max), deterministic and idempotent) and attaches it to both nodes' EdgeIDs.
 func upsertSceneEdge(engine *core.StorageEngine, agentID uint64, nodeA, nodeB uint64, weight float64, now int64, evidenceChanged bool) (bool, error) {
 	lo, hi := min(nodeA, nodeB), max(nodeA, nodeB)
 	edgeID := common.HashID(fmt.Sprintf("l1edge:%d:%d", lo, hi))
 	edge, err := core.ReadSceneEdge(engine, agentID, edgeID)
 	switch {
 	case err != nil && common.CodeOf(err) != common.ErrNotFound:
-		// An edge that is there but will not read back is not an edge that is
-		// missing: rebuilding it restarts CreatedAt, the clock decay runs on, and
-		// hands back the full similarity an aged edge had decayed away from.
+		// An edge that is there but will not read back is not an edge that is missing.
 		return false, err
 	case err != nil:
 		edge = &core.SceneEdge{

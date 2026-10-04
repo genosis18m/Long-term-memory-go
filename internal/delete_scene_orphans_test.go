@@ -11,19 +11,8 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/repo/core"
 )
 
-// Deleting a session is the correction a host makes when it decides something should never
-// have been remembered, so the file has to end up as if that conversation had never
-// happened — for every layer a host can read. Checking the live listing alone would miss a
-// record the caches stopped showing but the log still holds: it comes back the moment the
-// indexes are rebuilt from records, which is also the first thing a restart does.
-//
-// The comparison is against a second file driven the same way with the deleted scene simply
-// never created, so the expectation is arithmetic rather than an enumeration of what the
-// cascade is believed to touch. L1 is deliberately out of the comparison, and the reason is
-// narrower than it looks: a deleted scene's own node does leave with the delete (measured at
-// the host surface by TestInterfaceL1AfterDeletingOneOfTwoRelatedScenes), while what the decay
-// pass withdraws later is a surviving node's co-occurrence edge — an edge record has no read of
-// its own, though a survivor's edge_ids list does name one until that pass runs.
+// Deleting a session is the correction a host makes when it decides something should never have been
+// remembered, so the file has to end up as if that conversation had never happened.
 func TestDeleteSceneLeavesNoOrphansInReadableLayers(t *testing.T) {
 	srv := mockLLMServer(t, turnKeywords)
 	dir := t.TempDir()

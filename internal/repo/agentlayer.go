@@ -1,15 +1,8 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// Agent tenant registry records: one RecAgentRegistry frame per agent maps
-// the random 8-byte agentID to its external name. The record lives inside
-// the agent's own domain (idHash == agentID); Open rebuilds the name map by
-// scanning.
-//
-// The payload is that name and nothing else — what kind of agent a domain
-// holds lives on its L0 profile instead (core.AgentTypePrimary /
-// AgentTypeSub). The primary domain carries no registry record at all, so no
-// name can resolve to it and a lookup by name can never land on the primary.
+// Agent tenant registry records: one RecAgentRegistry frame per agent maps the random 8-byte agentID
+// to its external name.
 
 package repo
 
@@ -30,12 +23,8 @@ func WriteAgentRegistry(engine *core.StorageEngine, agentID uint64, name string)
 	return err
 }
 
-// ListAgentRegistry scans every domain's registry records and returns
-// agentID -> name, plus the failure of the first record that exists but resolves
-// to no name (unreadable, undecodable, or empty). The two answers are not
-// interchangeable: a domain holding an unreadable key is still a domain. A
-// caller that only lists may ignore the failure; a caller about to hand out a
-// domain by name may not.
+// ListAgentRegistry scans every domain's registry records and returns agentID -> name, plus the
+// failure of the first record that exists but resolves to no name (unreadable, undecodable, or empty).
 func ListAgentRegistry(engine *core.StorageEngine) (map[uint64]string, error) {
 	out := make(map[uint64]string)
 	var unresolved error

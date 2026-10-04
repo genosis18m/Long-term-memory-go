@@ -11,8 +11,7 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/repo/core"
 )
 
-// planNode is the in-memory tree node while building/folding. It carries the
-// node's derived IDHash so folding can re-persist it.
+// planNode is the in-memory tree node while building/folding.
 type planNode struct {
 	id        uint64
 	seq       uint32
@@ -28,9 +27,8 @@ type planNode struct {
 	children   []*planNode
 }
 
-// PlanNodeView is the external tree node; a step is addressed by Seq, the
-// ordinal the library handed out inside its turn, and ParentSeq says which step
-// it hangs under (0 = a root).
+// PlanNodeView is the external tree node; a step is addressed by Seq, the ordinal the library handed
+// out inside its turn, and ParentSeq says which step it hangs under (0 = a root).
 type PlanNodeView struct {
 	Seq        uint32         `json:"seq"`
 	ParentSeq  uint32         `json:"parent_seq"`
@@ -43,18 +41,15 @@ type PlanNodeView struct {
 	Children   []PlanNodeView `json:"children"`
 }
 
-// PlanTree is the external forest view of one plan. A plan may hold several roots
-// (each a step created with no parent); Done/Total are summed over every node of
-// every tree, not just the roots. Nodes whose parent record is missing surface as
-// roots too, so an expired root never hides its live subtree.
+// PlanTree is the external forest view of one plan.
 type PlanTree struct {
 	Roots      []PlanNodeView `json:"roots"`
 	DoneCount  int            `json:"done_count"`
 	TotalCount int            `json:"total_count"`
 }
 
-// BuildTree assembles one turn's plan forest from the agent's in-memory plan
-// cache, so the read costs no engine scan. Callers hold ac.Mu.
+// BuildTree assembles one turn's plan forest from the agent's in-memory plan cache, so the read costs
+// no engine scan.
 func BuildTree(ac *domain.Context, topicID uint64) (*PlanTree, error) {
 	roots := Forest(aggregate(ac, topicID))
 	views := make([]PlanNodeView, 0, len(roots))
@@ -69,9 +64,8 @@ func BuildTree(ac *domain.Context, topicID uint64) (*PlanTree, error) {
 	return &PlanTree{Roots: views, DoneCount: done, TotalCount: total}, nil
 }
 
-// aggregate returns the nodes of one turn's plan from the domain's plan cache
-// (nil when no node lives under that topic). The aggregate carries nodes only:
-// what happened during a step is not a property of the node.
+// aggregate returns the nodes of one turn's plan from the domain's plan cache (nil when no node lives
+// under that topic).
 func aggregate(ac *domain.Context, topicID uint64) []core.PlanNode {
 	agg := ac.Plans.Aggregate(topicID)
 	if agg == nil {
@@ -80,9 +74,7 @@ func aggregate(ac *domain.Context, topicID uint64) []core.PlanNode {
 	return agg.Nodes
 }
 
-// Forest links stored nodes into root trees by their parent ordinal. Nodes arrive
-// Seq-ascending, so roots and children alike keep creation order. A node whose
-// parent record is missing is surfaced as a root instead of vanishing.
+// Forest links stored nodes into root trees by their parent ordinal.
 func Forest(nodes []core.PlanNode) []*planNode {
 	bySeq := make(map[uint32]*planNode, len(nodes))
 	for i := range nodes {
@@ -110,9 +102,7 @@ func Forest(nodes []core.PlanNode) []*planNode {
 	return roots
 }
 
-// ToNodeView renders one tree node for the surface. An undefined stored status is
-// reported: the tree would otherwise show a step the engine cannot name as one
-// that has not started.
+// ToNodeView renders one tree node for the surface.
 func ToNodeView(n *planNode) (PlanNodeView, error) {
 	status, err := StatusToString(n.status)
 	if err != nil {
@@ -160,9 +150,8 @@ func countTree(v PlanNodeView) (done, total int) {
 	return done, total
 }
 
-// RollupTree walks one turn's plan forest bottom-up: a node's Summary becomes the
-// concatenation of its children's summaries. It NEVER changes a node's Status — a
-// parent's Done is never inferred from its children's. Callers hold ac.Mu.
+// RollupTree walks one turn's plan forest bottom-up: a node's Summary becomes the concatenation of its
+// children's summaries.
 func RollupTree(ac *domain.Context, agentID, topicID uint64) error {
 	for _, root := range Forest(aggregate(ac, topicID)) {
 		if err := rollupNode(ac, agentID, root); err != nil {
@@ -172,16 +161,7 @@ func RollupTree(ac *domain.Context, agentID, topicID uint64) error {
 	return nil
 }
 
-// rollupNode recurses children first, then backfills this node's Summary from
-// theirs. A fold needs two things: the node itself is Done, and every direct child
-// reached a final state — a partial fold reads exactly like a complete one. A failed
-// child with no summary contributes no text but still settles its branch.
-//
-// A Summary is rewritten here only while it is the library's own: empty, or carrying the
-// fold marker `UpdateNodeSummaryLocked` leaves behind. That is what keeps a fold complete
-// when a step is added under a Done parent, or when a settled child is re-opened and
-// finishes with different words. A Summary the host wrote has no marker and is never
-// clobbered — by anything in this file.
+// rollupNode recurses children first, then backfills this node's Summary from theirs.
 func rollupNode(ac *domain.Context, agentID uint64, n *planNode) error {
 	for _, c := range n.children {
 		if err := rollupNode(ac, agentID, c); err != nil {

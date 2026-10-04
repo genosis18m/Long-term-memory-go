@@ -1,16 +1,7 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// What a partial sweep may and may not do. Each record ages on its own stamp, so an
-// event written early can be gone while a later one survives — and the survivor has to
-// keep the `Seq` it was written at. Nothing compacts: a turn is addressed by
-// (topic, Seq), so a retried append to slot 7 must still mean slot 7 after a sweep, and
-// both reads of that turn have to agree on it.
-//
-// The dialogue is the other half: one `Update` stamps a turn's two originals together,
-// so they age as a pair and the ordinary expiry leaves `Messages` **empty** rather than
-// gapped. A hole in `Messages` appears only when the host addressed a slot of its own,
-// which is the extra utterance at Seq 9 below.
+// What a partial sweep may and may not do.
 
 package internal
 

@@ -1,10 +1,8 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// Package profile is the L0 profile capability: the first profile a domain gets,
-// a compact digest of a stored one, the distillation samples read out of L1, and
-// writing a distillation result back. Every projection here carries its own size
-// budget.
+// Package profile is the L0 profile capability: the first profile a domain gets, a compact digest of a
+// stored one, the distillation samples read out of L1, and writing a distillation result back.
 package profile
 
 import (
@@ -16,31 +14,22 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/repo/core"
 )
 
-// briefFieldMaxRunes is this digest's own budget for one free-text field: Name,
-// Role, Personality and preference keys are the host's text and arrive at any
-// length, and this string rides with every LLM call.
+// briefFieldMaxRunes is this digest's own budget for one free-text field.
 const briefFieldMaxRunes = 160
 
-// briefWorstCaseRunes is the ceiling Brief cannot exceed, and the test against it is what
-// keeps the guides' "bounded" honest: three free-text fields at the field cap, the type word,
-// five preference pairs at the key and value caps, and the emotion line.
+// briefWorstCaseRunes is the ceiling Brief cannot exceed, and the test against it is what keeps the
+// guides' "bounded" honest.
 const briefWorstCaseRunes = 2100
 
-// briefValueMaxRunes and briefPreferencesShown are the other two numbers the guides
-// quote about this digest: how long one preference value may get, and how many pairs
-// a profile with more of them still shows.
+// briefValueMaxRunes and briefPreferencesShown are the other two numbers the guides quote about this
+// digest.
 const (
 	briefValueMaxRunes    = 120
 	briefPreferencesShown = 5
 )
 
-// Brief renders a compact profile digest for prompt injection: identity,
-// personality, MBTI, top preferences and the current emotional state. Every field it
-// carries is bounded — one budget per free-text value, five preferences — because a
-// digest rides along with every call. An all-empty slot renders as the empty string,
-// and an all-zero emotional state is left out with it: 0/0/0 is the extreme reading
-// "very negative, calm, submissive" on this scale, but it is also what a profile
-// nothing was ever distilled onto carries, and the digest cannot tell the two apart.
+// Brief renders a compact profile digest for prompt injection: identity, personality, MBTI, top
+// preferences and the current emotional state.
 func Brief(slot core.ProfileSlot) string {
 	if slot.Name == "" && slot.Role == "" && slot.Personality == "" &&
 		slot.MBTI.Type == "" && len(slot.Preferences) == 0 &&
@@ -72,8 +61,8 @@ func Brief(slot core.ProfileSlot) string {
 	return b.String()
 }
 
-// writeKV writes up to max sorted key=value pairs of m into b: map iteration order is
-// random, so keys are sorted for a stable digest. Both halves are truncated.
+// writeKV writes up to max sorted key=value pairs of m into b: map iteration order is random, so keys
+// are sorted for a stable digest.
 func writeKV(b *strings.Builder, m map[string]string, max int) {
 	keys := slices.Sorted(maps.Keys(m))
 	for i, k := range keys {

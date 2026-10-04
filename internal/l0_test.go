@@ -10,9 +10,8 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/repo/core"
 )
 
-// UpdateL0 owns only the host-authored half: the fields Dream evolves survive
-// a host edit that never mentions them, and the timestamp is the library's
-// rather than whatever the caller sent.
+// UpdateL0 owns only the host-authored half: the fields Dream evolves survive a host edit that never
+// mentions them, and the timestamp is the library's rather than whatever the caller sent.
 func TestUpdateL0KeepsDistilledHalf(t *testing.T) {
 	db := newTestDB(t, newTestEngine(t))
 	seed := &core.ProfileSlot{
@@ -56,10 +55,6 @@ func TestUpdateL0KeepsDistilledHalf(t *testing.T) {
 }
 
 // A profile that cannot be decoded is not a profile that was never written.
-// UpdateL0 inherits the distilled half from the stored record, so reading an
-// unreadable payload as "absent" would let a host edit claim the whole slot and
-// drop emotion, MBTI and the domain's agent type — the one write this layer must
-// refuse rather than guess through.
 func TestUnreadableProfileIsNotAbsentProfile(t *testing.T) {
 	db := newTestDB(t, newTestEngine(t))
 	if err := db.UpdateL0(core.DefaultAgentID, &core.ProfileSlot{
@@ -86,10 +81,8 @@ func TestUnreadableProfileIsNotAbsentProfile(t *testing.T) {
 	}
 }
 
-// All three entries that write a profile require a name, because the name is how
-// a domain is addressed at all. UpdateL0 is the one that can clear it, so it
-// refuses a blank the way Open and SubAgent do rather than storing an
-// unaddressable profile.
+// All three entries that write a profile require a name, because the name is how a domain is addressed
+// at all.
 func TestUpdateL0RequiresName(t *testing.T) {
 	db := newTestDB(t, newTestEngine(t))
 	if err := db.UpdateL0(core.DefaultAgentID, &core.ProfileSlot{
@@ -111,11 +104,8 @@ func TestUpdateL0RequiresName(t *testing.T) {
 	}
 }
 
-// The host's half of the profile is written whole, not merged: a call that names one
-// preference drops the others, and one that omits Role clears it. That is the price of
-// being able to delete anything at all — a per-key merge would leave a preference with no
-// way to go away — so it is pinned as the contract rather than left as a surprise, with
-// the read-merge-write path that follows from it.
+// The host's half of the profile is written whole, not merged: a call that names one preference drops
+// the others, and one that omits Role clears it.
 func TestUpdateL0WritesTheHostHalfWhole(t *testing.T) {
 	db := newTestDB(t, newTestEngine(t))
 	seed := &core.ProfileSlot{

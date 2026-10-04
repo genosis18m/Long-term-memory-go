@@ -17,8 +17,8 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/repo/index"
 )
 
-// Internal tuning of the consolidation stages: the L1 decay parameters and the
-// scene-similarity floor of hyperedge construction.
+// Internal tuning of the consolidation stages: the L1 decay parameters and the scene-similarity floor
+// of hyperedge construction.
 const (
 	// L1 decay.
 	lambdaNode              float64 = 0.01
@@ -31,17 +31,14 @@ const (
 	l1EdgeMinSimilarity float64 = 0.15
 )
 
-// StructureStages runs stages 2 through 5 of the pipeline: rebuild the L2Meta
-// cache from the records and install it, run the L1 sync/edges/rebuild/decay
-// stages off that copy, then L0 distillation. Callers hold ac.Mu.
+// StructureStages runs stages 2 through 5 of the pipeline: rebuild the L2Meta cache from the records
+// and install it, run the L1 sync/edges/rebuild/decay stages off that copy, then L0 distillation.
 func StructureStages(ctx context.Context, ac *domain.Context, agentID uint64, rep *core.DreamReport) error {
 	start := time.Now()
 	// Stage 2: rebuild the L2Meta cache in one scan of the agent domain.
 	newL2Meta := index.BuildL2MetaFromEngine(ac.Engine, agentID)
-	// Installed here rather than after the L1 stages: the rebuild reads the records as
-	// they now stand and every L1 stage works from this copy, so nothing an L1 failure
-	// leaves behind makes it wrong. Installed late, the domain would keep serving a
-	// cache from before a compression whose records are already on disk.
+	// Installed here rather than after the L1 stages: the rebuild reads the records as they now stand and
+	// every L1 stage works from this copy, so nothing an L1 failure leaves behind makes it wrong.
 	ac.L2Meta = newL2Meta
 	decayParams := engram.DecayParams{
 		LambdaNode:             lambdaNode,
@@ -54,10 +51,8 @@ func StructureStages(ctx context.Context, ac *domain.Context, agentID uint64, re
 	AppendStage(rep, "index_rebuild", start, nil)
 
 	if cerr := StageCancelled(ctx, "index_rebuild"); cerr != nil {
-		// Reconcile first, then cancel: a pass that sank topics wrote new depths with
-		// no incremental mirror step, so this rebuilt table is the only thing that puts
-		// the read path back in step with the records. What is skipped here (L1 sync,
-		// edges, decay, distill) re-runs on the next pass.
+		// Reconcile first, then cancel: a pass that sank topics wrote new depths with no incremental mirror
+		// step, so this rebuilt table is the only thing that puts the read path back in step with the records.
 		return cerr
 	}
 
@@ -80,10 +75,7 @@ func StructureStages(ctx context.Context, ac *domain.Context, agentID uint64, re
 	return dErr
 }
 
-// l1Stages runs the L1 portion of the pipeline: scene nodes synced from the current L2
-// structure, co-occurrence hyperedges (keyword-overlap Jaccard >=
-// l1EdgeMinSimilarity; an existing edge only strengthens over a node this sync moved),
-// stale-node rebuild and finally time decay.
+// l1Stages runs the L1 portion of the pipeline.
 func l1Stages(ctx context.Context, ac *domain.Context, agentID uint64, newL2Meta *index.L2MetaIndex, decayParams *engram.DecayParams, rep *core.DreamReport) error {
 	start := time.Now()
 	touched, err := repo.SyncL1NodesFromL2(ac.Engine, agentID)
@@ -124,8 +116,8 @@ func l1Stages(ctx context.Context, ac *domain.Context, agentID uint64, newL2Meta
 	return cErr
 }
 
-// distillL0Stage runs Dream's L0 distillation (LLM emotion/MBTI, backfilled
-// into L1) and reports whether it ran. Callers hold ac.Mu.
+// distillL0Stage runs Dream's L0 distillation (LLM emotion/MBTI, backfilled into L1) and reports
+// whether it ran.
 func distillL0Stage(ctx context.Context, ac *domain.Context, agentID uint64) (bool, error) {
 	samples := profile.Samples(ac.Engine, agentID)
 	if len(samples) == 0 {

@@ -10,12 +10,8 @@ import (
 	"time"
 )
 
-// A host compares two recalls, indexes a listing by position, or diffs what the library
-// answered before and after a Dream — all three assume the order a read returns is part of
-// the answer, not an accident of which bucket Go happened to walk first. Every pure read is
-// therefore taken repeatedly against the same populated file and must encode identically:
-// map iteration is randomized per process, so a list assembled by ranging a map fails this
-// the way it fails a host.
+// A host compares two recalls, indexes a listing by position, or diffs what the library answered
+// before and after a Dream.
 func TestSurfaceReadOrderIsDeterministic(t *testing.T) {
 	_, _, taken := surfaceReadFixture(t)
 
@@ -52,14 +48,10 @@ func encode(tb testing.TB, label string, v any) string {
 	return string(raw)
 }
 
-// surfaceReadFixture opens one populated file and hands back every read a host takes
-// without naming a scene it wrote this instant — the same set the ordering gate walks,
-// so a second gate cannot be measuring a different library.
+// surfaceReadFixture opens one populated file and hands back every read a host takes without naming a
+// scene it wrote this instant.
 func surfaceReadFixture(t *testing.T) (*DB, *Session, map[string]func() any) {
-	// This file's fixture writes its records at the current time on purpose: the fixture runs a
-	// consolidation pass so the association layer has nodes, and that same pass sweeps what the
-	// retention window calls expired. A fixture that emptied two of its own reads would leave the
-	// gates below walking nothing.
+	// This file's fixture writes its records at the current time on purpose.
 	fixtureStamp := time.Now().UnixMilli()
 	m, sess, stubURL := openSurfaceLibrary(t)
 
@@ -71,9 +63,7 @@ func surfaceReadFixture(t *testing.T) (*DB, *Session, map[string]func() any) {
 		}
 	}
 
-	// Two graphs, so a listing of graphs has something to order as well. Each domain is
-	// imported by its own batch, because that is how the batch reports the graph it
-	// resolved into — an id the host names rather than one it guesses out of a listing.
+	// Two graphs, so a listing of graphs has something to order as well.
 	proj := []L3ImportItem{
 		{Title: "auth", Domain: "proj", NodeType: "package", Content: "who logs in",
 			Related: []L3Relation{{Titles: []string{"token", "session"}, Kind: EdgeDependency}}},
@@ -142,9 +132,7 @@ func surfaceReadFixture(t *testing.T) (*DB, *Session, map[string]func() any) {
 	}
 	kind := KindEvent
 
-	// One scene anchored to one graph, and one consolidation pass. Without them the two reads
-	// that depend on those layers answer an empty list — and a gate walking a read that answers
-	// [] is measuring nothing at all, which is exactly how the project-scoped listing looked fine.
+	// One scene anchored to one graph, and one consolidation pass.
 	if _, err := sess.UpdateScene(scenes[0].SceneID, ScenePatch{L3ID: &projID}); err != nil {
 		t.Fatalf("anchor a scene to the project: %v", err)
 	}
@@ -166,9 +154,8 @@ func surfaceReadFixture(t *testing.T) (*DB, *Session, map[string]func() any) {
 		"SceneContext":       func() any { return mustRead(sess.SceneContext("")) },
 		"SceneContext/other": func() any { return mustRead(sess.SceneContext(scenes[1].SceneID)) },
 		"Agents":             func() any { return mustRead(m.Agents()) },
-		// The plan forest is the one read served out of the domain's own cache, and it is
-		// nested — the case where handing back a shared slice would be both easiest to do
-		// and hardest to notice.
+		// The plan forest is the one read served out of the domain's own cache, and it is nested — the case
+		// where handing back a shared slice would be both easiest to do and hardest to notice.
 		"PlanState": func() any { return mustRead(sess.PlanState()) },
 	}
 

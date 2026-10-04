@@ -1,8 +1,8 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// CompactTo is the host's only way back from tombstone-only deletes: it must
-// free space, keep every live record, and never be able to destroy a file.
+// CompactTo is the host's only way back from tombstone-only deletes: it must free space, keep every
+// live record, and never be able to destroy a file.
 package internal
 
 import (

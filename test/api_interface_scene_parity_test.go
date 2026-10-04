@@ -1,13 +1,7 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// A host running the loop reads the same scene twice in a row and by two doors: `Search`
-// opens the next turn and hands back the surface topics, `SceneContext` reads the same
-// scene as a transcript down to depth 2. Both are served from the same L2Meta cache, so
-// they must not offer two answers about one scene — different rows, different order, or
-// different per-row fields would each be a host bug waiting to happen. This pins the depth-1
-// rows of the transcript read against the turn-opening read, after a consolidation pass so
-// the two levels actually differ.
+// A host running the loop reads the same scene twice in a row and by two doors.
 
 package test
 

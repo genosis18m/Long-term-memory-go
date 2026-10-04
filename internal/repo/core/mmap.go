@@ -10,9 +10,8 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/common"
 )
 
-// RemapFile remaps the file at its current size; the new mapping is
-// established before the old one is released, so on failure the old
-// mapping stays valid.
+// RemapFile remaps the file at its current size; the new mapping is established before the old one is
+// released, so on failure the old mapping stays valid.
 func RemapFile(f *os.File, oldData []byte) ([]byte, error) {
 	info, err := f.Stat()
 	if err != nil {

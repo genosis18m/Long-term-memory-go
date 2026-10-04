@@ -1,9 +1,8 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// OpenDB's rules: what the file holds and what the caller brought decide whether
-// a database opens at all, and a refused open leaves nothing behind. The path's
-// three states get their own test because one of them truncates.
+// OpenDB's rules: what the file holds and what the caller brought decide whether a database opens at
+// all, and a refused open leaves nothing behind.
 
 package internal
 
@@ -26,10 +25,8 @@ func primaryProfile(name string) *core.ProfileSlot {
 	return &core.ProfileSlot{Name: name, Role: "assistant"}
 }
 
-// The branch that creates is the branch that truncates, so it may be reached
-// only on a path confirmed absent. openEngine is called directly because the
-// case that matters — a stat failure that is not "absent", on a path sitting
-// next to real data — cannot be produced through a public entry point portably.
+// The branch that creates is the branch that truncates, so it may be reached only on a path confirmed
+// absent.
 func TestOpenEngineCreatesOnlyOnAConfirmedAbsence(t *testing.T) {
 	dir := t.TempDir()
 	blocker := filepath.Join(dir, "blocker")
@@ -71,9 +68,8 @@ func TestOpenEngineCreatesOnlyOnAConfirmedAbsence(t *testing.T) {
 	}
 }
 
-// No file and no profile is a refusal that must not leave a file: an empty one
-// would make the next attempt take a different branch of the rules and report a
-// different error for the same mistake.
+// No file and no profile is a refusal that must not leave a file: an empty one would make the next
+// attempt take a different branch of the rules and report a different error for the same mistake.
 func TestOpenDBRefusesToCreateWithoutAProfile(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "absent.meh")
 	if _, err := OpenDB(path, testLLMConfig(), DefaultMemHopDefaults, nil); err == nil {
@@ -84,8 +80,7 @@ func TestOpenDBRefusesToCreateWithoutAProfile(t *testing.T) {
 	}
 }
 
-// No file, profile brought: created and seeded. The identity is stamped here, so
-// a caller cannot open a file and claim its primary is a sub-agent.
+// No file, profile brought: created and seeded.
 func TestOpenDBCreatesAndSeedsThePrimary(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "fresh.meh")
 	slot := primaryProfile("Meow")
@@ -116,8 +111,8 @@ func TestOpenDBCreatesAndSeedsThePrimary(t *testing.T) {
 	}
 }
 
-// A file whose primary is settled keeps its own profile: the argument is not
-// consulted, so opening a file never rewrites whose memory it holds.
+// A file whose primary is settled keeps its own profile: the argument is not consulted, so opening a
+// file never rewrites whose memory it holds.
 func TestOpenDBKeepsTheStoredPrimary(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "seeded.meh")
 	first, err := OpenDB(path, testLLMConfig(), DefaultMemHopDefaults, primaryProfile("Original"))
@@ -143,12 +138,11 @@ func TestOpenDBKeepsTheStoredPrimary(t *testing.T) {
 	}
 }
 
-// A file that exists but holds no primary profile — one created by a path that
-// never settled it — needs the argument, and is refused without one.
+// A file that exists but holds no primary profile — one created by a path that never settled it —
+// needs the argument, and is refused without one.
 func TestOpenDBSeedsAnExistingFileWithNoPrimary(t *testing.T) {
-	// A file that exists and holds nothing: open the engine and close it again
-	// without settling a primary, which is the state a path that never seeded one
-	// leaves behind.
+	// A file that exists and holds nothing: open the engine and close it again without settling a primary,
+	// which is the state a path that never seeded one leaves behind.
 	path := filepath.Join(t.TempDir(), "bare.meh")
 	bare, err := openEngine(path, true)
 	if err != nil {
@@ -177,8 +171,8 @@ func TestOpenDBSeedsAnExistingFileWithNoPrimary(t *testing.T) {
 	}
 }
 
-// A profile with no name cannot identify a domain, and a half-specified endpoint
-// is refused before anything touches the filesystem.
+// A profile with no name cannot identify a domain, and a half-specified endpoint is refused before
+// anything touches the filesystem.
 func TestOpenDBRefusesIncompleteArguments(t *testing.T) {
 	dir := t.TempDir()
 	if _, err := OpenDB("", testLLMConfig(), DefaultMemHopDefaults, primaryProfile("x")); common.CodeOf(err) != common.ErrConfig {
@@ -190,10 +184,7 @@ func TestOpenDBRefusesIncompleteArguments(t *testing.T) {
 	if _, err := OpenDB(filepath.Join(dir, "b.meh"), testLLMConfig(), DefaultMemHopDefaults, primaryProfile("   ")); common.CodeOf(err) != common.ErrInvalidQuery {
 		t.Fatalf("a blank profile name: want ErrInvalidQuery, got %v", err)
 	}
-	// A retention window the sweep cannot represent is refused here rather than
-	// redrawn: negative asks for a sweep that never runs, and a window past the
-	// ceiling wraps the duration around into a cutoff in the future, which sweeps
-	// everything the domain holds.
+	// A retention window the sweep cannot represent is refused here rather than redrawn.
 	for _, ms := range []int64{-1, 1 << 62, math.MaxInt64} {
 		d := DefaultMemHopDefaults
 		d.ContentRetentionMs = ms
@@ -218,9 +209,8 @@ func TestOpenDBRefusesIncompleteArguments(t *testing.T) {
 	}
 }
 
-// An all-zero defaults table is what a host writes when it copies the shortest example,
-// so the entry point answers it exactly as it answers DefaultMemHopDefaults: nothing is
-// silently switched off, and nothing asks the model to compress a scene toward zero.
+// An all-zero defaults table is what a host writes when it copies the shortest example, so the entry
+// point answers it exactly as it answers DefaultMemHopDefaults.
 func TestOpenTakesUnfilledDefaultsAsTheLibraryDefaults(t *testing.T) {
 	db, err := OpenDB(filepath.Join(t.TempDir(), "zero.meh"), testLLMConfig(), MemHopDefaults{}, primaryProfile("primary"))
 	if err != nil {

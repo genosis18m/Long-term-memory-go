@@ -43,10 +43,8 @@ func (d *declining) count() int {
 	return d.asks
 }
 
-// A scene the model will not compress stays above the trigger, so the next pass asks again:
-// the engine keeps no memory of a refusal. What one such pass costs is exactly one
-// consolidation call per scene — measured here rather than assumed, because the host's
-// answer to "why did memory spend a call while nothing changed" is this number.
+// A scene the model will not compress stays above the trigger, so the next pass asks again: the engine
+// keeps no memory of a refusal.
 func TestDeclinedConsolidationAsksOncePerScenePerPass(t *testing.T) {
 	engine, err := core.Create(filepath.Join(t.TempDir(), "test.meh"))
 	if err != nil {

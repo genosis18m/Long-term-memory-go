@@ -1,15 +1,7 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// Two fields on a scene belong to the host and to nobody else: the title it gave the
-// conversation (`UpdateScene`) and the project domain it hung the conversation on (the anchor a
-// per-project listing reads). Both live on a record the library rewrites for its own reasons —
-// opening a turn bumps the counter and stamps the last-used ordering — and a consolidation pass
-// rebuilds the mirrors those reads are served from. A rewrite that assembled the record from the
-// fields its author cared about would drop a title and an anchor with no error anywhere, and the
-// host would notice as an empty name in a listing, or a conversation missing from the project it
-// anchored it to. This drives both the record rewrite and the rebuild, and checks both fields
-// before and after a restart.
+// Two fields on a scene belong to the host and to nobody else.
 
 package test
 
@@ -50,9 +42,8 @@ func TestInterfaceHostFieldsOnASceneSurviveTheLibrarysOwnRewrites(t *testing.T) 
 		t.Fatalf("UpdateScene: %v", err)
 	}
 
-	// The library's own rewrite of that record: opening a turn reads the slot back and stamps
-	// two of its fields on the way out. This is where a title would vanish if the write
-	// assembled a record from scratch instead of editing what it read.
+	// The library's own rewrite of that record: opening a turn reads the slot back and stamps two of its
+	// fields on the way out.
 	settleTurn(t, db, sceneID, "继续重构第二个模块", "第二个模块也补上测试")
 
 	rep, err := db.Dream(context.Background(), "")

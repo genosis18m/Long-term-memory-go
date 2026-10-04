@@ -60,10 +60,8 @@ func TestSurfaceL3Knowledge(t *testing.T) {
 	}
 }
 
-// TestSurfaceL3GraphLabelIsUnique pins what a host can reach of the graph
-// identity: a domain label addresses one graph, because ImportL3 routes a
-// domain by that label. Renaming a graph onto a label another graph carries is
-// refused and changes nothing.
+// TestSurfaceL3GraphLabelIsUnique pins what a host can reach of the graph identity: a domain label
+// addresses one graph, because ImportL3 routes a domain by that label.
 func TestSurfaceL3GraphLabelIsUnique(t *testing.T) {
 	db := openSurfaceDB(t)
 	if _, err := db.ImportL3([]L3ImportItem{{Title: "a", Domain: "alpha"}}, L3ImportSkip); err != nil {
@@ -97,9 +95,7 @@ func TestSurfaceL3GraphLabelIsUnique(t *testing.T) {
 	}
 }
 
-// TestSurfaceL3DeleteDropsSceneAnchor pins the L3 -> L2 direction of the anchor
-// contract: both write paths refuse a graph that does not exist, so deleting the
-// graph has to unanchor the scenes that named it.
+// TestSurfaceL3DeleteDropsSceneAnchor pins the L3 -> L2 direction of the anchor contract.
 func TestSurfaceL3DeleteDropsSceneAnchor(t *testing.T) {
 	db := openSurfaceDB(t)
 	proj, err := db.ImportL3([]L3ImportItem{{Title: "p", Domain: "proj"}}, L3ImportSkip)

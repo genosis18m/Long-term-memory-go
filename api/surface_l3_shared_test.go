@@ -9,23 +9,8 @@ import (
 	"testing"
 )
 
-// L3 is the one layer a file shares across every domain: a family of agents reads one
-// project graph as a tool, and each of them may be the first to write a node into it. The
-// graph's identity is derived from the label the host types, so four domains asking for
-// "engine" at once are asking for the same record — which makes this the only place where
-// "same id, two writers" is the ordinary case rather than a corner. The id a node derives
-// from its title has the same property inside one batch.
-//
-// Shared identity is two judgements, not one hash formula: a repeat title is settled by the
-// graph's own title set long before an address is computed, and the pool's address guard is the
-// last line refusing to overwrite a record that is already there. Changing how a node's id is
-// derived therefore cannot duplicate a title on its own — which is what the assertions below
-// must be read against.
-//
-// So the outcomes a host can see have to be single-valued: every caller names the same graph,
-// the file holds one slot for it, every node that was asked for is there exactly once, and a
-// read running beside the storm never fails and never shows a node nobody imported. Run it
-// under -race.
+// L3 is the one layer a file shares across every domain: a family of agents reads one project graph as
+// a tool, and each of them may be the first to write a node into it.
 func TestSharedKnowledgeGraphUnderConcurrentDomains(t *testing.T) {
 	m, _, stubURL := openSurfaceLibrary(t)
 	defer func() { _ = m.Close() }()
@@ -62,9 +47,7 @@ func TestSharedKnowledgeGraphUnderConcurrentDomains(t *testing.T) {
 					return
 				default:
 				}
-				// A reader names the graph the way a tool does: it lists, then reads. An
-				// empty listing is a legitimate answer before the first import has landed;
-				// a slot that lists but does not read, or a node nobody imported, is not.
+				// A reader names the graph the way a tool does: it lists, then reads.
 				graphs, err := sess.ListL3()
 				if err != nil {
 					readErrs[who] = fmt.Sprintf("reader %d: ListL3: %v", who, err)

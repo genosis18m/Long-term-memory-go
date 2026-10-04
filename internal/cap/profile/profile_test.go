@@ -60,15 +60,12 @@ func TestBriefTruncatesLongValues(t *testing.T) {
 	}
 }
 
-// The digest is promised as "bounded", so the bound has to be a number a host can hold the
-// library to rather than an adjective: each free-text field capped, exactly the five lowest
-// preference keys present, in key order — the same profile has to inject the same bytes
-// every turn — and the whole thing under briefWorstCaseRunes.
+// The digest is promised as "bounded", so the bound has to be a number a host can hold the library to
+// rather than an adjective.
 func TestBriefIsBoundedAndRepeatable(t *testing.T) {
 	long := strings.Repeat("记", 400)
-	// Keys must stay distinguishable after truncation, or a fixture of identical prefixes
-	// hides exactly the drift this checks: one key is long enough to be capped (and sorts
-	// first because it starts with 'A'), the rest are short and ordered.
+	// Keys must stay distinguishable after truncation, or a fixture of identical prefixes hides exactly
+	// the drift this checks.
 	longKey := strings.Repeat("A", briefFieldMaxRunes+40)
 	prefs := map[string]string{longKey: strings.Repeat("v", 300)}
 	for i := 0; i < 40; i++ {

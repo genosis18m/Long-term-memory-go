@@ -59,10 +59,8 @@ func TestL2MetaIndex(t *testing.T) {
 		}
 	})
 
-	// The whole point of the cache is rebuilding a topic slot without reading
-	// the record, so the two field sets must not drift apart. Listing them in
-	// an assertion cannot catch it — both sides would simply omit the field —
-	// so compare the structures themselves.
+	// The whole point of the cache is rebuilding a topic slot without reading the record, so the two field
+	// sets must not drift apart.
 	t.Run("cache_covers_every_topic_field", func(t *testing.T) {
 		record := fieldNames(reflect.TypeFor[core.TopicSlot]())
 		cached := fieldNames(reflect.TypeFor[L2Meta]())
@@ -75,9 +73,7 @@ func TestL2MetaIndex(t *testing.T) {
 	})
 }
 
-// A merge moves a whole scene at once. The row carries the scene it belongs to, so
-// a move that updated only the scene list would leave the row pointing at the scene
-// it came from — and the next removal would then look for it in the wrong list.
+// A merge moves a whole scene at once.
 func TestRetargetSceneMovesTheWholeScene(t *testing.T) {
 	idx := newL2MetaIndex()
 	idx.Update(&L2Meta{IDHash: 11, SceneID: 1, Depth: 1})
@@ -107,8 +103,8 @@ func TestRetargetSceneMovesTheWholeScene(t *testing.T) {
 	}
 }
 
-// fieldNames maps each exported field to its type, so the cache structure can
-// be compared against the record it stands in for.
+// fieldNames maps each exported field to its type, so the cache structure can be compared against the
+// record it stands in for.
 func fieldNames(typ reflect.Type) map[string]string {
 	out := make(map[string]string, typ.NumField())
 	for i := 0; i < typ.NumField(); i++ {

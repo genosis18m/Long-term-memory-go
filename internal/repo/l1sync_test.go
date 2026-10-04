@@ -24,8 +24,8 @@ func tempEngine(t *testing.T) *core.StorageEngine {
 	return eng
 }
 
-// mustCreateTurn writes one depth-1 turn topic under sceneID and returns its
-// id; the caller's userTS doubles as the turn seq so each call stays unique.
+// mustCreateTurn writes one depth-1 turn topic under sceneID and returns its id; the caller's userTS
+// doubles as the turn seq so each call stays unique.
 func mustCreateTurn(t *testing.T, engine *core.StorageEngine, sceneID uint64, kws []string, userTS int64) uint64 {
 	t.Helper()
 	id := core.ComputeTurnTopicID(sceneID, uint64(userTS))
@@ -35,8 +35,8 @@ func mustCreateTurn(t *testing.T, engine *core.StorageEngine, sceneID uint64, kw
 	return id
 }
 
-// TestSyncL1NodesFromL2 covers node creation, idempotent no-op, topic-set
-// update and per-scene isolation.
+// TestSyncL1NodesFromL2 covers node creation, idempotent no-op, topic-set update and per-scene
+// isolation.
 func TestSyncL1NodesFromL2(t *testing.T) {
 	engine := tempEngine(t)
 	sceneA := common.HashID("sceneA")
@@ -79,9 +79,7 @@ func TestSyncL1NodesFromL2(t *testing.T) {
 			afterNoop.UpdatedAt, firstUpdatedAt)
 	}
 
-	// A new topic in the scene updates the node in place. The clock is parked on a
-	// sentinel first, so "the changed set moved it" is an equality rather than a race
-	// between two calls that can land in the same millisecond.
+	// A new topic in the scene updates the node in place.
 	node.UpdatedAt = 1
 	if err := core.WriteSceneNode(engine, core.DefaultAgentID, node.IDHash, node); err != nil {
 		t.Fatalf("park the clock on a sentinel: %v", err)
@@ -122,8 +120,8 @@ func TestSyncL1NodesFromL2(t *testing.T) {
 	}
 }
 
-// TestSyncL1NodesFromL2SkipsCompressed verifies depth>2 topics do not enter
-// nodes (compression groups are covered by their depth<=2 parent).
+// TestSyncL1NodesFromL2SkipsCompressed verifies depth>2 topics do not enter nodes (compression groups
+// are covered by their depth<=2 parent).
 func TestSyncL1NodesFromL2SkipsCompressed(t *testing.T) {
 	engine := tempEngine(t)
 	sceneA := common.HashID("sceneA")
@@ -150,10 +148,7 @@ func TestSyncL1NodesFromL2SkipsCompressed(t *testing.T) {
 	}
 }
 
-// An L1 node that is there but will not read back is not a missing node: the pass
-// that treats it as one writes a fresh record over it, resetting Importance,
-// Valence, Arousal and CreatedAt and dropping the EdgeIDs the hyperedges still
-// name — the opposite of what this pass promises.
+// An L1 node that is there but will not read back is not a missing node.
 func TestSyncL1NodesFromL2KeepsANodeItCannotRead(t *testing.T) {
 	engine := tempEngine(t)
 	sceneID := common.HashID("sceneA")
@@ -179,9 +174,7 @@ func TestSyncL1NodesFromL2KeepsANodeItCannotRead(t *testing.T) {
 	}
 }
 
-// A topic that will not read back is not a topic that left the scene: dropping it
-// from the enumeration makes the node it stood on look unchanged or shrunken, and
-// the next pass writes that shorter list as the scene's memory footprint.
+// A topic that will not read back is not a topic that left the scene.
 func TestSyncL1NodesFromL2StopsOnUnreadableTopic(t *testing.T) {
 	engine := tempEngine(t)
 	sceneID := common.HashID("sceneA")
@@ -198,11 +191,8 @@ func TestSyncL1NodesFromL2StopsOnUnreadableTopic(t *testing.T) {
 	}
 }
 
-// Both ends of the valence/arousal scale are readings a distillation can answer
-// with, so (0,0) is a settled node rather than an unstamped one — a memory the
-// model called "very negative and calm". Only the node's own marker can tell the
-// two apart: inferring it from the values lets a later pass replace that settled
-// reading, and the rewrite refreshes the UpdatedAt node decay is measured from.
+// Both ends of the valence/arousal scale are readings a distillation can answer with, so (0,0) is a
+// settled node rather than an unstamped one — a memory the model called "very negative and calm".
 func TestBackfillL1EmotionsLeavesASettledNodeAlone(t *testing.T) {
 	engine := tempEngine(t)
 	sceneID := common.HashID("sceneA")

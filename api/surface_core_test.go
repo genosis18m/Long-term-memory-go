@@ -13,11 +13,7 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/common"
 )
 
-// Which scene a read continues is the domain's own memory: an un-named read opens its
-// next turn on the scene the domain is working, NewScene starts a fresh one, and a
-// reopened file restores the current scene from the records — the one whose turn counter
-// ran furthest — rather than starting a third. A host carrying no key across calls is
-// what this contract makes possible, so it is pinned end to end, through a restart.
+// Which scene a read continues is the domain's own memory.
 func TestSearchContinuesTheDomainScene(t *testing.T) {
 	llm := stubLLM()
 	t.Cleanup(llm.Close)
@@ -60,11 +56,8 @@ func TestSearchContinuesTheDomainScene(t *testing.T) {
 		t.Fatalf("NewScene returned the scene it was asked to leave: %s", fresh.Scene.SceneID)
 	}
 
-	// The current scene is the records' fact, not the live handle's: reopening the file
-	// resumes the scene a turn was opened in most recently — here the second conversation,
-	// which holds fewer turns than the first. The counter only decides among records written
-	// before the stamp existed; "which stream was I in" is not something it can answer.
-	// The turn writes work from that read alone, with nothing carried over.
+	// The current scene is the records' fact, not the live handle's: reopening the file resumes the scene
+	// a turn was opened in most recently.
 	if err := m.Close(); err != nil {
 		t.Fatalf("close: %v", err)
 	}
@@ -115,9 +108,8 @@ func TestSurfaceTurnFlow(t *testing.T) {
 	}
 	sceneID, openedTopic := res.Scene.SceneID, res.NewTopicID
 
-	// One finished turn: Update names no id and still closes exactly the turn Search
-	// opened — the topic it returns is the one that read issued, under the scene it
-	// returned, with the distilled track on it.
+	// One finished turn: Update names no id and still closes exactly the turn Search opened — the topic it
+	// returns is the one that read issued, under the scene it returned, with the distilled track on it.
 	closed, err := db.Update(TurnEnd{
 		Input: "remember the launch date", Output: "noted, launching next monday", CreatedAt: turnStamp,
 	})
@@ -146,10 +138,7 @@ func TestSurfaceTurnFlow(t *testing.T) {
 		t.Fatalf("search unknown scene: want ErrNotFound, got %v", err)
 	}
 
-	// What a turn is made of is refused at the append boundary: a record with no
-	// content, the library's own consolidation role (named by value here, since it
-	// is deliberately not a public constant), an event that never says what
-	// happened, and a kind no reader can name.
+	// What a turn is made of is refused at the append boundary.
 	for i, bad := range []ArchiveInput{
 		{Kind: KindUtterance, Role: RoleUser, CreatedAt: 1},
 		{Kind: KindUtterance, Role: 3, Content: "u", CreatedAt: 1},
@@ -161,9 +150,7 @@ func TestSurfaceTurnFlow(t *testing.T) {
 		}
 	}
 
-	// Nothing is written onto a turn the domain does not hold. Deleting the scene takes
-	// the turn the last read opened with it, so the five writes on that turn are refused
-	// — they cannot fall back to guessing a scene or a turn to write.
+	// Nothing is written onto a turn the domain does not hold.
 	if err := db.DeleteScene(sceneID); err != nil {
 		t.Fatalf("delete scene: %v", err)
 	}

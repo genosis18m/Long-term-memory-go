@@ -1,11 +1,8 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// Dream takes a scene id, and a host in a tool loop reaches for exactly that: the model
-// names a scene out of its context, and the id may be one the library has already lost.
-// The scope also has a boundary worth stating out loud — consolidation honours it, the two
-// retention prunes do not, because content and plan nodes age on their own clocks and a
-// host that had to sweep every scene one by one would never finish the domain.
+// Dream takes a scene id, and a host in a tool loop reaches for exactly that: the model names a scene
+// out of its context, and the id may be one the library has already lost.
 
 package test
 
@@ -95,9 +92,8 @@ func TestInterfaceDreamScopesConsolidationButNotRetention(t *testing.T) {
 	if err != nil {
 		t.Fatalf("SceneContext(other): %v", err)
 	}
-	// A fused group is the one surface row with children under it, so "did this pass fuse
-	// anything" is read off ChildCount rather than off a row count — the scene read lists a
-	// group and the turns it swallowed, so both scenes show three rows either way.
+	// A fused group is the one surface row with children under it, so "did this pass fuse anything" is
+	// read off ChildCount rather than off a row count.
 	fused := func(topics []memhop.SceneContextTopic) int {
 		n := 0
 		for _, row := range topics {

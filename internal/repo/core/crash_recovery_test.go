@@ -13,8 +13,8 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/common"
 )
 
-// A delete must survive a crash (no checkpoint): the tombstone is replayed
-// on Open instead of the deleted record silently resurrecting.
+// A delete must survive a crash (no checkpoint): the tombstone is replayed on Open instead of the
+// deleted record silently resurrecting.
 func TestTombstoneReplayAfterCrash(t *testing.T) {
 	p := tempPath(t, "tomb")
 	eng, err := Create(p)
@@ -79,8 +79,7 @@ func TestTombstoneReplayOverridesSnapshot(t *testing.T) {
 	}
 }
 
-// A crash mid-append leaves the file ending inside a frame. That residue is the
-// tail of the log, so Open must cut it and keep appending from a clean end.
+// A crash mid-append leaves the file ending inside a frame.
 func TestTornTailFrameTruncatedOnOpen(t *testing.T) {
 	p := tempPath(t, "torn")
 	eng, err := Create(p)
@@ -130,13 +129,7 @@ func TestTornTailFrameTruncatedOnOpen(t *testing.T) {
 	}
 }
 
-// Two frame failures are two different accidents. A frame that does not fit the
-// file is the log's own tail, cut short: everything the scan reached is intact and
-// the residue is garbage. A frame whose bytes disagree with their checksum is
-// whole — its header says exactly where the next frame begins — so only that one
-// record is lost, and the records written after it are still addressable. Cutting
-// the log at a checksum failure deletes them too, and the next checkpoint makes
-// that permanent.
+// Two frame failures are two different accidents.
 func TestChecksumFailedFrameKeepsTheRestOfTheLog(t *testing.T) {
 	p := tempPath(t, "rot")
 	eng, err := Create(p)
@@ -175,9 +168,8 @@ func TestChecksumFailedFrameKeepsTheRestOfTheLog(t *testing.T) {
 	if _, data, err := eng2.ReadRecord(DefaultAgentID, 3); err != nil || string(data) != "three" {
 		t.Fatalf("record 3: data=%q err=%v", data, err)
 	}
-	// The scan walked the whole log, so the append point is past every frame
-	// the file holds — including the damaged one, whose bytes stay until a
-	// compaction rewrites the record area.
+	// The scan walked the whole log, so the append point is past every frame the file holds — including
+	// the damaged one, whose bytes stay until a compaction rewrites the record area.
 	if _, err := eng2.WriteRecord(DefaultAgentID, RecL2Topic, 4, []byte("four")); err != nil {
 		t.Fatal(err)
 	}
@@ -186,10 +178,7 @@ func TestChecksumFailedFrameKeepsTheRestOfTheLog(t *testing.T) {
 	}
 }
 
-// The undo half of a failed append. A write the kernel refuses cannot be provoked
-// from a test, but what must be true afterwards can: the file is cut back to where
-// the batch began, the caller's own cause is still what it reports, and the log
-// keeps working from that point.
+// The undo half of a failed append.
 func TestUndoAppendCutsBackToTheBatchStart(t *testing.T) {
 	p := tempPath(t, "undo")
 	eng, err := Create(p)
@@ -226,8 +215,8 @@ func TestUndoAppendCutsBackToTheBatchStart(t *testing.T) {
 	}
 }
 
-// A crash between writing the snapshot blob and flipping the header leaves an
-// orphan blob at the tail; Open must recover instead of failing forever.
+// A crash between writing the snapshot blob and flipping the header leaves an orphan blob at the tail;
+// Open must recover instead of failing forever.
 func TestOrphanSnapshotBlobTruncatedOnOpen(t *testing.T) {
 	p := tempPath(t, "orphan")
 	eng, err := Create(p)
@@ -255,9 +244,8 @@ func TestOrphanSnapshotBlobTruncatedOnOpen(t *testing.T) {
 	if !eng2.Contains(DefaultAgentID, 1) || !eng2.Contains(DefaultAgentID, 2) {
 		t.Fatal("records lost after orphan blob recovery")
 	}
-	// The committed snapshot is still the active one: the orphan appended
-	// behind it was recognised and truncated rather than adopted. Adopting it
-	// would move this offset and lose record 2, which its index never named.
+	// The committed snapshot is still the active one: the orphan appended behind it was recognised and
+	// truncated rather than adopted.
 	if got := eng2.activeHeaderRef().SnapshotOffset; got != committedOff {
 		t.Fatalf("active snapshot moved: want %d, got %d", committedOff, got)
 	}
@@ -286,13 +274,7 @@ func TestSecondInstanceRejectedByLock(t *testing.T) {
 	eng2.Close()
 }
 
-// Rotted payload and a rotted length field are two different accidents. A frame
-// whose payload disagrees with its checksum still says exactly where the next frame
-// begins; a frame whose own length bytes rotted says the wrong thing, so stepping
-// over it by that length lands wherever but the next record. The scan then reads
-// "this frame does not fit the file" — which is the torn-tail signal — and truncates
-// from a point that is not the tail at all, deleting records that were never damaged
-// and making the loss permanent at the next checkpoint.
+// Rotted payload and a rotted length field are two different accidents.
 func TestRottedLengthFieldKeepsTheRecordsAfterIt(t *testing.T) {
 	p := tempPath(t, "rotlen")
 	eng, err := Create(p)
@@ -332,17 +314,14 @@ func TestRottedLengthFieldKeepsTheRecordsAfterIt(t *testing.T) {
 	if _, data, err := eng2.ReadRecord(DefaultAgentID, 3); err != nil || string(data) != "three" {
 		t.Fatalf("record 3: data=%q err=%v", data, err)
 	}
-	// The damaged frame's declared length is a lie of unknown direction, so the
-	// scan may not move the append point by it: neither truncating the log nor
-	// extending it with a sparse hole is a legal answer here.
+	// The damaged frame's declared length is a lie of unknown direction, so the scan may not move the
+	// append point by it.
 	if got := fileSize(t, p); got != before {
 		t.Fatalf("file resized by recovery of a rotted length: want %d, got %d", before, got)
 	}
 }
 
-// A create that cannot take the exclusive lock has to stay away from the file:
-// truncating before the lock is taken empties a database another instance is
-// reading, and its holder then faults on a mapped page that no longer exists.
+// A create that cannot take the exclusive lock has to stay away from the file.
 func TestCreateRefusesAFileAnotherInstanceHolds(t *testing.T) {
 	p := tempPath(t, "create-lock")
 	eng, err := Create(p)
@@ -385,10 +364,8 @@ func appendBytes(t *testing.T, path string, b []byte) {
 	}
 }
 
-// appendThroughEngine puts raw bytes at the tail of a file an instance still holds, through
-// the very handle that instance appends with — where a refused batch would have left them.
-// A second handle cannot serve here: an open engine locks the whole file, so on Windows the
-// write that injects the residue fails first and the test measures the lock, not the undo.
+// appendThroughEngine puts raw bytes at the tail of a file an instance still holds, through the very
+// handle that instance appends with — where a refused batch would have left them.
 func appendThroughEngine(t *testing.T, e *StorageEngine, b []byte) {
 	t.Helper()
 	if _, err := e.file.Seek(0, io.SeekEnd); err != nil {
@@ -399,8 +376,8 @@ func appendThroughEngine(t *testing.T, e *StorageEngine, b []byte) {
 	}
 }
 
-// flipByteAt rewrites one stored byte, which is what rot inside a frame's payload
-// looks like to its checksum: the frame stays the size its header declares.
+// flipByteAt rewrites one stored byte, which is what rot inside a frame's payload looks like to its
+// checksum: the frame stays the size its header declares.
 func flipByteAt(t *testing.T, path string, offset uint64) {
 	t.Helper()
 	f, err := os.OpenFile(path, os.O_RDWR, 0644)

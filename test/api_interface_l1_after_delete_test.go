@@ -11,19 +11,8 @@ import (
 	memhop "github.com/genosis18m/Long-term-memory-go/api"
 )
 
-// Deleting a scene is the correction a host makes when it decides something should never have
-// been remembered, and L1 is the layer whose whole content is a judgement about scenes — so it
-// is where the question bites. What the measurement showed, and what this pins, is that the
-// two halves of L1 behave differently:
-//
-//   - the deleted scene's own node is gone from `ListL1` with the delete itself;
-//   - a surviving node keeps naming the co-occurrence edge that linked them until the next
-//     consolidation. An edge record has no read of its own, but `SceneNodeView.edge_ids` is a
-//     host-visible list of ids, so in that window the host is handed an id it cannot resolve.
-//
-// That gap is the deferred half, not a lost record — and it is worth stating rather than
-// smoothing over, because a host that treats `edge_ids` as a live join key between two scenes
-// will read a relationship that has already been withdrawn.
+// Deleting a scene is the correction a host makes when it decides something should never have been
+// remembered, and L1 is the layer whose whole content is a judgement about scenes.
 func TestInterfaceL1AfterDeletingOneOfTwoRelatedScenes(t *testing.T) {
 	llm := newMockLLM(t)
 	path := filepath.Join(t.TempDir(), "l1_after_delete.meh")
@@ -108,8 +97,8 @@ func TestInterfaceL1AfterDeletingOneOfTwoRelatedScenes(t *testing.T) {
 	}
 }
 
-// dreamOnlyWhenAsked keeps the passes in this file's own hands: the scene must not be
-// consolidated behind the assertions, which would sink rows this test lists by hand.
+// dreamOnlyWhenAsked keeps the passes in this file's own hands: the scene must not be consolidated
+// behind the assertions, which would sink rows this test lists by hand.
 func dreamOnlyWhenAsked(d *memhop.MemHopDefaults) {
 	d.SceneDreamTopicThreshold = -1
 	d.DreamCompressMinTopics = 100

@@ -13,22 +13,14 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/repo/core"
 )
 
-// A Dream cancelled after its compression has landed still has to hand the
-// domain a read path that matches the records. Compression sinks the merged
-// topics by rewriting their depth, and nothing mirrors that write, so skipping
-// the whole-table rebuild left the scene listing turns the pass had already
-// swallowed — and never showing the summary that replaced them — until the
-// domain's cache was dropped or the file reopened.
+// A Dream cancelled after its compression has landed still has to hand the domain a read path that
+// matches the records.
 func TestCancelledDreamReconcilesTheReadPath(t *testing.T) {
 	const (
 		sceneID = uint64(7)
 		leftID  = uint64(11)
 		rightID = uint64(12)
-		// The model is asked to consolidate, then once per group for the fused
-		// topic's keywords. Cancelling on the third call — the second group's — means
-		// the first group has already landed and been reported, which is the state
-		// the checkpoint order has to get right. Whether the second group finishes
-		// first is not what this test claims.
+		// The model is asked to consolidate, then once per group for the fused topic's keywords.
 		groups = `{"l2_groups":[{"node_hashes":[11,12],"merged_summary":"两轮并成一事"},` +
 			`{"node_hashes":[13,14],"merged_summary":"另两轮并成一事"}]}`
 		keywords = `{"keywords":["登录","刷新"]}`
@@ -76,9 +68,7 @@ func TestCancelledDreamReconcilesTheReadPath(t *testing.T) {
 	}
 }
 
-// The other exit a cancelled pass takes: not one scene got in, so every scene's
-// model call failed. Reported as a model failure, the host goes to check a model
-// that was never asked.
+// The other exit a cancelled pass takes: not one scene got in, so every scene's model call failed.
 func TestDreamCancelledBeforeAnySceneLandedReportsCancellation(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()

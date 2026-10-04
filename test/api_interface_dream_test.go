@@ -72,9 +72,7 @@ func TestInterfaceDream(t *testing.T) {
 	if !slices.Equal(fused.Keywords, []string{"重构", "代码", "测试"}) {
 		t.Fatalf("fused keywords = %q, want the three words extracted from the summary", fused.Keywords)
 	}
-	// The summary is the fused topic's own utterance: the user slot of the parent,
-	// under role 3 — the one role a host cannot write and the public surface
-	// deliberately leaves unnamed, so the number is what a host matches on.
+	// The summary is the fused topic's own utterance: the user slot of the parent, under role 3.
 	fusedID := fused.TopicID
 	sums, err := db.SearchL4(internal.L4Query{TopicID: &fusedID})
 	if err != nil {
@@ -110,9 +108,7 @@ func TestInterfaceDream(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetL0 after dream: %v", err)
 	}
-	// The type word is derived from the four dimensions and never taken from the
-	// reply: the mock answers "ESFP" over dimensions that read ESTP, so an
-	// implementation that started trusting the model's own word fails here.
+	// The type word is derived from the four dimensions and never taken from the reply.
 	if profile.MBTI.Type != "ESTP" {
 		t.Fatalf("distilled MBTI = %+v, want the type derived from 0.2/0.3/-0.1/0.4", profile.MBTI)
 	}
@@ -134,10 +130,8 @@ func TestInterfaceDream(t *testing.T) {
 		t.Fatalf("directed Dream on scene %s: err=%v", sceneID, err)
 	}
 
-	// The loop keeps running after consolidation, and the state it runs on is the
-	// library's: an un-named read continues the same scene, and the turn it opens
-	// closes onto its own topic — one that stands as a root of its own, rather than
-	// being handed to the fused group that swallowed the turns before it.
+	// The loop keeps running after consolidation, and the state it runs on is the library's: an un-named
+	// read continues the same scene, and the turn it opens closes onto its own topic.
 	after, err := db.Search(memhop.SearchQuery{})
 	if err != nil {
 		t.Fatalf("Search after consolidation: %v", err)
@@ -222,9 +216,7 @@ func TestInterfaceCheckpointPersist(t *testing.T) {
 	// proves the id survives a restart.
 }
 
-// A model that answers off contract during consolidation costs one Dream pass and
-// nothing else: no group lands, so the turns stay on the surface with their own
-// keywords and originals, and no summary is written above them.
+// A model that answers off contract during consolidation costs one Dream pass and nothing else.
 func TestInterfaceDreamRefusesAnOffContractReply(t *testing.T) {
 	llm := newMockLLM(t)
 	m := openMockDB(t, filepath.Join(t.TempDir(), "offcontract.meh"), llm.srv.URL,
@@ -277,9 +269,7 @@ func TestInterfaceDreamRefusesAnOffContractReply(t *testing.T) {
 	}
 }
 
-// A cancelled pass answers with the cancellation, not with the model's failure:
-// one cancel fails every scene's call at once, and a host told "the model failed"
-// goes and checks a model that never refused it.
+// A cancelled pass answers with the cancellation, not with the model's failure.
 func TestInterfaceDreamReportsCancellation(t *testing.T) {
 	llm := newMockLLM(t)
 	m := openMockDB(t, filepath.Join(t.TempDir(), "cancel.meh"), llm.srv.URL,
@@ -299,9 +289,7 @@ func TestInterfaceDreamReportsCancellation(t *testing.T) {
 	}
 }
 
-// The retention sweep is the one part of a pass a host cannot reconstruct afterwards: the
-// records it deleted are gone, and the same pass writes others, so a before/after diff of
-// Stats separates nothing. The two prune counters are therefore reported by the pass itself.
+// The retention sweep is the one part of a pass a host cannot reconstruct afterwards.
 func TestInterfaceDreamReportsWhatItSwept(t *testing.T) {
 	llm := newMockLLM(t)
 	db := newTestDB(t, openMockDB(t, filepath.Join(t.TempDir(), "sweep.meh"), llm.srv.URL,

@@ -21,9 +21,8 @@ const (
 	// Retry budget: reasoning tokens count toward completion_tokens and can
 	// exhaust the 512-token first attempt, leaving content empty.
 	keywordRetryMaxTokens = 4096
-	// keywordChunkRunes is the input-length threshold (in runes) above which
-	// extraction splits the text first: the prompt constraint weakens with input
-	// length, and long inputs are the main trigger of natural-language-summary replies.
+	// keywordChunkRunes is the input-length threshold (in runes) above which extraction splits the text
+	// first.
 	keywordChunkRunes = 2000
 )
 
@@ -41,23 +40,20 @@ Rules:
 9. Exclude: greetings, filler words, question words (when/where/what/why/how/who/which), generic verbs (go/do/get/run/make/have/want/like/think) unless tied to a specific action
 10. Output ONLY valid JSON: {"keywords":[...]}, no markdown, no code fences`
 
-// keywordFormatRetry is appended to the user prompt for the format-constrained
-// retry: long inputs drift toward natural-language summaries.
+// keywordFormatRetry is appended to the user prompt for the format-constrained retry: long inputs
+// drift toward natural-language summaries.
 const keywordFormatRetry = `
 
 Output ONLY valid JSON: {"keywords":["keyword1", "keyword2", ...]}.
 No markdown, no code fences, no explanations.`
 
-// errKeywordFormat is what extraction reports when every attempt — including
-// the format-constrained retry — came back without parseable JSON.
+// errKeywordFormat is what extraction reports when every attempt — including the format-constrained
+// retry — came back without parseable JSON.
 var errKeywordFormat = common.NewError(common.ErrLLM,
 	"keyword extraction returned no parseable JSON; check the model's structured-output capability")
 
-// ExtractKeywords extracts semantic keywords whose union represents the
-// text's core meaning (unlimited count). A reply that is not valid JSON surfaces as
-// an error rather than a degraded result: an empty or partial track would be stored
-// as if it were the real one. Long inputs are chunked first so the JSON constraint
-// stays effective.
+// ExtractKeywords extracts semantic keywords whose union represents the text's core meaning (unlimited
+// count).
 func ExtractKeywords(ctx context.Context, chat Chat, text string) ([]string, error) {
 	trimmed := strings.TrimSpace(text)
 	if trimmed == "" {
@@ -69,12 +65,7 @@ func ExtractKeywords(ctx context.Context, chat Chat, text string) ([]string, err
 	return extractOne(ctx, chat, "Extract keywords from:\n"+trimmed)
 }
 
-// extractOne runs the full attempt ladder for one prompt: three widening token
-// budgets (a reasoning model can spend the first on reasoning and truncate the
-// reply), then one format-constrained retry that restates the JSON-only rule. A
-// transport failure surfaces as itself, a truncation with it — that is the answer
-// the host acts on by raising the ceiling. A model that answered but never answered
-// in JSON yields errKeywordFormat. Whole texts and chunks alike both come through here.
+// extractOne runs the full attempt ladder for one prompt.
 func extractOne(ctx context.Context, chat Chat, user string) ([]string, error) {
 	widest := minTokens(chat.MaxOutputTokens(), ConsolidationMaxTokens)
 	budgets := []int{
@@ -96,9 +87,7 @@ func extractOne(ctx context.Context, chat Chat, user string) ([]string, error) {
 	}
 	response, err := chat.Chat(ctx, systemKeywords, user+keywordFormatRetry, widest)
 	if err != nil {
-		// The transport's own failure is what the host has to hear. A reply cut off by
-		// the output ceiling is not a model that cannot do structured output, and the
-		// two send the host to different fixes: raise MaxOutputTokens, or change model.
+		// The transport's own failure is what the host has to hear.
 		return nil, err
 	}
 	if keywords, ok := parseKeywords(response); ok {
@@ -107,19 +96,14 @@ func extractOne(ctx context.Context, chat Chat, user string) ([]string, error) {
 	return nil, errKeywordFormat
 }
 
-// extractKeywordsChunked extracts per chunk through the same ladder and merges the
-// results. A chunk that fails every attempt is an error, not a skipped one: the
-// surviving chunks would otherwise read as a complete keyword track.
+// extractKeywordsChunked extracts per chunk through the same ladder and merges the results.
 func extractKeywordsChunked(ctx context.Context, chat Chat, trimmed string) ([]string, error) {
 	chunks := splitForExtraction(trimmed, keywordChunkRunes)
 	merged := make([]string, 0, len(chunks)*4)
 	for i, chunk := range chunks {
 		keywords, err := extractOne(ctx, chat, "Extract keywords from:\n"+chunk)
 		if err != nil {
-			// Which chunk failed is this loop's knowledge and nobody else's, so it goes in
-			// the text; what the failure was stays in the cause, so a truncation still reads
-			// as a truncation and a cancellation as a cancellation. An error carrying no
-			// code is passed through rather than re-wrapped into one that reads as success.
+			// Which chunk failed is this loop's knowledge and nobody else's, so it goes in the text; what the.
 			if code := common.CodeOf(err); code != 0 {
 				return nil, common.NewError(code,
 					fmt.Sprintf("keyword extraction chunk %d of %d failed", i, len(chunks)), err)
@@ -131,9 +115,8 @@ func extractKeywordsChunked(ctx context.Context, chat Chat, trimmed string) ([]s
 	return dedupeKeywords(merged), nil
 }
 
-// splitForExtraction splits text into chunks of at most limit runes,
-// preferring sentence/line boundaries in the trailing window so keywords
-// survive the split; cuts hard at the limit otherwise.
+// splitForExtraction splits text into chunks of at most limit runes, preferring sentence/line
+// boundaries in the trailing window so keywords survive the split; cuts hard at the limit otherwise.
 func splitForExtraction(text string, limit int) []string {
 	runes := []rune(text)
 	if len(runes) <= limit {
@@ -160,8 +143,7 @@ func splitForExtraction(text string, limit int) []string {
 	return chunks
 }
 
-// parseKeywords parses the LLM keyword reply; ok=false means the response
-// is not valid JSON.
+// parseKeywords parses the LLM keyword reply; ok=false means the response is not valid JSON.
 func parseKeywords(response string) ([]string, bool) {
 	var raw struct {
 		Keywords []string `json:"keywords"`

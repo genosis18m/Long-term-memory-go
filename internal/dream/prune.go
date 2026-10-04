@@ -13,15 +13,12 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/repo/core"
 )
 
-// ContentRetention is the sweep window a domain gets when its host did not configure
-// one: Dream drops L4 content older than this, and plan nodes past it too. Both layers
-// share the one window because both hold what happened in one turn, and a topic that
-// keeps neither is left with the keyword track Dream folded out of them.
+// ContentRetention is the sweep window a domain gets when its host did not configure one: Dream drops
+// L4 content older than this, and plan nodes past it too.
 const ContentRetention = 7 * 24 * time.Hour
 
-// retentionWindow resolves the window for one domain: the host's configured
-// value when it set a positive one, the engine default otherwise. There is no
-// "keep everything" spelling — retention is what bounds the file.
+// retentionWindow resolves the window for one domain: the host's configured value when it set a
+// positive one, the engine default otherwise.
 func retentionWindow(ac *domain.Context) time.Duration {
 	if ac.Defaults != nil && ac.Defaults.ContentRetentionMs > 0 {
 		return time.Duration(ac.Defaults.ContentRetentionMs) * time.Millisecond
@@ -29,10 +26,8 @@ func retentionWindow(ac *domain.Context) time.Duration {
 	return ContentRetention
 }
 
-// PruneContentStage drops the L4 records past the retention window, utterances
-// and events alike, and counts what went away into the report — the log line is not
-// something a host can read back. Best-effort: a failure is
-// logged and recorded in the report but never aborts Dream. Callers hold ac.Mu.
+// PruneContentStage drops the L4 records past the retention window, utterances and events alike, and
+// counts what went away into the report — the log line is not something a host can read back.
 func PruneContentStage(ac *domain.Context, agentID uint64, rep *core.DreamReport) {
 	start := time.Now()
 	cutoff := time.Now().Add(-retentionWindow(ac)).UnixMilli()
@@ -46,13 +41,7 @@ func PruneContentStage(ac *domain.Context, agentID uint64, rep *core.DreamReport
 	AppendStage(rep, "l4_prune", start, err)
 }
 
-// PrunePlanStage sweeps plan nodes past the window. A plan is exempt only while it
-// BOTH holds a non-Done node AND saw activity inside the window: an in-flight task must
-// not lose its tree mid-task, but once a plan has been silent past the window it is
-// abandoned and sweeps like any other record, so L5 stays bounded. Nodes are swept on
-// their own clock and touch no content: a step expiring takes the tree with it and
-// leaves the turn's events where they are. Best-effort, like the content stage.
-// Callers hold ac.Mu.
+// PrunePlanStage sweeps plan nodes past the window.
 func PrunePlanStage(ac *domain.Context, agentID uint64, rep *core.DreamReport) {
 	start := time.Now()
 	cutoff := time.Now().Add(-retentionWindow(ac)).UnixMilli()
@@ -66,9 +55,8 @@ func PrunePlanStage(ac *domain.Context, agentID uint64, rep *core.DreamReport) {
 	// hot path, and the sweep must not be shaped by a cache that could be behind.
 	aggs, err := repo.CollectPlanNodes(ac.Engine, agentID)
 	if err != nil {
-		// The exemption is per-tree and derived from every node in it, so an unreadable
-		// node is exactly the one that could still be holding a tree alive. Skipping the
-		// sweep costs one Dream cycle; sweeping on a partial set costs the tree.
+		// The exemption is per-tree and derived from every node in it, so an unreadable node is exactly the
+		// one that could still be holding a tree alive.
 		slog.Warn("dream: plan nodes not swept", "agent", common.FormatHash(agentID), "err", err)
 		AppendStage(rep, "l5_prune", start, err)
 		return

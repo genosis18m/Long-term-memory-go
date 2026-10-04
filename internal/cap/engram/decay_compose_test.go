@@ -13,11 +13,8 @@ import (
 
 const decayHourMs = int64(3_600_000)
 
-// Forgetting is measured in wall-clock hours, and the pass that applies it re-bases the
-// very field it just measured. Those two only agree if the decay composes: two passes an
-// hour apart have to land on the importance a single two-hour pass reaches. That re-based
-// field is also what a host reads as SceneNodeView.UpdatedAt, so this pins what the answer
-// means: when consolidation last held this node, not when the memory was last used.
+// Forgetting is measured in wall-clock hours, and the pass that applies it re-bases the very field it
+// just measured.
 func TestNodeDecayComposesAcrossPasses(t *testing.T) {
 	engine, err := core.Create(filepath.Join(t.TempDir(), "decay.meh"))
 	if err != nil {

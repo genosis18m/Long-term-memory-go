@@ -1,16 +1,8 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// A read hands the host a value, and a host is entitled to treat it as its own: sort the
-// listing, blank a field before rendering, keep two reads and compare them later. None of
-// that is safe if the value reached back into memory the library still uses — a decoded
-// record is fresh, but a cache, a mirror, or a slice the门面 forgot to re-wrap is not, and the
-// damage shows up far away from the mutation, on the next read someone else makes.
-//
-// This walks the same reads the ordering gate walks, against the same populated file: take two
-// copies, rewrite every leaf of the first through a fresh addressable copy of it (so the walk
-// reaches shared backing arrays and maps even when the read returned a struct by value), and
-// require the second copy to answer exactly as it did before.
+// A read hands the host a value, and a host is entitled to treat it as its own: sort the listing,
+// blank a field before rendering, keep two reads and compare them later.
 
 package api
 
@@ -43,11 +35,8 @@ func TestSurfaceReadsHandBackNoLibraryMemory(t *testing.T) {
 	}
 }
 
-// mutateLeaves rewrites every leaf reflect can reach: strings, numbers, booleans, and map
-// entries (whose values cannot be addressed in place, so they are replaced). It does not
-// grow or shrink a container — a length change would be a different question, since a host
-// cannot corrupt the library by appending to a slice it was handed unless that slice is
-// shared, which is exactly the element-writing this detects.
+// mutateLeaves rewrites every leaf reflect can reach: strings, numbers, booleans, and map entries
+// (whose values cannot be addressed in place, so they are replaced).
 func mutateLeaves(v reflect.Value) {
 	switch v.Kind() {
 	case reflect.String:

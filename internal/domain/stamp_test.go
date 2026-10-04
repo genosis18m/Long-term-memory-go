@@ -5,10 +5,8 @@ package domain
 
 import "testing"
 
-// Which conversation a reopened domain resumes is decided by the scene record's last-used
-// stamp, whose unit is milliseconds. Two rounds opened inside the same millisecond therefore
-// have to be stamped in the order they happened rather than equally, or the tie-break falls
-// through to the scene id — a hash — and the clock decides where the host left off.
+// Which conversation a reopened domain resumes is decided by the scene record's last-used stamp, whose
+// unit is milliseconds.
 func TestNextUsedStampIsStrictlyIncreasing(t *testing.T) {
 	c := &Context{}
 	const now = int64(1_700_000_000_000)

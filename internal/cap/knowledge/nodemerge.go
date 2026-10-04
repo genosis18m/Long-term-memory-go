@@ -1,8 +1,8 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// Node field-merge policy of the knowledge capability: how an import folds
-// into an existing hypergraph node (skip vs append vs replace).
+// Node field-merge policy of the knowledge capability: how an import folds into an existing hypergraph
+// node (skip vs append vs replace).
 
 package knowledge
 
@@ -14,10 +14,7 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/repo/core"
 )
 
-// MergeFields folds imported values into an existing node: an empty imported
-// value keeps the current one, a non-empty NodeType replaces, content is
-// appended only when it adds information, keywords are unioned and a
-// non-empty sourceRef refreshes the positional reference.
+// MergeFields folds imported values into an existing node.
 func MergeFields(node *core.HypergraphNode, nodeType, content string, keywords []string, sourceRef string, now int64) {
 	if nodeType != "" {
 		node.NodeType = nodeType
@@ -30,8 +27,7 @@ func MergeFields(node *core.HypergraphNode, nodeType, content string, keywords [
 	node.UpdatedAt = now
 }
 
-// OverwriteFields replaces the mutable fields of an existing node. The ID and
-// graph membership are stable and untouched; an empty sourceRef clears it.
+// OverwriteFields replaces the mutable fields of an existing node.
 func OverwriteFields(node *core.HypergraphNode, nodeType, content string, keywords []string, sourceRef string, now int64) {
 	node.NodeType = nodeType
 	node.Content = content

@@ -1,12 +1,8 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// The public surface of the facade, pinned by reflection: these lists are the review
-// gate, so nothing becomes host-callable without an edit here. Add a name only when
-// the method is meant to be public. TestPublicSignaturesCarryNoNumericIds and
-// TestHandlesExposeNoField below enforce the other half of the contract — no id a host
-// can see leaves as a number, and no field of a handle is reachable around its
-// methods.
+// The public surface of the facade, pinned by reflection: these lists are the review gate, so nothing
+// becomes host-callable without an edit here.
 
 package api
 
@@ -51,31 +47,26 @@ func diffNames(want, got []string) (missing, extra []string) {
 
 func TestSessionPublicSurface(t *testing.T) {
 	want := []string{
-		// runtime/task face — the host drives these every turn and LLM tools
-		// bind to them
-		// core cycle (host-driven)
+		// runtime/task face — the host drives these every turn and LLM tools.
 		"Search", "Update", "Dream", "AppendArchive",
-		// L0 profile
+		// L0 profile.
 		"GetL0", "UpdateL0",
-		// L1 scene hypergraph (read-only; Dream is the only writer)
+		// L1 scene hypergraph (read-only; Dream is the only writer).
 		"ListL1",
-		// L2 scene reads
+		// L2 scene reads.
 		"ListScenes", "SceneContext",
-		// L3 knowledge
+		// L3 knowledge.
 		"GetL3", "ListL3", "ImportL3", "QueryL3Nodes", "QueryL3Subgraph",
-		// L4 archives
+		// L4 archives.
 		"SearchL4",
-		// the plan tree: written one step at a time — one step created or
-		// restated per call (parentSeq 0 opens the tree)
+		// the plan tree: written one step at a time.
 		"PlanNodeAdd", "PlanNodeUpdate", "PlanState",
 
-		// assembly/admin face — host code at session boundaries and management
-		// channels only, never an LLM tool
-		// L2 scene management and corrections
+		// assembly/admin face — host code at session boundaries and management.
 		"UpdateScene", "RenameTopic", "MergeScenes", "DeleteScene", "DeleteTopic",
-		// L3 management and corrections
+		// L3 management and corrections.
 		"UpdateL3", "DeleteL3",
-		// the domain's own identity, for handing back to DB.Agent
+		// the domain's own identity, for handing back to DB.Agent.
 		"AgentID",
 	}
 	sort.Strings(want)
@@ -87,10 +78,7 @@ func TestSessionPublicSurface(t *testing.T) {
 }
 
 func TestDBPublicSurface(t *testing.T) {
-	// Three ways in — the domain the file was opened on, one created under it by
-	// name, and one addressed by the id the library handed out — plus the discovery of
-	// what is in the file, the file-level lifecycle and the file-level diagnostics. No
-	// LLM tool binds here.
+	// Three ways in — the domain the file was opened on, one created under it by name, and one addressed.
 	want := []string{
 		"Primary", "SubAgent", "Agent", "Agents",
 		"Checkpoint", "CompactTo", "Close", "IsClosed", "Stats",
@@ -103,10 +91,8 @@ func TestDBPublicSurface(t *testing.T) {
 	}
 }
 
-// TestHandlesExposeNoField pins the route the method lists cannot see: an exported
-// field on a handle lets a host reach the internal value it holds — and with it the
-// numeric ids this facade renders as hex — without calling a single method. Both
-// handles carry their counterpart unexported.
+// TestHandlesExposeNoField pins the route the method lists cannot see: an exported field on a handle
+// lets a host reach the internal value it holds.
 func TestHandlesExposeNoField(t *testing.T) {
 	for _, handle := range []struct {
 		name string
@@ -125,12 +111,8 @@ func TestHandlesExposeNoField(t *testing.T) {
 	}
 }
 
-// TestPublicSignaturesCarryNoNumericIds pins the other half of the facade
-// contract: every id a host can see is a 16-char hex string. Input-only types
-// are deliberately aliases of their internal seam (SearchQuery, L4Query…), so the
-// package path is not what matters — a uint64 field is.
-// UpdateScene is the shape to watch: without its facade override the result is a
-// core.SceneSlot, whose SceneID and L3ID are uint64.
+// TestPublicSignaturesCarryNoNumericIds pins the other half of the facade contract: every id a host
+// can see is a 16-char hex string.
 func TestPublicSignaturesCarryNoNumericIds(t *testing.T) {
 	for _, handle := range []struct {
 		name string
@@ -154,10 +136,7 @@ func TestPublicSignaturesCarryNoNumericIds(t *testing.T) {
 	}
 }
 
-// TestTurnWritesCarryNoId pins what this round took out of the host's hands: the five
-// writes that work on the turn now open address that turn through the library's own
-// memory of which one it is, so none of them names a scene or a topic. A method
-// growing an id parameter here is a host carrying a key it should never have held.
+// TestTurnWritesCarryNoId pins what this round took out of the host's hands.
 func TestTurnWritesCarryNoId(t *testing.T) {
 	want := map[string]int{
 		"Update":         1, // one TurnEnd
@@ -179,11 +158,8 @@ func TestTurnWritesCarryNoId(t *testing.T) {
 	}
 }
 
-// TestArchiveInputCarriesNoAddress pins the other half of the same contract: the
-// write shape has no field for an address the library fills in. ArchiveSlot names the
-// topic a stored record belongs to, and a host copying a read record into an append
-// would be naming a turn it does not hold — so the append takes a shape where that
-// claim has no place to go, rather than one that accepts it and drops it.
+// TestArchiveInputCarriesNoAddress pins the other half of the same contract: the write shape has no
+// field for an address the library fills in.
 func TestArchiveInputCarriesNoAddress(t *testing.T) {
 	for _, banned := range []string{"ID", "TopicID"} {
 		if _, ok := reflect.TypeOf(ArchiveInput{}).FieldByName(banned); ok {
@@ -195,8 +171,8 @@ func TestArchiveInputCarriesNoAddress(t *testing.T) {
 	}
 }
 
-// inTypes skips In(0): for a method read off a type, that first input is the
-// receiver, whose struct graph reaches the storage engine.
+// inTypes skips In(0): for a method read off a type, that first input is the receiver, whose struct
+// graph reaches the storage engine.
 func inTypes(fn reflect.Type) []reflect.Type {
 	out := make([]reflect.Type, 0, fn.NumIn())
 	for i := 1; i < fn.NumIn(); i++ {
@@ -213,10 +189,8 @@ func outTypes(fn reflect.Type) []reflect.Type {
 	return out
 }
 
-// numericIDField walks a type (and every struct it can reach) looking for a
-// uint64 field named like an identifier — the shape an internal record id takes
-// before the facade renders it. Counters (a turn's slot ordinal, a plan step's
-// Seq) share the width and are fine to hand out. seen breaks recursive types.
+// numericIDField walks a type (and every struct it can reach) looking for a uint64 field named like an
+// identifier — the shape an internal record id takes before the facade renders it.
 func numericIDField(t reflect.Type, seen map[reflect.Type]bool) string {
 	if t == nil || seen[t] {
 		return ""

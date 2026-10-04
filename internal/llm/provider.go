@@ -1,9 +1,8 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// Package llm is the LLM transport: a Provider is a thin go-openai wrapper
-// offering one chat call, a truncation-escalation retry and an output ceiling.
-// It builds no prompts and parses no responses.
+// Package llm is the LLM transport: a Provider is a thin go-openai wrapper offering one chat call, a
+// truncation-escalation retry and an output ceiling.
 
 package llm
 
@@ -21,24 +20,21 @@ import (
 )
 
 const (
-	// defaultTimeoutSecs 是 LlmConfig.TimeoutSecs 未设置时的 HTTP 超时。
+	// defaultTimeoutSecs 是 LlmConfig.TimeoutSecs 未设置时的 HTTP 超时。.
 	defaultTimeoutSecs = 120
-	// defaultMaxOutputTokens 是 LlmConfig.MaxOutputTokens 未设置时的输出上限。
+	// defaultMaxOutputTokens 是 LlmConfig.MaxOutputTokens 未设置时的输出上限。.
 	defaultMaxOutputTokens = 8192
 )
 
-// Provider 是 go-openai 客户端的薄封装。
+// Provider 是 go-openai 客户端的薄封装。.
 type Provider struct {
 	client          *openai.Client
 	model           string
 	maxOutputTokens int
 }
 
-// budgets reads the two budgets the same way every other tuning argument here is read: an
-// unfilled value (0 or below) takes the library default. Neither may fall through as a zero,
-// because each one fails silently in the other direction: a zero output ceiling truncates
-// every answer to nothing, and a zero HTTP timeout means no timeout at all - which would
-// hold a domain's lock open on a hung endpoint indefinitely.
+// budgets reads the two budgets the same way every other tuning argument here is read: an unfilled
+// value (0 or below) takes the library default.
 func budgets(llm config.LlmConfig) (timeoutSecs, maxOutputTokens int) {
 	timeoutSecs, maxOutputTokens = llm.TimeoutSecs, llm.MaxOutputTokens
 	if timeoutSecs <= 0 {
@@ -50,7 +46,7 @@ func budgets(llm config.LlmConfig) (timeoutSecs, maxOutputTokens int) {
 	return timeoutSecs, maxOutputTokens
 }
 
-// New 从一份 LLM 配置创建 Provider。
+// New 从一份 LLM 配置创建 Provider。.
 func New(llm config.LlmConfig) *Provider {
 	timeoutSecs, maxTokens := budgets(llm)
 	oc := openai.DefaultConfig(llm.APIKey)
@@ -63,8 +59,7 @@ func New(llm config.LlmConfig) *Provider {
 	}
 }
 
-// normalizeBaseURL 确保 BaseURL 以 /v1 结尾（go-openai 不自动补），
-// 并剥离可能传入的完整 /chat/completions 后缀（SDK 会重新拼接）。
+// normalizeBaseURL 确保 BaseURL 以 /v1 结尾（go-openai 不自动补），.
 func normalizeBaseURL(raw string) string {
 	u := strings.TrimRight(strings.TrimSpace(raw), "/")
 	if before, ok := strings.CutSuffix(u, "/chat/completions"); ok {
@@ -76,8 +71,7 @@ func normalizeBaseURL(raw string) string {
 	return u
 }
 
-// Chat 执行一次非流式 chat completion，对 429/5xx 做指数退避重试
-// （500ms → 2s，共 3 次尝试），其余错误不重试。
+// Chat 执行一次非流式 chat completion，对 429/5xx 做指数退避重试.
 func (p *Provider) Chat(ctx context.Context, system, user string, maxTokens int) (string, error) {
 	req := openai.ChatCompletionRequest{
 		Model: p.model,
@@ -106,9 +100,8 @@ func (p *Provider) Chat(ctx context.Context, system, user string, maxTokens int)
 		resp, err := p.client.CreateChatCompletion(ctx, req)
 		if err != nil {
 			if cerr := ctx.Err(); cerr != nil {
-				// The caller's context is gone, so whatever the HTTP stack reported is
-				// that cancellation travelling through it. LlmConfig's own HTTP timeout
-				// belongs to the client's context, so a deadline still classifies below.
+				// The caller's context is gone, so whatever the HTTP stack reported is that cancellation travelling
+				// through it.
 				return "", common.NewError(common.ErrCancelled, "llm call cancelled", cerr)
 			}
 			status, msg := httpError(err)
@@ -131,14 +124,12 @@ func (p *Provider) Chat(ctx context.Context, system, user string, maxTokens int)
 		}
 		return resp.Choices[0].Message.Content, nil
 	}
-	// The last attempt's failure is what the caller gets, and lastErr holds it: the
-	// loop only ends here when that attempt failed on a status worth retrying. Every
-	// way out of this function carries a code — a bare error would read as code 0.
+	// The last attempt's failure is what the caller gets, and lastErr holds it: the loop only ends here
+	// when that attempt failed on a status worth retrying.
 	return "", lastErr
 }
 
-// httpError 从 go-openai 错误中提取 HTTP 状态码与消息体；RequestError 优先
-// （go-openai 可能在其中包裹零值 APIError），非 HTTP 错误返回 (0, "")。
+// httpError 从 go-openai 错误中提取 HTTP 状态码与消息体；RequestError 优先.
 func httpError(err error) (int, string) {
 	var reqErr *openai.RequestError
 	if errors.As(err, &reqErr) && reqErr.HTTPStatusCode > 0 {
@@ -151,8 +142,7 @@ func httpError(err error) (int, string) {
 	return 0, ""
 }
 
-// maxUpstreamEcho 是上游错误正文的死额度：正文原样进错误对象，既回给调用方又被
-// WARN 到 stderr，而网关与代理在 4xx 上常回显一整页 HTML。有诊断价值的始终是开头。
+// maxUpstreamEcho 是上游错误正文的死额度：正文原样进错误对象，既回给调用方又被.
 const maxUpstreamEcho = 256
 
 // clampEcho keeps the head of a body that is not ours in length or charset.
@@ -163,7 +153,7 @@ func clampEcho(body []byte) string {
 	return strings.ToValidUTF8(string(body[:maxUpstreamEcho]), "") + "…"
 }
 
-// retryable 判断状态码是否属于值得重试的瞬时错误（429 与 5xx）。
+// retryable 判断状态码是否属于值得重试的瞬时错误（429 与 5xx）。.
 func retryable(status int) bool {
 	switch status {
 	case http.StatusTooManyRequests,

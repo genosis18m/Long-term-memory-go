@@ -23,9 +23,7 @@ func writeContent(t *testing.T, engine *core.StorageEngine, idx *index.L4Index, 
 	return arc.IDHash
 }
 
-// The whole point of a positional id: re-writing a topic's Seq lands on the same
-// record. A replayed turn therefore converges without the library ever holding a
-// list of what that turn superseded.
+// The whole point of a positional id: re-writing a topic's Seq lands on the same record.
 func TestAppendArchiveL4SameSeqOverwritesInPlace(t *testing.T) {
 	engine := tempEngine(t)
 	idx := index.NewL4Index()
@@ -57,9 +55,8 @@ func TestAppendArchiveL4SameSeqOverwritesInPlace(t *testing.T) {
 	}
 }
 
-// Kind is a condition like any other, and it has to hold on every read route —
-// including the by-ID fast path, which would otherwise hand an event back to a
-// caller that asked for utterances.
+// Kind is a condition like any other, and it has to hold on every read route — including the by-ID
+// fast path, which would otherwise hand an event back to a caller that asked for utterances.
 func TestQueryArchivesL4HonoursKindOnEveryRoute(t *testing.T) {
 	engine := tempEngine(t)
 	idx := index.NewL4Index()
@@ -92,9 +89,8 @@ func TestQueryArchivesL4HonoursKindOnEveryRoute(t *testing.T) {
 	}
 }
 
-// A topic's records come back in Seq order even when their timestamps say
-// otherwise: Seq is the one total order of a topic's content, and it is what
-// makes a transcript read question-first.
+// A topic's records come back in Seq order even when their timestamps say otherwise: Seq is the one
+// total order of a topic's content, and it is what makes a transcript read question-first.
 func TestQueryArchivesL4OrdersBySeqNotTimestamp(t *testing.T) {
 	engine := tempEngine(t)
 	idx := index.NewL4Index()
@@ -127,9 +123,8 @@ func TestQueryArchivesL4OrdersBySeqNotTimestamp(t *testing.T) {
 	}
 }
 
-// A record the index names but the engine cannot read is mirror drift and must
-// be reported: a transcript missing one utterance reads exactly like a complete
-// one. An empty query is not that case — it selects nothing, it does not fail.
+// A record the index names but the engine cannot read is mirror drift and must be reported: a
+// transcript missing one utterance reads exactly like a complete one.
 func TestQueryArchivesL4TopicIndexDriftIsAnError(t *testing.T) {
 	engine := tempEngine(t)
 	idx := index.NewL4Index()
@@ -143,10 +138,8 @@ func TestQueryArchivesL4TopicIndexDriftIsAnError(t *testing.T) {
 	}
 }
 
-// The domain-wide route answers the same promise as the indexed one: a record it
-// cannot return is reported. Otherwise a content search quietly hands back fewer
-// lines than the domain holds, and the caller has no way to tell that from a turn
-// that said less.
+// The domain-wide route answers the same promise as the indexed one: a record it cannot return is
+// reported.
 func TestQueryArchivesL4ScanReportsUnreadableRecord(t *testing.T) {
 	engine := tempEngine(t)
 	idx := index.NewL4Index()
@@ -209,11 +202,6 @@ func TestDropExpiredArchivesMirrorsAfterTheDisk(t *testing.T) {
 }
 
 // A Seq is a slot inside one turn, so a read spanning turns cannot order by it.
-// Ordering by Seq did two damages at once: a host asking for its newest content
-// got the turn with the most slots — an old but long turn beating a short fresh
-// one — and records tied on Seq came back in whatever order the record scan
-// visited them, so the same query twice could return different subsets of
-// itself.
 func TestDomainWideL4ReadOrdersByTimeAndKeepsNewest(t *testing.T) {
 	engine := tempEngine(t)
 	idx := index.NewL4Index()

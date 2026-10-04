@@ -11,12 +11,8 @@ import (
 	memhop "github.com/genosis18m/Long-term-memory-go/api"
 )
 
-// Merging rewrites which scene a topic belongs to, so it is the one correction that moves
-// records rather than deleting them: the scene id on every moved topic, its keyword track,
-// the L4 archives keyed by those topics, and the caches that list them all have to agree.
-// The existing merge case checks the live answer, which a cache that was updated while the
-// records were not would also satisfy. This one closes the file and reads it back, so the
-// reopened truth — rebuilt from records — is what has to match.
+// Merging rewrites which scene a topic belongs to, so it is the one correction that moves records
+// rather than deleting them.
 func TestInterfaceMergeSurvivesReopen(t *testing.T) {
 	llm := newMockLLM(t)
 	path := filepath.Join(t.TempDir(), "merge_reopen.meh")

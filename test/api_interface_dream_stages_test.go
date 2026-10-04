@@ -1,10 +1,8 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// `DreamReport.Stages` is how a host finds out which part of a consolidation pass did what,
-// and after a failure which part never ran. That only works if the names and their order are
-// a closed, published set — a stage renamed in code would leave a host switching on a word
-// the library no longer emits.
+// `DreamReport.Stages` is how a host finds out which part of a consolidation pass did what, and after
+// a failure which part never ran.
 
 package test
 

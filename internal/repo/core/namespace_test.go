@@ -8,17 +8,8 @@ import (
 	"testing"
 )
 
-// Every id the library derives must name exactly one kind of record, because an
-// id is all a caller hands back: no record type travels with it. Two layers of
-// guarantee make that true — a derivation namespace per family, and the typed
-// reader that refuses a frame of the wrong type (see
-// TestTypedReadersRejectForeignRecordType). This is the first half, proved by
-// exhaustion rather than by a case picked to pass: every derivation is run over
-// one shared input space and no id may come out twice.
-//
-// The space deliberately reuses the same numbers across families (topic 7 as a
-// turn's scene, as an L4 context, as a plan's owner), which is exactly the shape
-// a collision would take if a namespace were missing.
+// Every id the library derives must name exactly one kind of record, because an id is all a caller
+// hands back: no record type travels with it.
 func TestDerivedIdNamespacesAreDisjoint(t *testing.T) {
 	scenes := []uint64{0, 1, 7, 42, 0xdeadbeef, 1 << 40}
 	seqs := []uint64{0, 1, 2, 3, 10, 1000}
@@ -60,9 +51,8 @@ func TestDerivedIdNamespacesAreDisjoint(t *testing.T) {
 			}
 			return out
 		},
-		// A fused group's key spans the same (scene, number) space the turn family
-		// draws from, so its own prefix and its member set are what keep the two
-		// families apart.
+		// A fused group's key spans the same (scene, number) space the turn family draws from, so its own
+		// prefix and its member set are what keep the two families apart.
 		"fused": func() []uint64 {
 			var out []uint64
 			for _, s := range scenes {
@@ -92,9 +82,8 @@ func TestDerivedIdNamespacesAreDisjoint(t *testing.T) {
 	}
 }
 
-// A derivation is only safe if distinct inputs give distinct ids within its own
-// family too — otherwise the namespace keeps families apart while one of them
-// aliases its own records.
+// A derivation is only safe if distinct inputs give distinct ids within its own family too — otherwise
+// the namespace keeps families apart while one of them aliases its own records.
 func TestDerivedIdFamiliesAreInjective(t *testing.T) {
 	check := func(name string, ids []uint64) {
 		t.Helper()

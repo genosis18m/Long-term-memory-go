@@ -1,8 +1,8 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// The content write path: who owns which field of an appended record, and what one
-// topic's shared Seq space does when two kinds want the same slot.
+// The content write path: who owns which field of an appended record, and what one topic's shared Seq
+// space does when two kinds want the same slot.
 
 package internal
 
@@ -22,9 +22,7 @@ func utterance(seq uint64, role core.ArchiveRole, text string, ts int64) core.Ar
 	}
 }
 
-// An append adopts what the utterance kind owns — speaker and medium — and derives
-// the addressing from the topic it was given, so a host can read a record back,
-// change it, and write it to the slot it came from.
+// An append adopts what the utterance kind owns.
 func TestAppendArchiveAdoptsDeclaredUtteranceFields(t *testing.T) {
 	db := newTestDB(t, newTestEngine(t))
 	_, _, topicID := newTurnKey(t, db)
@@ -49,9 +47,8 @@ func TestAppendArchiveAdoptsDeclaredUtteranceFields(t *testing.T) {
 	}
 }
 
-// Seq is one space the topic's two kinds share, and taking a held slot overwrites it
-// instead of erroring — that is what lets a replayed turn converge. It reaches
-// across kind: naming an event's slot replaces the event.
+// Seq is one space the topic's two kinds share, and taking a held slot overwrites it instead of
+// erroring — that is what lets a replayed turn converge.
 func TestAppendArchiveOverwritesAcrossKinds(t *testing.T) {
 	db := newTestDB(t, newTestEngine(t))
 	_, hex, topicID := newTurnKey(t, db)
@@ -80,9 +77,8 @@ func TestAppendArchiveOverwritesAcrossKinds(t *testing.T) {
 	}
 }
 
-// Auto-allocation stays above every held slot, so appending in any order cannot
-// collide: the two dialogue slots are still free for a host that names them after
-// its events have landed.
+// Auto-allocation stays above every held slot, so appending in any order cannot collide: the two
+// dialogue slots are still free for a host that names them after its events have landed.
 func TestAppendArchiveAllocatesAboveHeldSlots(t *testing.T) {
 	db := newTestDB(t, newTestEngine(t))
 	_, _, topicID := newTurnKey(t, db)
@@ -108,9 +104,8 @@ func TestAppendArchiveAllocatesAboveHeldSlots(t *testing.T) {
 	}
 }
 
-// An over-budget record is refused rather than shortened, and the two kinds have
-// different budgets: an event is a note about a step, an utterance is the step's
-// whole text.
+// An over-budget record is refused rather than shortened, and the two kinds have different budgets: an
+// event is a note about a step, an utterance is the step's whole text.
 func TestAppendArchiveBudgets(t *testing.T) {
 	db := newTestDB(t, newTestEngine(t))
 	_, _, topicID := newTurnKey(t, db)
@@ -135,12 +130,8 @@ func TestAppendArchiveBudgets(t *testing.T) {
 	}
 }
 
-// A record's timestamp is milliseconds since the epoch, and the two unit mistakes a
-// host makes are refused rather than stored: a seconds-scale stamp writes a record
-// the retention window sweeps at the next Dream, taking the turn's whole transcript
-// with it while the sweep reports nothing, and a microsecond-scale one never expires.
-// Both leave nothing behind, and the same instant in milliseconds is stored and found
-// by a millisecond window.
+// A record's timestamp is milliseconds since the epoch, and the two unit mistakes a host makes are
+// refused rather than stored.
 func TestAppendArchiveRefusesAnAbsentOrWrongUnitTimestamp(t *testing.T) {
 	db := newTestDB(t, newTestEngine(t))
 	_, hex, topicID := newTurnKey(t, db)

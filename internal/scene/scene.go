@@ -1,10 +1,7 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// Package scene holds the small methods over one scene record: resolving or
-// allocating it, listing its depth-1 topics, rendering one topic together with
-// the utterances it owns, and the deletion steps that keep parents, content
-// mirrors and L3 anchors consistent.
+// Package scene holds the small methods over one scene record.
 
 package scene
 
@@ -19,15 +16,8 @@ import (
 	"github.com/genosis18m/Long-term-memory-go/internal/repo/core"
 )
 
-// CurrentScene names the scene a domain resumes its conversation on: the one a turn was
-// opened in most recently. Until that stamp existed the only hint was the turn counter,
-// and the counter cannot tell two equally long conversations apart — a restart then
-// restored whichever id happened to be smaller, dropping the host into a conversation it
-// had not been in. The counter still decides where nothing is stamped (records written
-// before the field existed), and the smaller id breaks the last tie, so the same records
-// always restore the same scene. A domain holding no scenes answers 0, which is the read's
-// cue to open the first one. The scan is strict: resuming the wrong stream is worse than
-// reporting the damage.
+// CurrentScene names the scene a domain resumes its conversation on: the one a turn was opened in most
+// recently.
 func CurrentScene(engine *core.StorageEngine, agentID uint64) (uint64, error) {
 	scenes, err := repo.CollectAllScenesL2(engine, agentID)
 	if err != nil {
@@ -48,14 +38,8 @@ func CurrentScene(engine *core.StorageEngine, agentID uint64) (uint64, error) {
 	return resumed.SceneID, nil
 }
 
-// ResolveExisting answers which scene a read is scoped to when the host named one,
-// and refuses the combination where the host also handed over an anchor: it returns
-// the id, not the record — opening the turn is the step that reads the scene back to
-// bump its counter. Record-layer errors pass through unchanged, so an unknown scene
-// stays ErrNotFound and a closing database ErrClosed.
-//
-// The anchor is creation-time only: a scene that already exists keeps its anchor
-// until UpdateScene moves it, so this refusal needs no lookup of the named graph.
+// ResolveExisting answers which scene a read is scoped to when the host named one, and refuses the
+// combination where the host also handed over an anchor: it returns the id, not the record.
 func ResolveExisting(engine *core.StorageEngine, agentID uint64, sceneID uint64, anchored bool) (uint64, error) {
 	slot, err := core.ReadSceneSlot(engine, agentID, sceneID)
 	if err != nil {
@@ -68,11 +52,8 @@ func ResolveExisting(engine *core.StorageEngine, agentID uint64, sceneID uint64,
 	return slot.SceneID, nil
 }
 
-// Create allocates a free scene id and persists the scene under a library-generated
-// name, anchored on the given L3 graph when one is named (0 anchors nothing). The
-// anchor graph is resolved before anything is written: a refusal has to leave no
-// scene behind. Nothing is read back afterwards — freshID proved the id free under
-// the caller's domain lock.
+// Create allocates a free scene id and persists the scene under a library-generated name, anchored on
+// the given L3 graph when one is named (0 anchors nothing).
 func Create(engine *core.StorageEngine, agentID uint64, anchor uint64, stamp int64) (uint64, error) {
 	if anchor != 0 {
 		g, err := repo.ReadSharedGraphL3(engine, anchor)
@@ -94,9 +75,7 @@ func Create(engine *core.StorageEngine, agentID uint64, anchor uint64, stamp int
 	return slot.SceneID, nil
 }
 
-// freshID mints an unused 8-byte scene id. Zero is skipped: it is the
-// "no scene" sentinel of the ID surface. A collision would silently merge two
-// distinct scenes, so allocation loops until the id is free.
+// freshID mints an unused 8-byte scene id.
 func freshID(engine *core.StorageEngine, agentID uint64) (uint64, error) {
 	for {
 		var b [8]byte

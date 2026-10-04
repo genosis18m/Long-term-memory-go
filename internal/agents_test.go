@@ -1,8 +1,8 @@
 // Copyright (c) 2026 qyiun666
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// Multi-agent lifecycle tests: registry stability across restarts and domain
-// isolation at identical idHashes.
+// Multi-agent lifecycle tests: registry stability across restarts and domain isolation at identical
+// idHashes.
 
 package internal
 
@@ -22,11 +22,8 @@ func openPrimaryTestDB(t *testing.T, path string) *DB {
 	return db
 }
 
-// A name is a domain's address, so it resolves to the same domain after a
-// restart — the mapping is rebuilt from the on-file registry records — and two
-// names never land in one place. Sameness is shown by what the domain holds; the
-// id a domain answers to is published too (Session.AgentID / DB.Agent), but a name
-// is what survives a lost roster.
+// A name is a domain's address, so it resolves to the same domain after a restart — the mapping is
+// rebuilt from the on-file registry records — and two names never land in one place.
 func TestSubAgentNameResolvesToTheSameDomainAcrossRestart(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "registry.meh")
 	llm := testLLMConfig()
@@ -69,8 +66,8 @@ func TestSubAgentNameResolvesToTheSameDomainAcrossRestart(t *testing.T) {
 	}
 }
 
-// TestAgentDomainIsolation two agents writing the same idHash into one
-// shared file never see each other's records.
+// TestAgentDomainIsolation two agents writing the same idHash into one shared file never see each
+// other's records.
 func TestAgentDomainIsolation(t *testing.T) {
 	db := openPrimaryTestDB(t, filepath.Join(t.TempDir(), "isolation.meh"))
 	t.Cleanup(func() { _ = db.Close() })
@@ -99,9 +96,8 @@ func TestAgentDomainIsolation(t *testing.T) {
 		t.Fatalf("GetL0(b) = %+v err=%v, want agent-b", pb, err)
 	}
 
-	// One open turn per domain: each domain's own scene mints its own topic id and
-	// keeps it, so writing to a after b opened a later turn still lands on a's turn —
-	// and the events under them stay per-agent. A host names neither id on the way in.
+	// One open turn per domain: each domain's own scene mints its own topic id and keeps it, so writing to
+	// a after b opened a later turn still lands on a's turn — and the events under them stay per-agent.
 	_, turnA, _ := newTurnKeyFor(t, db, a)
 	_, turnB, _ := newTurnKeyFor(t, db, b)
 	if _, err := db.AppendArchive(a, core.ArchiveSlot{Kind: core.KindEvent, EventType: "tool_call", Content: "a", CreatedAt: 1}); err != nil {
@@ -126,10 +122,8 @@ func TestAgentDomainIsolation(t *testing.T) {
 	}
 }
 
-// Agents lists what the file holds, and the listing reads the registry rather than a
-// cache — so a tenant key that exists but resolves to no name has to stop it. Leaving
-// that domain out would tell a host the file holds one fewer memory than it does, and
-// the whole purpose of the list is to be the complete answer.
+// Agents lists what the file holds, and the listing reads the registry rather than a cache — so a
+// tenant key that exists but resolves to no name has to stop it.
 func TestAgentsStopsOnAKeyThatResolvesToNoName(t *testing.T) {
 	db := openPrimaryTestDB(t, filepath.Join(t.TempDir(), "agents.meh"))
 	t.Cleanup(func() { _ = db.Close() })

@@ -47,9 +47,8 @@ func TestSurfaceL2Scenes(t *testing.T) {
 	if err := db.MergeScenes(primary, []string{second.Scene.SceneID}); err != nil {
 		t.Fatalf("merge scenes: %v", err)
 	}
-	// Two refusals share this one entry point and one coarse code, so the message is what
-	// tells a host which of its ids it got wrong: a scene merged into itself, versus the same
-	// secondary named twice. Checked as a pair — either sentence alone would let the other drift.
+	// Two refusals share this one entry point and one coarse code, so the message is what tells a host
+	// which of its ids it got wrong: a scene merged into itself, versus the same secondary named twice.
 	selfErr := db.MergeScenes(primary, []string{primary})
 	if CodeOf(selfErr) != ErrInvalidQuery {
 		t.Fatalf("self-merge: want ErrInvalidQuery, got %v", selfErr)
@@ -74,9 +73,8 @@ func TestSurfaceL2Scenes(t *testing.T) {
 	}
 }
 
-// The scene read is served out of a cache, so writing the record alone would
-// leave a new name invisible until the next consolidation rebuilt the index.
-// This is the guard on that mirroring: both reads have to see the name at once.
+// The scene read is served out of a cache, so writing the record alone would leave a new name
+// invisible until the next consolidation rebuilt the index.
 func TestSurfaceRenameTopicIsVisibleOnTheReadPath(t *testing.T) {
 	db := openSurfaceDB(t)
 	res, err := db.Search(SearchQuery{})
@@ -123,9 +121,8 @@ func TestSurfaceRenameTopicIsVisibleOnTheReadPath(t *testing.T) {
 	}
 }
 
-// Empty is the absence of a name rather than one: a topic is created unnamed and
-// stays so until somebody names it, so clearing it adds nothing. An unknown topic
-// is reported instead of being invented, and a malformed id never reaches storage.
+// Empty is the absence of a name rather than one: a topic is created unnamed and stays so until
+// somebody names it, so clearing it adds nothing.
 func TestSurfaceRenameTopicRefusals(t *testing.T) {
 	db := openSurfaceDB(t)
 	res, err := db.Search(SearchQuery{})
@@ -143,13 +140,8 @@ func TestSurfaceRenameTopicRefusals(t *testing.T) {
 	}
 }
 
-// The transcript read can name nothing at all: which scene this domain is working is
-// the library's own memory, so a loop that recalls between its rounds carries no id and
-// opens no turn to do it. A domain that has never been read answers with an empty
-// transcript — "nothing has been said here yet" is a fact, not a failure, and a recall
-// port whose error terminates the round needs no special case for it. Starting a
-// conversation is still what the read that opens a turn does, and a scene the host *names*
-// that is not there is still ErrNotFound.
+// The transcript read can name nothing at all: which scene this domain is working is the library's own
+// memory, so a loop that recalls between its rounds carries no id and opens no turn to do it.
 func TestSurfaceSceneReadNeedsNoId(t *testing.T) {
 	db := openSurfaceDB(t)
 
