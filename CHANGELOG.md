@@ -45,7 +45,7 @@ README 的版本表与 git log。
 15. **「一家一份库」里项目知识怎么走，钉在门面上**：L3 是一份文件一个池（不是域一个池），所以模型用一次工具调用招来的
  worker 若另开一条路径，起手是一张空图；若作为父文件的子域建出来，则不必重导就继承那张图。此前这两种形状只在读面行为上成立、 门面级没有测试钉着，而宿主挑哪一种（共享项目知识 vs 各自一家）恰恰是按这条来定的。补 `TestKnowledgeGraphStaysInsideItsFile`：同文件的第二个域看得见、第二个文件看不见、且第二个文件自己导入不动到第一份文件。**负例证明**：把 `ListL3` 的池从公共域改成调用方域，第一条断言当场红。形状一字未动。
 16. **指南里那段可跑骨架有了编译检查**：`make check-guides` 把两份指南 §11 的 `package main` 代码块抽进一个临时模块，用 `replace` 指向当前工作树、`GOPROXY=off` 编一遍。「照文档抄就能集成」这句话此前只靠人读——示例里的符号随公开面改口而烂掉时没有任何检查会红，而 §11 恰恰是宿主最快的一条接入路径。两份指南的骨架现在都编得过（实测）；**负例证明**：把示例里的 `SearchQuery{}` 改成一个不存在的名字，该 target 当场以 `undefined: api.SearchQueryNope` 退出 2。零新依赖，也不塞进 pre-commit（它是开发机上显式的一步）。
-17. **四个调参旋钮统一成「留 0 就是没填」**：原来三个字段各自解释自己的零值——两个当「关掉」、一个当「不跳过而且让模型按 0 去合」，只有保留窗口把 0 与负数都读成库默认；而 `LlmConfig` 的两个预算早就是「留 0 = 默认」这一种读法。归一化只落在宿主的结构体变成引擎配置的那一刻（`OpenDB`），六个读取点一个不改：0 由 `DefaultMemHopDefaults` 顶上，「关掉这一项」改用显式负数，压缩门限的负数折成 0（0 才是「不设目标」的真实取值，负数不该进提示词）。代价说清：`DreamCompressMinTopics` 那个 0 不是「更保守」而是**更激进**——它同时是提示词里让场景收敛到的目标数，零值宿主拿到的是「把话题压向 0 或以下」。三仓 e2e 复跑 14 条全过，而它本身就是拿 `api.MemHopDefaults{}` 在跑：改前那次 `Dream` 有一次巩固调用、场景清单多出一个融合父行（4 vs 3）、关键词调用 6 次；改后巩固按 20 的门限跳过、那次调用归零、关键词 5 次。方向是保守而非丢数据，被改变的只是把 0 当「关掉」用的宿主——那批读法从未随 tag 发布。新增 `internal/config` 的第一份测试与`TestOpenTakesUnfilledDefaultsAsTheLibraryDefaults`（负例：撤掉归一化即红）。磁盘格式 `0x0012` 不变，公开面一字不变。决策与四条落选方案见 `notes/implemented/architecture/2026-09-23-unfilled-means-default-for-the-four-knobs.md`。
+17. **四个调参旋钮统一成「留 0 就是没填」**：原来三个字段各自解释自己的零值——两个当「关掉」、一个当「不跳过而且让模型按 0 去合」，只有保留窗口把 0 与负数都读成库默认；而 `LlmConfig` 的两个预算早就是「留 0 = 默认」这一种读法。归一化只落在宿主的结构体变成引擎配置的那一刻（`OpenDB`），六个读取点一个不改：0 由 `DefaultMemHopDefaults` 顶上，「关掉这一项」改用显式负数，压缩门限的负数折成 0（0 才是「不设目标」的真实取值，负数不该进提示词）。代价说清：`DreamCompressMinTopics` 那个 0 不是「更保守」而是**更激进**——它同时是提示词里让场景收敛到的目标数，零值宿主拿到的是「把话题压向 0 或以下」。三仓 e2e 复跑 14 条全过，而它本身就是拿 `api.MemHopDefaults{}` 在跑：改前那次 `Dream` 有一次巩固调用、场景清单多出一个融合父行（4 vs 3）、关键词调用 6 次；改后巩固按 20 的门限跳过、那次调用归零、关键词 5 次。方向是保守而非丢数据，被改变的只是把 0 当「关掉」用的宿主——那批读法从未随 tag 发布。新增 `internal/config` 的第一份测试与`TestOpenTakesUnfilledDefaultsAsTheLibraryDefaults`（负例：撤掉归一化即红）。磁盘格式 `0x0012` 不变，公开面一字不变。决策与四条落选方案见 `upstream notes/implemented/architecture/2026-09-23-unfilled-means-default-for-the-four-knobs.md`。
 18. **召回契约补上「摘要先老化、行还在」这一档**：第 8 条把规则写成「丢 `Depth > 1`、`ChildCount > 0` 取那条 `RoleDream`」，而保留窗扫的是正文不是话题行——一周之后一个巩固组正是「表面上一行、自己没有正文」的状态，照原规则渲染会**整段失声**，而库里那些轮的关键词轨还在（实测新用例：`TestFusedGroupAgesIntoKeywordTracksNotSilence`：摘要扫掉，父行留在 depth-1 且带着自己那条 `FusedKeywords`，两个子行也各自带着）。规则因此改成有条件的：有摘要时跳过 depth-2，没摘要就交出**这一行自己的** `Keywords`——摊平的那份列举不带父指针，读者走不进那棵子树，所以能退回的东西必须就写在行上（那条轨正是建组时从成员摘要折出来的）；`Messages` 为空是过期的终局而不是丢了一行。零代码改动，两份指南同批改口。
 19. **场景读的每一行带上自己的两个时间界**（`SceneContextTopic.UserTimestamp`/`AgentTimestamp`，与 `TopicSlot` 同名同义）：上一条把「父行没正文就退回 `Keywords`」写成规则之后，拿宿主那条召回路实测了一遍（`ContentRetentionMs=1` 逼出过期态）——**四行全部 `messages=0`，而按旧契约「时间取最早一条消息」只能定成 1970 年**，于是这些记忆在「最近 N 条」的截断里排在最前、第一个被丢掉；更糟的是没收进组的普通一轮两句原文被扫掉后按契约直接被丢弃，一份跑了两周的场景读起来是空的。行上本来就有那两个界（轮＝刺激/应答时刻，组＝组内最早/最晚那一轮），只是这条读一直没交出来；交出来之后第（4）判定不再扫消息，宿主少一个循环。规则同时推广到任意一行没有正文的表面行：退回这一行自己的 `Keywords`。实测证据在宿主那侧（同树的过期场景用例：改前 1 条且日期 1970，改后 2 条且日期是这两行自己的时刻）；引擎侧新增映射断言（负例：把 `scene.ContextTopic` 里那两行映射摘掉即红）。磁盘格式 `0x0012` 不变，公开面方法数不变，只多两个读侧字段。
 
@@ -135,7 +135,7 @@ README 的版本表与 git log。
 
 52. **关键词提炼不再把「撞到输出上限」说成「这个模型不会答 JSON」**（`internal/cap/llmops/keywords.go`，本轮唯一一处生产代码改动）：提炼的尝试阶梯是三档递增的输出预算加最后一次格式重试，而推理型模型最常见的失败形态就是整段预算被思考吃掉、每一档都回 `finish_reason=length`。此前最后一步把这种截断改写成了 `errKeywordFormat`，文本是「returned no parseable JSON; check the model's structured-output capability」——两档都带 `ErrLLM`，错误文本是宿主分辨「抬 `MaxOutputTokens`」还是「换模型」的唯一通道，那句把宿主送去查一个从没答错过的端点。现在最后一步让传输层自己的错误原样上抛（那句话带着 `max_tokens=N` 与 `ErrTruncated` 因果），分块提炼再补上「第几块 / 共几块」并把原错误留在因果里。同一条判据在本仓已写过两次（巩固与蒸馏把那处「重试没跑成被报成答非所问」改准过），这是第三处，也是最容易被宿主当成模型质量问题的一处。`ErrTruncated` 仍是传输层的 `errors.Is` 标记，**不新增公开错误码**，方法数与磁盘格式一字未动。证据：`TestKeywordExtractionKeepsATruncationAsTheCeilingItIs`（阶梯走满 4 次调用、截断留在错误链里、文本不再出现 no parseable JSON）与 `TestChunkedExtractionNamesTheChunkAndKeepsTheCause`（5000 字切成 3 块，报 `chunk 0 of 3` 且在第一块就停）。**四条负例各红在对应断言上**：把截断改回伪装、包装时丢掉因果、包装时丢掉块号、以及去掉那层包装。
 
-53. **宿主可以只存一件标识符：域既有名字可幂等取，也有 id 可读回、可拿回去**（`Session.AgentID` + `DB.Agent(llm, id)`，本轮公开面两处加法，用户裁定）：v1.6.4 把域 id 从公开面收掉，理由是「名字就是唯一的把手」；真接入里宿主仍然要为每个域存一件标识符，而名字要在 `Open`、`SubAgent`、`ProfileInput` 三处各抄一遍，抄错一次就安静地建出第二个子域。现在句柄上的 `AgentID()` 交出该域 16 位 hex 的 id（主域就是那个隐式零号值），库句柄上的 `DB.Agent(llm, id)` 按它取回同一个域、并把端点换成本次传入的那个；它**不建任何东西**——这个文件从没注册过的 id 以 `ErrAgentNotFound` 拒，一句不是 hex 的字符串在碰任何域之前以 `ErrInvalidQuery` 拒，所以一个打错或编出来的 id 开不出一个顶替真域的空记忆。id 仍然不透明、仍然全部由库发出、仍然不许宿主自造，放弃掉的只是「id 彻底不出门面」这一条形式收益。测试按形状钉：三个域三个互不相同的 16 位 hex，同一 id 在重开之后仍指向 worker 自己的画像（`先写测试再动手` 逐字段对回），另一个 id 落在另一个域上，主域的 id 交回主域，未知 id 与被当作 id 递进来的名字各拿自己那一档码。按 id 取回同时把该域挂到本次传入的端点上（正活着的域立刻换 transport），这条由 `TestAgentByIDMovesTheLiveDomainToTheNewEndpoint` 钉。**四条负例各红在自己的断言上**：撤掉准入 → 未知 id 答成 code 0；撤掉解析 → 名字递进 id 这道门也不报错；把 id 换成「一律回主域」→ 句柄交出 `0000000000000000`；撤掉装端点那一步 → 活域仍跑在旧端点上。**公开面从 25 + 7 变到 26 + 8**：清单、门面注释门禁的条数（34）、两份指南的入口段与 §9 速查表、AGENTS 与 `internal/agent.md` 的「两个入口」同批改口；决策档案里那条「保留一个按 id 取会话的方法作为逃生口」的落选理由改写为「2026-09-23 改判采纳」，原理由与为什么不再成立都留在 `notes/implemented/architecture/2026-09-11-open-decides-the-primary-domain.md`。磁盘格式 `0x0012` 不动（域 id 本来就在每条记录的帧里，注册记录早已存在），对宿主是纯加法，不断任何既有调用。
+53. **宿主可以只存一件标识符：域既有名字可幂等取，也有 id 可读回、可拿回去**（`Session.AgentID` + `DB.Agent(llm, id)`，本轮公开面两处加法，用户裁定）：v1.6.4 把域 id 从公开面收掉，理由是「名字就是唯一的把手」；真接入里宿主仍然要为每个域存一件标识符，而名字要在 `Open`、`SubAgent`、`ProfileInput` 三处各抄一遍，抄错一次就安静地建出第二个子域。现在句柄上的 `AgentID()` 交出该域 16 位 hex 的 id（主域就是那个隐式零号值），库句柄上的 `DB.Agent(llm, id)` 按它取回同一个域、并把端点换成本次传入的那个；它**不建任何东西**——这个文件从没注册过的 id 以 `ErrAgentNotFound` 拒，一句不是 hex 的字符串在碰任何域之前以 `ErrInvalidQuery` 拒，所以一个打错或编出来的 id 开不出一个顶替真域的空记忆。id 仍然不透明、仍然全部由库发出、仍然不许宿主自造，放弃掉的只是「id 彻底不出门面」这一条形式收益。测试按形状钉：三个域三个互不相同的 16 位 hex，同一 id 在重开之后仍指向 worker 自己的画像（`先写测试再动手` 逐字段对回），另一个 id 落在另一个域上，主域的 id 交回主域，未知 id 与被当作 id 递进来的名字各拿自己那一档码。按 id 取回同时把该域挂到本次传入的端点上（正活着的域立刻换 transport），这条由 `TestAgentByIDMovesTheLiveDomainToTheNewEndpoint` 钉。**四条负例各红在自己的断言上**：撤掉准入 → 未知 id 答成 code 0；撤掉解析 → 名字递进 id 这道门也不报错；把 id 换成「一律回主域」→ 句柄交出 `0000000000000000`；撤掉装端点那一步 → 活域仍跑在旧端点上。**公开面从 25 + 7 变到 26 + 8**：清单、门面注释门禁的条数（34）、两份指南的入口段与 §9 速查表、AGENTS 与 `internal/agent.md` 的「两个入口」同批改口；决策档案里那条「保留一个按 id 取会话的方法作为逃生口」的落选理由改写为「2026-09-23 改判采纳」，原理由与为什么不再成立都留在 `upstream notes/implemented/architecture/2026-09-11-open-decides-the-primary-domain.md`。磁盘格式 `0x0012` 不动（域 id 本来就在每条记录的帧里，注册记录早已存在），对宿主是纯加法，不断任何既有调用。
 
 54. **域 id 的作用域是一个文件——这条被三仓 e2e 第一次点这道门就撞了出来**（新增 `TestAnAgentIDAddressesADomainInsideOneFile`；门面注释、两份指南、AGENTS 与 `internal/agent.md` 的「域身份三个入口」同补一段）：按「一个 agent 一个文件」部署时，两个文件各自的主域**都是那个隐式零号域**，`AgentID()` 交出同样的 16 个 0；如果宿主照上一轮的写法拿 id 建一张跨文件的全局表，两个 agent 的记忆就会被叠到一起。现在把实话写进宿主读到的每一处文本：一个 id 在**一个文件内**唯一地指一个域（`DB.Agent` 因此没有歧义），跨文件的键是路径；测试实测两个文件的同一个零号 id 各读回自己那份画像（`first-primary` / `second-primary`），并钉住「同一文件内主域 id 与子域 id 必不相同」，所以宿主在单文件里按 id 建表不撞车。指南里那句「宿主可以只存一件标识符」随之限定为「在一个文件内只存一件」。e2e 程序从 14 条长到 16 条：按 id 重开本文件主域交出同一批话题、一个文件内两种 id 互不相同、编出来的 id 在门口被 `ErrAgentNotFound` 拒。零生产代码改动（本轮改的全是文档注释与一处测试），公开面与磁盘格式一字未动。
 
@@ -376,7 +376,7 @@ README 的版本表与 git log。
 
 1. **`cmd/memhop-mcp` 整包删除**（14 个文件 3109 行）：25 个工具、多租户 HTTP（SSE 与 streamable-http 双传输）、按 `/mcp/<tenant>` 建/取域的租户注册表、`--tenants` 白名单与锚定 db-dir 的读入口一起消失。仓库不再有 server 形态、不再有后台进程，对外只剩「以 Go module 使用 `api`」一种接入。
 2. **直接依赖 4 → 3**：它是全仓唯一读 `modelcontextprotocol/go-sdk` 的地方，`go mod tidy` 连带清掉它带入的 7 个间接依赖（`google/jsonschema-go`、`segmentio/asm`、`segmentio/encoding`、`yosida95/uritemplate/v3`、`x/oauth2`、`x/sync`、`x/time`）。留下 xxhash、go-openai、golang.org/x/sys。
-3. **公开 Go 面一字不动**：`Session` 25 + `DB` 7 的名单、锁范围、幂等语义与 ID 契约全部原样；`api.CodeOf` 保留为宿主把错误读成数值码的门面唯一口（退役后它在本仓零调用，留任理由见 `notes/implemented/architecture/2026-09-22-go-module-only-surface.md`）。
+3. **公开 Go 面一字不动**：`Session` 25 + `DB` 7 的名单、锁范围、幂等语义与 ID 契约全部原样；`api.CodeOf` 保留为宿主把错误读成数值码的门面唯一口（退役后它在本仓零调用，留任理由见 `upstream notes/implemented/architecture/2026-09-22-go-module-only-surface.md`）。
 4. **构建与门禁收口**：`make build-mcp` / `test-mcp` 两个 target 删除，pre-commit 与 workflow 的 vet / gofmt 包清单去掉 `cmd`——`cmd/` 已不存在，留着会让门禁直接报错退出（已实测：`go vet ./cmd/...` 退 1）。
 5. **文档按实话重写**：`AGENTS.md` 的形态、对外面、依赖、宿主接入四条改写，「不存在的能力」补上「不带 server 形态」；README 的 MCP 特性条目、分层图与双语集成指南里「仅 Go 侧」的措辞改成对调用方的约束（`CompactTo` 的入参是一条任意写路径，目的地由宿主限定）。顺带纠正一处归因错误：`SceneContextTopic.messages` 的空值例外原本记在 MCP 工具头上，实为 `omitempty` 的性质——Go 侧读回恒为非 nil 列表。磁盘格式 `0x0012` 不变，旧文件照常打开。
 
@@ -415,7 +415,7 @@ README 的版本表与 git log。
 20. **读侧剩下的定序与拒绝改诚实**：跨话题的 `SearchL4` 此前按 `Seq` 排序，而 `Seq` 是**轮内**槽位号，于是 `Limit` 留下的是「槽位最多的那一轮」而不是最新内容，`Seq` 相同的记录又按扫描顺序出现，同一查询两次可给出不同子集（现在单话题仍按槽位，跨话题按记录自己的时间、以 id 收尾，`TestDomainWideL4ReadOrdersByTimeAndKeepsNewest`）。`Dream` 在压缩已落盘之后被取消，会整段跳过 L2Meta 重建，于是该域继续列出这一趟已经吞掉的轮次，直到缓存被回收或重开文件（取消检查点移到装回之后，`TestCancelledDreamReconcilesTheReadPath`）。图导入批次用一份「跳过读不回的槽」的扫描预载标签→图，于是导入一张被坏槽占着的标签会答成「这里没有图」并在同一标签下铸出第二张图，该域节点从此分属两个 id（播种与改名检查都改走严格扫描，且严格拒绝会把读不回的那条记录 id 带出来——引擎没有别的口能指出哪条坏了，`TestImportL3RefusesUnreadableGraphSlot`）。话题列举只保留镜像那条路，删掉生产上不可达的扫记录回退分支与它永远不会产生的 error，宽容版 `CollectAllTopics` 随之消失；一批次给多张图盖章失败时，合并出的错误行按图 id 升序而不是 map 顺序。 随它一起退役的还有图槽的来源：`HypergraphSlot.source` 的 kind 恒为 "manual"、另两个字段没有任何写入路径能设置，`SourceKind` 四个值里三个连写点都没有，于是那个形状、那份枚举与 `source` 键一并删除，旧文件里多出的键在解码时被忽略（对读这个键的宿主是 breaking）。 同一批的「每图标题集 / 每图边键」此前是按图懒加载、且来自一份跳过读不回记录的列举，于是对一个读不回的节点，Merge 导入会答「这个标题还没有」，按位置式 id 原地覆写那条读不回的记录、还算进 CreatedIDs 当成新增；现在三张索引都在批次创建时一次建好、且走严格扫描——顺带把「K 张图各扫两遍全池」换成整池两遍。
     - **话题列举给出确定顺序**：排序键是 (UserTimestamp, Depth)，而**同深度**的两个话题可以共用一个 user 时间戳（融合父带的就是它组内首轮的 `UserTimestamp`，任何同深度、时间戳相同的话题都与它打平），打平时顺序只能由记录扫描给出——现在以记录 id 收尾，同一个场景两次读给出同一个顺序（`TestListTopicsL2BreaksTiesOnID`）。
     - **顺手净删**：`index` 里与 `core.IterAll` 同形的第二份扫描（自己 `json.Unmarshal`，绕过帧类型校验）、`domain` 两处永不成立的 `L2Meta == nil` 分支（同文件第三个函数就直接解引用）、`ensureRegistered` 里第二份永不触发的空名校验（唯一的调用方 `SubAgent` 先拒）、一个零调用的 L3 测试辅助函数；`scene.DetachGraph` 扫完一遍场景后又按 id 把每条命中的重读一次再改写，同锁内那次重读的失败分支永不成立——现在直接用扫描已解出的 slot 改写。
-    - **文档四处不实/越界**：`cap` 的「不认识层，收到的都是渲染好的文本」与四个包的现状冲突（`profile.Samples` 自己扫 L1 并按本包常量裁剪，`engram`/`knowledge` 收的是 engine/节点原语），改写为「不认识编排，预算各归各包」；`domain` 两处复制根条目已有的镜像属主纪律、`turn` 一处替键的语义说话、`dream` 一处断言别包的写入集合，各按 D01 收回或上移（「内容只被话题寻址、话题里推不出场景」此前只写在 `turn` 里，现归根条目）；两个写入口的取舍与代价落为决策档案 `notes/implemented/architecture/2026-09-11-l4-content-two-write-entries.md`。
+    - **文档四处不实/越界**：`cap` 的「不认识层，收到的都是渲染好的文本」与四个包的现状冲突（`profile.Samples` 自己扫 L1 并按本包常量裁剪，`engram`/`knowledge` 收的是 engine/节点原语），改写为「不认识编排，预算各归各包」；`domain` 两处复制根条目已有的镜像属主纪律、`turn` 一处替键的语义说话、`dream` 一处断言别包的写入集合，各按 D01 收回或上移（「内容只被话题寻址、话题里推不出场景」此前只写在 `turn` 里，现归根条目）；两个写入口的取舍与代价落为决策档案 `upstream notes/implemented/architecture/2026-09-11-l4-content-two-write-entries.md`。
 
 21. **上抛的错误都带着自己的码**：`ReadRecord` 此前把帧解码器的裸 `io.EOF` 原样交出，而 `api.CodeOf` 对不是 `*common.Error` 的错误返回 0——0 正是「成功」那一档，一次拒绝于是穿着「没有结论」的外衣到达宿主；快照装进来的索引条目不校验偏移，一条 CRC 自洽而偏移高到记录区之外的条目就能让某个 id 指到日志以外（现在按 id 读把它译成 `ErrCorruption`，`TestReadRecordCodesAnIndexEntryTheLogDoesNotHold`）。`Dream` 的「一个场景都没巩固成」同样是裸 `errors.New`，现带 `ErrLLM`。剩下的几处说的是同一件事：**取消**。新增 `ErrCancelled`（5008），Dream 的每个检查点与 LLM 传输里被调用方撤掉的两种等待（请求在途、退避待重试）都报它，`ctx.Err()` 留在 cause 里，`errors.Is(err, context.Canceled)` 照旧成立——被撤掉的请求在 HTTP 栈里报回来的也是一个错误，按状态码分类就成了「服务拒绝了」，而一次报成模型失败的取消会让宿主去查一个从没拒绝过它的东西。回复被输出上限截断也补上 `ErrLLM`（cause 仍是 `ErrTruncated`，升级预算的那次重试靠它判定）：截断通常被升级吃掉，活下来的那一次正是宿主的最后一手信息，此前它带着 0 码。`memhop_dream` 改用 MCP 请求自己的上下文，客户端走开后这一趟在下一个检查点停下，不再以 `context.Background()` 顶着一把域锁跑完整条流水线（`TestCancelledDreamReconcilesTheReadPath`、`TestDreamCancelledBeforeAnySceneLandedReportsCancellation`、`internal/llm/provider_test.go` 三条、`TestHandlePartialKeepsResultAlongsideError`）。
 
@@ -733,15 +733,15 @@ v1.6.2 唯一的树写面 `PlanCommit` 一次只走一步，并且**强制绑一
   （`go test -tags integration ./test/ -run TestInterface` → 21 条）；要真额度的只有
   `core_cycle` / `e2e_flow` / `fidelity` / `keyword_extraction_e2e` / `benchmark`。本轮正是跑这一批
   才发现 `TestInterfaceTurnContentSharesOneKey` 的前提（事件绑到一个还不存在的步骤）已被推翻。
-- 决策档案第三轮：`notes/implemented/architecture/2026-09-10-plan-tree-declared-per-turn.md`；
-  `notes/rejected/architecture/2026-09-09-plan-whole-tree-record-and-cross-layer-cascade.md` 里
+- 决策档案第三轮：`upstream notes/implemented/architecture/2026-09-10-plan-tree-declared-per-turn.md`；
+  `upstream notes/rejected/architecture/2026-09-09-plan-whole-tree-record-and-cross-layer-cascade.md` 里
   「提交即追加胜出」与「纠正手段是作废整轮」两条按本轮现状改写（整树一记录那条否决仍然成立）。
-- 决策档案（2026-09-09/10）：`notes/implemented/architecture/2026-09-09-l4-content-layer-and-plan-only-l6.md`、
-  `notes/implemented/simplification/2026-09-09-addressing-content-by-topic-and-kind.md`、
-  `notes/implemented/simplification/2026-09-09-l4-seven-day-retention-and-transcript-completeness.md`、
-  `notes/implemented/simplification/2026-09-09-update-distills-its-own-topic.md`、
-  `notes/implemented/architecture/2026-09-09-turn-topic-id-is-the-only-join-key.md`、
-  `notes/rejected/architecture/2026-09-09-plan-whole-tree-record-and-cross-layer-cascade.md`。
+- 决策档案（2026-09-09/10）：`upstream notes/implemented/architecture/2026-09-09-l4-content-layer-and-plan-only-l6.md`、
+  `upstream notes/implemented/simplification/2026-09-09-addressing-content-by-topic-and-kind.md`、
+  `upstream notes/implemented/simplification/2026-09-09-l4-seven-day-retention-and-transcript-completeness.md`、
+  `upstream notes/implemented/simplification/2026-09-09-update-distills-its-own-topic.md`、
+  `upstream notes/implemented/architecture/2026-09-09-turn-topic-id-is-the-only-join-key.md`、
+  `upstream notes/rejected/architecture/2026-09-09-plan-whole-tree-record-and-cross-layer-cascade.md`。
 
 ## v1.6.2 — 2026-09-07 — 计划事件不再受词表约束（`EventType` 归宿主）
 
@@ -753,7 +753,7 @@ v1.6.2 唯一的树写面 `PlanCommit` 一次只走一步，并且**强制绑一
 - **对宿主是放宽方向**：原本被拒的写入现在成功，无需宿主改调用点即可受益；meowagent 的沙箱裁决反问（`sandbox_ask`）由此可直接入计划轨迹
 - **测试**：`internal/l6_test.go` 的 `TestPlanEventVocabularyRejectsUnknown` 改写为 `TestPlanEventNamesAreHostOwned`（钉住宿主命名被接受、名字原样回读、被拒仍不建节点链）；`api` 面两处拒写断言改钉空 `EventType`（`surface_l6_test.go`、`surface_closed_loop_test.go`）；`test/api_interface_plan_test.go` 的「被拒不改动树」例子改用缺 `EventType` 的事件
 - **文档同步**：`api/session.go` 的 `AppendTrajectory` / `PlanCommit` 注释、`INTEGRATION_GUIDE.md` 与 `.zh.md` 的 L6 计划面表格、`internal/plan/agent.md`
-- 决策档案：`notes/implemented/simplification/2026-09-07-plan-event-vocabulary-retirement.md`
+- 决策档案：`upstream notes/implemented/simplification/2026-09-07-plan-event-vocabulary-retirement.md`
 
 ## v1.6.1 — 2026-09-06 — 公开面收敛（34→27）、内置说明书卡删除、公开面按使用者分两类、L5 记录层退役（目录即能力）
 
@@ -777,7 +777,7 @@ v1.6.2 唯一的树写面 `PlanCommit` 一次只走一步，并且**强制绑一
 - **组装/管理面（7 个 + DB 8 个）**：会话边界与管理通道调用，不做成 LLM 工具（`UpdateScene`/`MergeScenes`/`DeleteScene`/`DeleteTopic`/`UpdateL3`/`DeleteL3`/`DeleteL3Nodes`）——能力方法 5 个随 L5 记录层退役移除（见下节）
 - 落点：`api/session.go` 头注释总表（go doc 可见）、`api/surface_public_test.go` want 列表分组钉住、`INTEGRATION_GUIDE.md` §8 两类速查
 
-格式在本版本内最终落到 `0x000C`（`0x0F` 帧型随 L5 记录层退役，`0x000B` 及更早文件 Open 时显式拒绝）；决策档案 `notes/implemented/architecture/2026-09-06-remove-builtin-cards.md`（其前身的 embed→代码组装决策同日整体被取代，档案移入 `notes/rejected/`）与 `notes/implemented/architecture/2026-09-06-l5-record-layer-retirement.md`。
+格式在本版本内最终落到 `0x000C`（`0x0F` 帧型随 L5 记录层退役，`0x000B` 及更早文件 Open 时显式拒绝）；决策档案 `upstream notes/implemented/architecture/2026-09-06-remove-builtin-cards.md`（其前身的 embed→代码组装决策同日整体被取代，档案移入 `upstream notes/rejected/`）与 `upstream notes/implemented/architecture/2026-09-06-l5-record-layer-retirement.md`。
 
 ### L5 记录层退役（目录即能力）
 
@@ -790,7 +790,7 @@ v1.6.2 唯一的树写面 `PlanCommit` 一次只走一步，并且**强制绑一
 - **PromptCard 迁入 capability 包**：删去宿主无法复刻的 `id:`（hash 派生）/`package:`（目录名复述）/`usage:`（用量统计失去写入方）三行渲染
 - **格式 0x000B → 0x000C**：`0x0F` 帧型退役，引擎不再存储能力卡；`0x000B` 及更早文件 Open 时显式拒绝、不迁移（本仓先例）；`SnapshotVersion=0x02` 不变（索引结构无变化）
 - **对消费方 breaking**：meowagent 的五个能力调用点、八个类型与 `CapabilityOriginBuiltin` skip 在其自身适配轮次前编译会断（断点清单见决策档案）
-- 决策档案 `notes/implemented/architecture/2026-09-06-l5-record-layer-retirement.md`
+- 决策档案 `upstream notes/implemented/architecture/2026-09-06-l5-record-layer-retirement.md`
 
 ## v1.6.0 — 2026-09-04 — 接口去 fallback、按层闭环修复与文件级 L3/L5 公共池（实测驱动）
 
@@ -805,7 +805,7 @@ v1.6.2 唯一的树写面 `PlanCommit` 一次只走一步，并且**强制绑一
 - **格式 0x000A → 0x000B**：L5 记录换域 = 语义布局变更，旧文件 Open 时显式拒绝、不迁移
 - 结晶与导入拒收与内置卡同名的卡（记进 `Errors`，不落库——存储影子卡将永远无法再更新或删除），结晶提示的现有目录并入内置卡；资源条目 `type` 限定 mcp/skill/api/composite 四值，结晶候选按落盘点过卡级校验（create/merge 前置全量校验，reuse 命中不落盘免校验，reuse 未命中降级 create 在落库前过闸——最小载荷不写入）；`UpdateCapability` 保留 `FileHash`（包水位，非内容指纹）——未变更包的重导入是 no-op，宿主对卡的生命周期与定义修改存活到包内容真正变更；plug/ 目录读取失败（权限/IO）告警，缺目录仍为 no-op
 - 结晶 prompt 改按新形态产出（功能条目数组 + config 动作链），PromptCard 渲染 `package:` 行与条目级 `steps:` 行（`a -> b -> c`）；内置 6 张卡转 v4 单卡包，链序并入 summary
-- 公开面方法数不变（34 会话 + 8 DB 方法）；MCP 工具数不变（31：capability list/update 的 type/workflow 参数删除、list 增 package、import 返回包摘要）；决策档案 `notes/implemented/architecture/2026-09-06-l5-uniform-card-shared-pool.md`
+- 公开面方法数不变（34 会话 + 8 DB 方法）；MCP 工具数不变（31：capability list/update 的 type/workflow 参数删除、list 增 package、import 返回包摘要）；决策档案 `upstream notes/implemented/architecture/2026-09-06-l5-uniform-card-shared-pool.md`
 
 ### L3 知识图升级为文件级公共池
 
@@ -815,7 +815,7 @@ v1.6.2 唯一的树写面 `PlanCommit` 一次只走一步，并且**强制绑一
 - **锚点跨域**：场景锚点校验（`Search{L3ID}` / `UpdateScene{L3ID}`）改读公共域记录；`DeleteL3` 两阶段——公共锁内删图，释放后遍历「默认域 + 注册表」逐域清锚（`detachGraphAnchors`），不嵌套双锁
 - **格式 0x0009 → 0x000A**：0x0009 及更早文件在 Open 时显式拒绝、不迁移（沿用先例；不升版本的替代会让旧按域 L3 记录变孤儿、同名重导入产出双份）
 - **MCP 语义变更**：单文件多租户下所有租户共享同一份 L3 池——原「no data is ever shared across tenants」承诺改写为「除 L3 外按域隔离」
-- 公开面不变（34 会话 + 8 DB 方法）；新增跨域共享/删档存活/保留域守卫/跨域清锚/重启回归/并发竞速六组测试（`internal/l3shared_test.go`），api 租户隔离用例补 L3 共享断言；决策档案 `notes/implemented/architecture/2026-09-05-l3-file-wide-shared-pool.md`
+- 公开面不变（34 会话 + 8 DB 方法）；新增跨域共享/删档存活/保留域守卫/跨域清锚/重启回归/并发竞速六组测试（`internal/l3shared_test.go`），api 租户隔离用例补 L3 共享断言；决策档案 `upstream notes/implemented/architecture/2026-09-05-l3-file-wide-shared-pool.md`
 
 ### 接口去 fallback 与按层闭环修复
 

@@ -18,3 +18,12 @@ This repository (`genosis18m/Long-term-memory-go`) is an **attributed public mir
 - Not a GitHub fork graph link; credit still belongs upstream
 
 For product questions, ecosystem links, and upstream contact details, prefer the original MemHop repository and the links listed in the README.
+
+## Trimmed from this mirror
+
+These upstream materials were removed because they are not used by the Go module,
+tests, or host-facing guides:
+
+- `notes/` design archives (architecture / rejected-decision writeups)
+- `benches/fixtures/longmemeval_smoke.json` (not referenced by any test)
+
