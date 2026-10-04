@@ -22,7 +22,7 @@
 </p>
 
 <p align="center">
-  <strong>Current: v1.6.5</strong>
+  <strong>Current: v1.6.6</strong>
 </p>
 
 ---

@@ -22,7 +22,7 @@
 </p>
 
 <p align="center">
-  <strong>当前版本：v1.6.5</strong>
+  <strong>当前版本：v1.6.6</strong>
 </p>
 
 ---
