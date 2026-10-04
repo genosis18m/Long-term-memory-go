@@ -44,13 +44,6 @@ jobs:
       - name: Unit tests (public SDK and internal suites)
         run: go test ./...
 
-      # The integration guides carry a runnable skeleton each; `go build` of the
-      # packages never compiles it, so a guide a host copies verbatim can rot
-      # silently. This is the machine check behind the promise that a host can paste the guide and build.
-      - name: Guides compile (both integration guides' skeletons)
-        if: runner.os != 'Windows'
-        run: make check-guides
-
       # The race check covers the whole module, not just the packages that hold locks:
       # the consolidation a round close schedules runs on its own goroutine, and the
       # host-facing suite is where that pass races a test's own reads. Measured on the

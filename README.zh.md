@@ -49,9 +49,6 @@ MemHop 是 **Agent 专用**记忆数据库：每个 Agent 绑定唯一的 `.meh`
 
 ## 快速开始
 
-> 完整集成指南（配置、各层 API、轮次与轨迹、陷阱）：
-> [INTEGRATION_GUIDE.zh.md](INTEGRATION_GUIDE.zh.md) · English: [INTEGRATION_GUIDE.md](INTEGRATION_GUIDE.md)
-
 ```go
 import (
     "context"
@@ -263,8 +260,6 @@ go test -tags integration ./test/...    # 集成测试（需要 LLM key）
 
 ## 版本历史
 
-每行只保留至多五条重点；完整逐条记录见 [CHANGELOG.md](CHANGELOG.md)。
-
 | 版本 | 日期                 | 亮点 | 核心改动 |
 |------|----------------------|------|---------|
 | v1.6.6 | 2026-09-23 | 一轮只剩一次收束：域自持场景与轮次，写入形状不再收归属字段 |1. **一次 `Update(TurnEnd{Input,Output,Outcome,CreatedAt})` 收束一轮**——`Settle` 退役；Input/Output 原地覆写该轮话题的 Seq 1/2，Outcome 按调用次数追加成 `turn_outcome` 事件。场景与轮次键由域自持：`Search` 续用当前场景并开出这一轮，`AppendArchive` 的写入形状（`ArchiveInput`）不带地址——写到宿主没在做的轮这条路被形状关死。<br>2. **一个域只需存一件标识符**：`Session.AgentID` 读回该域库发号的 id，`DB.Agent(llm, id)` 按它取回同一个域（不建任何东西——未知或非 hex 一律拒），`DB.Agents()` 列出文件里的每个域。<br>3. **父步骤折出的摘要是派生值**：计划节点带 `summary_folded` 标记，分支变了派生摘要跟着重折，宿主写的文本任何汇总都不改写。<br>4. **修复真缺陷：合并吞掉对话的项目归属**——没锚的场景并掉锚定的那条后，整段对话从项目列举消失；现在幸存者没锚就接手被吞场景的锚，锚冲突整次拒且在任何删除之前。<br>5. **修复 Linux CI 抓出的真缺陷：同一毫秒连开两轮时，重开回到哪段会话由 id 哈希决定**——域内 `last_used_at` 戳改为严格递增。|
@@ -301,7 +296,6 @@ go test -tags integration ./test/...    # 集成测试（需要 LLM key）
 |---|---|
 | 本镜像 | [github.com/genosis18m/Long-term-memory-go](https://github.com/genosis18m/Long-term-memory-go) |
 | 上游 MemHop | [github.com/qyiun666/MemHop](https://github.com/qyiun666/MemHop) |
-| 镜像说明 | [MIRROR.md](MIRROR.md) |
 | MeowAgent | [github.com/meowagent/meowagent](https://github.com/meowagent/meowagent) — 即将开源 |
 | Meowire | [github.com/qyiun666/meowire](https://github.com/qyiun666/meowire) |
 | MeowDesk | [github.com/qyiun666/MeowDesk](https://github.com/qyiun666/MeowDesk) — 即将开源 |

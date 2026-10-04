@@ -49,9 +49,6 @@ Built as the brain memory of [MeowAgent](https://github.com/meowagent/meowagent)
 
 ## Quick Start
 
-> Full integration guide (config, all layer APIs, turns and trajectories, pitfalls):
-> [INTEGRATION_GUIDE.md](INTEGRATION_GUIDE.md) · 中文: [INTEGRATION_GUIDE.zh.md](INTEGRATION_GUIDE.zh.md)
-
 ```go
 import (
     "context"
@@ -269,14 +266,11 @@ go build ./...                          # Build
 go vet ./...                            # Static analysis
 go test ./internal/...                  # Unit tests (no external services)
 go test -tags integration ./test/...    # Integration tests (requires an LLM key)
-make check-guides                       # Compile the runnable skeleton both guides embed
 ```
 
 Integration tests run against a real LLM (the engine needs no embedding service). Configure the LLM via environment variables `MEMHOP_TEST_LLM_KEY` / `MEMHOP_TEST_LLM_URL` / `MEMHOP_TEST_LLM_MODEL` (defaults to the DeepSeek endpoint when only the key is set), or via `test/testsupport/key_config.json`.
 
 ## Changelog
-
-Each row keeps at most five highlights; the full numbered log lives in [CHANGELOG.md](CHANGELOG.md).
 
 | Version | Date | Highlight | Core Changes |
 |---------|------|-----------|--------------|
@@ -314,7 +308,6 @@ Each row keeps at most five highlights; the full numbered log lives in [CHANGELO
 |---|---|
 | This mirror | [github.com/genosis18m/Long-term-memory-go](https://github.com/genosis18m/Long-term-memory-go) |
 | Upstream MemHop | [github.com/qyiun666/MemHop](https://github.com/qyiun666/MemHop) |
-| Mirror notes | [MIRROR.md](MIRROR.md) |
 | MeowAgent | [github.com/meowagent/meowagent](https://github.com/meowagent/meowagent) — coming soon |
 | Meowire | [github.com/qyiun666/meowire](https://github.com/qyiun666/meowire) |
 | MeowDesk | [github.com/qyiun666/MeowDesk](https://github.com/qyiun666/MeowDesk) — coming soon |
