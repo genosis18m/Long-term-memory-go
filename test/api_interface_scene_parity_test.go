@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // A host running the loop reads the same scene twice in a row and by two doors.
 
 package test

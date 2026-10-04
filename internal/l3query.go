@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // L3 query big methods of the composition root: node lookup and BFS subgraph.
 
 package internal

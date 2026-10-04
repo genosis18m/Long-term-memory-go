@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // Search is a scene-scoped read: a scene is the host's session, so Search neither guesses which scene
 // a message belongs to nor distills anything.
 package internal

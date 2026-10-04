@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // How far a subgraph read goes: maxDepth counts hops, a non-positive one is no bound, and an edge-kind
 // filter decides which hops exist at all.
 

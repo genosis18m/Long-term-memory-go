@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // Package llmops hosts the LLM-assisted cognitive capabilities of the memory engine: keyword
 // extraction, L2 consolidation and L1->L0 distillation.
 package llmops

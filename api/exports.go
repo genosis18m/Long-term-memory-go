@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // Re-exported data-model surface of the facade: the enum constants and the error contract.
 
 package api

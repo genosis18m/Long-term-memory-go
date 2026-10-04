@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // Package turn holds the small methods over one finished turn: the gate on which topic a turn may
 // settle into, and the L0 profile read the read path shares.
 

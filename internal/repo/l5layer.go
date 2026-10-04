@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // L5 plan-node primitives: write one node, batch delete by id or by owning topic, and group a domain's
 // nodes into per-topic aggregates.
 package repo

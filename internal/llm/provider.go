@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // Package llm is the LLM transport: a Provider is a thin go-openai wrapper offering one chat call, a
 // truncation-escalation retry and an output ceiling.
 

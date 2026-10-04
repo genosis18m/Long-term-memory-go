@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // Host journey for the L2 scene surface: the calls a host makes to manage the sessions it already has.
 
 package test

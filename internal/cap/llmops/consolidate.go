@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // consolidate.go: the L2 consolidation call point — asks the LLM which adjacent topics share a
 // conversation thread and reconstructs merged keyword tracks into natural-language summaries.
 

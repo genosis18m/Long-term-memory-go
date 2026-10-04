@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // L2 scene big methods of the composition root: list / metadata patch / topic naming / merge / delete
 // and the deep scene-context read.
 

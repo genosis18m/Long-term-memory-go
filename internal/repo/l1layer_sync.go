@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // L1 node writes: rebuild one scene node per scene from the current depth<=2 L2 topics, and backfill
 // the emotion signals a distillation computed for nodes the sync pass created.
 package repo

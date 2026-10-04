@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // A host that shuts down while a worker is still driving a turn is the one race every method has to
 // survive, and it can be lost silently.
 

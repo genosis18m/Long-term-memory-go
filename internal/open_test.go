@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // OpenDB's rules: what the file holds and what the caller brought decide whether a database opens at
 // all, and a refused open leaves nothing behind.
 

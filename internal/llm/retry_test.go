@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // The token budgets are the library's only lever over how much an endpoint may answer, and every
 // existing case exercises them through a fake transport.
 

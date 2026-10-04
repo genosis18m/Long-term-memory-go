@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // The composition root's assembly point: resolving the database path's three states, opening or
 // creating the engine, settling the primary domain and reloading the tenant registry.
 

@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // The content write path: who owns which field of an appended record, and what one topic's shared Seq
 // space does when two kinds want the same slot.
 

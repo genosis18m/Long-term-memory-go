@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // Enumerations of the data model: the content medium, the archive kind and the speaker an L4 record
 // carries, and the relation kind an L3 edge carries, each with its string form.
 package core

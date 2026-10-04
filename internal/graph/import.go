@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // Package graph holds the L3 knowledge-graph small methods: the batch-import steps and the
 // node/subgraph query steps, each assembling repo/core record features.
 

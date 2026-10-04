@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // Acceptance item 6's "return the plan as context, compressed automatically", measured at a depth
 // nothing has driven: the fold is pinned two levels down, where a parent reads what its children hold.
 

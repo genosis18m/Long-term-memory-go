@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // Acceptance items 2 and 9 on the premise the host actually deploys: several agent domains share one
 // .meh file, and each one's consolidation stays inside its own domain.
 

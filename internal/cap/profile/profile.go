@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // Package profile is the L0 profile capability: the first profile a domain gets, a compact digest of a
 // stored one, the distillation samples read out of L1, and writing a distillation result back.
 package profile

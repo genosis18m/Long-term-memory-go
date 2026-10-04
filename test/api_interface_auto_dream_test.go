@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // Acceptance items 9 and 11 say consolidation is the library's job, not a call the host has to
 // schedule.
 

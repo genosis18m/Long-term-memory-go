@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // Package testsupport provides shared helpers for integration tests that run against a real LLM
 // service (DeepSeek by default).
 package testsupport

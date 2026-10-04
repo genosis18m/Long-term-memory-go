@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // Profile distillation policy: the emotion/MBTI distilled from L1 samples into the typed L0 signals,
 // and the ranking that picks those samples.
 

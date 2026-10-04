@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // TimeoutSecs exists for one endpoint shape: a server that takes the connection and is slower to
 // answer than the caller can wait.
 

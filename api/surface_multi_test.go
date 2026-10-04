@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // Session surface tests: every exported method of the domain handle, exercised against a stub LLM.
 
 package api

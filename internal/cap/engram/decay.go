@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // L1 network forgetting: RebuildFromL2 drops stale scene nodes and DecayNetwork applies exponential
 // decay to node importance and edge weights, removing what falls below the configured thresholds.
 

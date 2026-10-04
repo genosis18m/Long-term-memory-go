@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // L0 profile operations of the internal layer: the read shares the turn package's profile read, the
 // write is a thin wrapper over the repo layer.
 

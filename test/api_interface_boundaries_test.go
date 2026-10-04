@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // Offline interface tests for what a host gets when it asks for something contradictory.
 
 package test

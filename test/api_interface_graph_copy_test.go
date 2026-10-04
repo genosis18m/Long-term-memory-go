@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // One recruited worker, one file of its own — and with it an empty L3 pool, because the project graph
 // is shared inside a file, not across files.
 

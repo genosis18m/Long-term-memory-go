@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // Offline interface tests: exercise the public API surface through memhop.Open with a mock
 // OpenAI-compatible LLM server.
 

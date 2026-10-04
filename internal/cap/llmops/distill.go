@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // Distill is the L1→L0 distillation call point — derives the agent's emotional state and MBTI-style
 // profile from L1 associative samples.
 

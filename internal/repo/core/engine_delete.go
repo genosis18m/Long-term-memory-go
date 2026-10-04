@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // Engine delete path: tombstone appending and the index bookkeeping that drops deleted records from
 // the per-agent primary/type indexes.
 

@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // A read hands the host a value, and a host is entitled to treat it as its own: sort the listing,
 // blank a field before rendering, keep two reads and compare them later.
 

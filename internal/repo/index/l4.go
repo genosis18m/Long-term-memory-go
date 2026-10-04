@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // L4Index caches one agent domain's content inventory grouped by topic, so a read can enumerate what a
 // turn holds.
 package index

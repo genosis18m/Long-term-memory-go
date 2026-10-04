@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // Package core provides typed Read/Write helpers for storage record types; typed slot access should go
 // through this package.
 package core

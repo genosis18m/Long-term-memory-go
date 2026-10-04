@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // The other half of the deployment the host actually builds: one process, several agents, each behind
 // the same two-method port from `api_interface_memory_port_test.go`.
 

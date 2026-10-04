@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // Turn-keyed surface: one key's content writes and event read-back, its plan tree, and the retention
 // window that empties it.
 

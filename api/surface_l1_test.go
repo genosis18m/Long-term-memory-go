@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // L1 read surface: the ids a host gets are hex like every other id, and the values are Dream's — there
 // is no write to test here.
 

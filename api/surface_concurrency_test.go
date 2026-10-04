@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // The concurrency contract is the one an integrating host cannot work around: calls on one domain
 // serialize, calls on different domains do not, and the turn id a `Search` mints is load-bearing.
 

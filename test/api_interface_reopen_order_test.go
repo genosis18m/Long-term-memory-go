@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // The order promise a host actually leans on is not "twice in one process" but "across my restarts".
 
 package test

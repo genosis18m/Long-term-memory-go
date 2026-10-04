@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // Node field-merge policy of the knowledge capability: how an import folds into an existing hypergraph
 // node (skip vs append vs replace).
 

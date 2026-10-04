@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // Dream takes a scene id, and a host in a tool loop reaches for exactly that: the model names a scene
 // out of its context, and the id may be one the library has already lost.
 

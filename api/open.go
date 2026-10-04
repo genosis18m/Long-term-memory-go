@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // Package api is the public facade of MemHop: a Go-module surface over one .meh file, with no business
 // logic here.
 package api

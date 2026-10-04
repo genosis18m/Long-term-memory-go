@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // Error contract of the public facade: the numeric error-code type, the CodeOf extractor, the NewError
 // constructor and the code constants, all forwarded to the internal seam.
 

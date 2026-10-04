@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // The file-wide shared L3 pool: one file hosts a single knowledge-graph pool (core.SharedPoolAgentID)
 // that every agent domain reads and writes, while scenes, archives and profiles stay domain-local.
 

@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // Transport classification tests: what the provider answers when the endpoint gave an answer that
 // cannot be used, and when the caller gave up mid-backoff.
 

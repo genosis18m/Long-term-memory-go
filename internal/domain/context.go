@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // Package domain carries one agent domain's state: the Context container (per-domain lock, the caches,
 // a cancellable work context) plus the L2Meta and plan cache maintenance every write path shares.
 

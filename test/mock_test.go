@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // Shared mock OpenAI-compatible LLM server for the offline interface tests; dispatches by the system
 // prompt of each LLM call point.
 

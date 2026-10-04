@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // L2 topic record primitives: listing, creation and the read-modify-write mutations of the keyword
 // track and parent link.
 package repo

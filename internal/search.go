@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // Search of the composition root: a scene-scoped read of the host's own session plus the turn it
 // opens.
 

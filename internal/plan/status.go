@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // Package plan holds the L5 plan-tree small methods: the status surface, the two input shapes a write
 // step takes, the create/update steps, and the forest build with its rollup.
 

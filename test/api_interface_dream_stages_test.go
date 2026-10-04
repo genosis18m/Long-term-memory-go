@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // `DreamReport.Stages` is how a host finds out which part of a consolidation pass did what, and after
 // a failure which part never ran.
 

@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // L4 archive operations of the internal layer: one write and one read over a topic's content, which is
 // where a turn's dialogue originals and its operation events both live.
 

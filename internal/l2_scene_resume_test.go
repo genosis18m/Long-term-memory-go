@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // Which conversation a domain resumes after a restart is not a detail: it decides what the next
 // `Search` reads back, writes into, and distils.
 

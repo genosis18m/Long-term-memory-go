@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // SearchL4's two time bounds compare against a record's own millisecond stamp.
 
 package test

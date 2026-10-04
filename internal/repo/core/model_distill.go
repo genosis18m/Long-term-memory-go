@@ -1,6 +1,3 @@
-// Copyright (c) 2026 qyiun666
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 // Distillation shapes shared by the LLM capability that produces them, the profile capability that
 // consumes them and the record layer that stores them.
 
